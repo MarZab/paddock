@@ -1,0 +1,37 @@
+{
+  "providers": [
+    {
+      "id": "302ai",
+      "name": "302.AI",
+      "base_url": "https://api.302.ai/v1",
+      "key_env": "302AI_API_KEY",
+      "wire": "openai",
+      "key_set": false,
+      "key_usable": false,
+      "key_optional": false,
+      "models": 125
+    },
+    {
+      "id": "abacus",
+      "name": "Abacus",
+      "base_url": "https://routellm.abacus.ai/v1",
+      "key_env": "ABACUS_API_KEY",
+      "wire": "openai",
+      "key_set": false,
+      "key_usable": false,
+      "key_optional": false,
+      "models": 108
+    },
+    {
+      "id": "abliteration-ai",
+      "name": "abliteration.ai",
+      "base_url": "https://api.abliteration.ai/v1",
+      "key_env": "ABLIT_KEY",
+      "wire": "openai",
+      "key_set": false,
+      "key_usable": false,
+      "key_optional": false,
+      "models": 3
+    }
+  ]
+}

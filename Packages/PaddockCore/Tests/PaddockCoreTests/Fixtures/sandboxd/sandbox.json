@@ -1,0 +1,72 @@
+[
+  {
+    "agent": "claude",
+    "created_at": "2026-10-17T14:30:56+02:00",
+    "id": "6882b112-8b75-4e69-9801-aa0f42b5266b",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-a",
+      "com.docker.sandbox.skillsStaged": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sandbox.workingDirectory": "/Users/operator/Projects/project-a",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha013",
+      "com.docker.sdk.container": "0.1.0-alpha016",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-10-24T16:28:12.087078Z",
+    "name": "project-a",
+    "runtime_mounts": [],
+    "status": "stopped",
+    "workspace": "/Users/operator/Projects/project-a"
+  },
+  {
+    "agent": "claude",
+    "created_at": "2026-10-23T21:06:53+02:00",
+    "id": "12557394-b7c9-4190-bcdc-d64840acfa0c",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-b",
+      "com.docker.sandbox.skillsStaged": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sandbox.workingDirectory": "/Users/operator/Projects/project-b",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha013",
+      "com.docker.sdk.container": "0.1.0-alpha016",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-10-24T16:57:14.013799Z",
+    "name": "project-b",
+    "runtime_mounts": [],
+    "status": "running",
+    "workspace": "/Users/operator/Projects/project-b"
+  },
+  {
+    "agent": "claude",
+    "created_at": "2026-09-07T21:55:56+02:00",
+    "id": "cd3af57d-5529-49ba-9222-b8ce327bf71f",
+    "labels": {
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-e",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sandbox.workingDirectory": "/Users/operator/Projects/project-e",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha013",
+      "com.docker.sdk.container": "0.1.0-alpha016",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-10-24T12:25:58.565343Z",
+    "name": "project-e",
+    "runtime_mounts": [],
+    "status": "stopped",
+    "workspace": "/Users/operator/Projects/project-e"
+  }
+]

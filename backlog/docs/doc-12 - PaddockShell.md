@@ -1,0 +1,12 @@
+---
+id: doc-12
+title: PaddockShell
+type: specification
+created_date: '2026-10-25 15:55'
+updated_date: '2026-11-04 14:20'
+---
+The sandbox shell ships as its own SPM package, `Packages/PaddockShell`, so other apps and tools can embed it:
+
+- `PaddockShellCore` (no UI): `SandboxShellSession` actor that opens `sbx exec -it N <shell>` through a PTY, exposes `write(_:)`, `resize(cols:rows:)`, `output: AsyncStream<Data>`, `exitCode`, and a non-interactive `run(_ command:) async throws -> ProcessResult`. It depends only on a `ProcessRunner`-style PTY protocol, so it is testable with a fake.
+- `PaddockShellUI`: a SwiftUI `SandboxTerminalView(session:cache:)` wrapping SwiftTerm, plus tab management (shell, shell 2, +). With a `TerminalViewCache` the view (and its live output) is kept per session while hidden and put back when shown; the host releases a session from the cache when its tab closes (`release`, `releaseAll`). Without one, each new view replays the session's scrollback. Copy and paste: SwiftTerm drops the selection on every chunk of output, so the terminal (`PaddockTerminalView`) keeps the text of the last selection made in it; Cmd-C copies the live selection, else that text, until the next click in the terminal. While the program tracks the mouse, Shift-drag selects. Right-click shows Copy, Paste, and Select All, also while the program tracks the mouse (PAD-65). A program never sets the Mac clipboard: what it copies with OSC 52 (Claude Code copies what was selected in its own view this way) is kept, as UTF-8 text up to 1 MB and never from a scrollback replay, and the right-click menu's Copy takes it when there is no newer selection of the terminal's own. **Ctrl-C** (alone: no Command, Option, or Shift) does what that Copy does when there is something to copy: it puts the text on the clipboard, does not reach the program, and spends the text (selection cleared, kept and program copy dropped), so the next Ctrl-C interrupts as usual. With nothing to copy it goes to the program (`TerminalCopy`, a local key monitor while the terminal has the focus, since SwiftTerm's `keyDown` cannot be overridden; PAD-79). Cmd-C copies only the terminal's own selection. OSC 52 reads are refused, so a program sees the clipboard only when the operator pastes (`ClipboardWrite`, PAD-66).
+- The app uses the package through its public API only, the same as an outside consumer would. DocC and a semver version are PAD-15.

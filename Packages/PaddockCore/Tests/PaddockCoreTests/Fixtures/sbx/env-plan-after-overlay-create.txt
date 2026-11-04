@@ -1,0 +1,32 @@
+
+ENVIRONMENT
+  Name:  m0-v3
+  File:  /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml
+
+SANDBOX
+  ! m0-v3 — present, not recorded as applied, needs your approval
+      agent: sbx-kit-claude
+
+KITS
+  ! docker.io/docker/sbx-kit-claude:2.1.316 — present, not recorded as applied, needs your approval
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/probe — present, not recorded as applied, needs your approval
+
+WORKSPACES
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project — present, not recorded as applied, needs your approval
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-ro — present, not recorded as applied, needs your approval
+      readOnly: true
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-rw — present, not recorded as applied, needs your approval
+
+PORTS
+  ! 3000/tcp4 — present, not recorded as applied, needs your approval
+      host: 18998
+
+LIFECYCLE
+  + initialize: touch "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/host-command-ran"
+      workdir: /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project
+      name: host marker
+      envFiles[0]: /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml
+
+  1 to add · 0 to change · 0 to destroy · 7 need approval
+  ! this plan runs commands on this machine, outside the sandbox, with your own privileges
+  ○ not approved yet — applying asks once

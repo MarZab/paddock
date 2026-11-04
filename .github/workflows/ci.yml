@@ -1,0 +1,36 @@
+# Lint and test on every push and pull request (PAD-91). The app itself (Xcode, SwiftTerm's build
+# plugin that the operator trusts by hand) is built on the Mac, not here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      # TODO: pin these actions by commit SHA (look the SHAs up on each action's releases page).
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Lint
+        run: mise run lint
+      - name: Test
+        run: mise run test
+
+  linux:
+    # PaddockCore without Apple frameworks, the way a Paddock sandbox runs it.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Swift
+        run: mise run swift-linux
+      - name: Test
+        run: |
+          export PATH="$HOME/.local/share/mise/shims:$PATH"
+          mise run test

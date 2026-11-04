@@ -1,0 +1,9 @@
+{
+  "default": {},
+  "description": "JSON object of inference endpoints for `sbx run --model <model> --provider <id>`, keyed by id, e.g. {\"gpubox\": {\"url\": \"http://gpubox:8000/v1\"}}. Fields: url (required, absolute http(s)), wire (\"openai\" default or \"anthropic\"), apiKeyEnv (variable llmman serve reads the API key from), name.",
+  "env_var": "DOCKER_SANDBOXES_MODEL_PROVIDERS",
+  "key": "model.providers",
+  "source": "default",
+  "type": "json",
+  "value": {}
+}

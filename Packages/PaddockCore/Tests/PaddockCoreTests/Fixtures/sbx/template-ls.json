@@ -1,0 +1,161 @@
+[
+  {
+    "id": "4a94d9144a70",
+    "repository": "docker.io/docker/sandbox-templates",
+    "tag": "claude-code-docker",
+    "flavor": "claude-code-docker",
+    "created_at": "2026-10-21T14:33:43Z",
+    "size": 1105156991
+  },
+  {
+    "id": "3213e74b2c46",
+    "repository": "docker.io/docker/sandbox-templates",
+    "tag": "cursor-agent-docker",
+    "flavor": "cursor-agent-docker",
+    "created_at": "2026-08-04T19:31:32Z",
+    "size": 902470025
+  },
+  {
+    "id": "ef636291701f",
+    "repository": "docker.io/docker/sandbox-templates",
+    "tag": "opencode-docker",
+    "flavor": "opencode-docker",
+    "created_at": "2026-09-23T18:21:12Z",
+    "size": 1446903106
+  },
+  {
+    "id": "b178ca62ec2e",
+    "repository": "docker.io/docker/sandbox-templates",
+    "tag": "shell-docker",
+    "flavor": "shell-docker",
+    "created_at": "2026-10-21T14:31:20Z",
+    "size": 683901922
+  },
+  {
+    "id": "6bb075bdc0c5",
+    "repository": "docker.io/library/custom-1",
+    "tag": "local",
+    "flavor": "claude-code",
+    "created_at": "2026-08-02T20:15:47Z",
+    "size": 635588506
+  },
+  {
+    "id": "84901f8efccd",
+    "repository": "docker.io/library/custom-2",
+    "tag": "local",
+    "flavor": "claude-code",
+    "created_at": "2026-10-03T14:59:12Z",
+    "size": 769905728
+  },
+  {
+    "id": "6b86394158c6",
+    "repository": "docker.io/library/custom-3",
+    "tag": "6655b3e7c7ad",
+    "flavor": "claude-code",
+    "created_at": "2026-10-17T12:01:10Z",
+    "size": 950253599
+  },
+  {
+    "id": "e73d6e733160",
+    "repository": "docker.io/library/custom-3",
+    "tag": "6acc64948237",
+    "flavor": "claude-code",
+    "created_at": "2026-10-17T11:40:40Z",
+    "size": 783768413
+  },
+  {
+    "id": "ce33eb74b560",
+    "repository": "docker.io/library/custom-3",
+    "tag": "90911ed57e34",
+    "flavor": "claude-code",
+    "created_at": "2026-10-17T11:29:20Z",
+    "size": 684093848
+  },
+  {
+    "id": "8e355d5a36a6",
+    "repository": "docker.io/library/custom-3",
+    "tag": "latest",
+    "flavor": "claude-code",
+    "created_at": "2026-10-19T11:03:31Z",
+    "size": 917850547
+  },
+  {
+    "id": "627def3b2b1c",
+    "repository": "docker.io/library/custom-4",
+    "tag": "latest",
+    "flavor": "claude-code",
+    "created_at": "2026-08-08T15:24:54Z",
+    "size": 1301719955
+  },
+  {
+    "id": "ab6cb8ac8f22",
+    "repository": "docker.io/library/custom-5",
+    "tag": "31f47e9c8699",
+    "flavor": "claude-code",
+    "created_at": "2026-10-15T13:27:37Z",
+    "size": 910865244
+  },
+  {
+    "id": "2337076bbf96",
+    "repository": "docker.io/library/custom-6",
+    "tag": "latest",
+    "flavor": "claude-code",
+    "created_at": "2026-10-23T08:26:09Z",
+    "size": 2414288772
+  },
+  {
+    "id": "53c0554646e6",
+    "repository": "docker.io/library/custom-7",
+    "tag": "d8ab1a2a5fd9",
+    "flavor": "claude-code",
+    "created_at": "2026-09-01T13:44:11Z",
+    "size": 849707294
+  },
+  {
+    "id": "1acf7a5d83ba",
+    "repository": "docker.io/library/custom-7",
+    "tag": "ef434988de14",
+    "flavor": "claude-code",
+    "created_at": "2026-09-01T15:03:36Z",
+    "size": 1115701765
+  },
+  {
+    "id": "5e662e37facc",
+    "repository": "docker.io/library/custom-8",
+    "tag": "latest",
+    "flavor": "claude-code",
+    "created_at": "2026-09-15T09:30:09Z",
+    "size": 929378164
+  },
+  {
+    "id": "47f9ed2f02c7",
+    "repository": "docker.io/library/custom-9",
+    "tag": "2f509405c5cb",
+    "flavor": "claude-code-docker",
+    "created_at": "2026-09-26T19:39:11Z",
+    "size": 2491616617
+  },
+  {
+    "id": "9e0e9231cafd",
+    "repository": "docker.io/library/custom-9",
+    "tag": "8110c68020a3",
+    "flavor": "claude-code-docker",
+    "created_at": "2026-09-12T10:33:56Z",
+    "size": 2493308701
+  },
+  {
+    "id": "0d08165db69a",
+    "repository": "docker.io/library/custom-10",
+    "tag": "latest",
+    "flavor": "claude-code",
+    "created_at": "2026-10-23T08:33:38Z",
+    "size": 1295435110
+  },
+  {
+    "id": "0d30b5f4c424",
+    "repository": "docker.io/paddock/m0",
+    "tag": "test",
+    "created_at": "2026-10-23T21:12:49Z",
+    "size": 3680
+  }
+]

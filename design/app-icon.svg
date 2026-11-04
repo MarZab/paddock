@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1D3B55"/>
+      <stop offset="1" stop-color="#3C7189"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4E9A55"/>
+      <stop offset="1" stop-color="#2B6A3A"/>
+    </linearGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E4DED2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFE7A8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFE7A8" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="tile">
+      <rect x="100" y="100" width="824" height="824" rx="185"/>
+    </clipPath>
+    <filter id="tileShadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#06121A" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- tile -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#sky)" filter="url(#tileShadow)"/>
+
+  <g clip-path="url(#tile)">
+    <!-- a few stars -->
+    <g fill="#FFFFFF">
+      <circle cx="232" cy="236" r="6" opacity="0.8"/>
+      <circle cx="790" cy="208" r="5" opacity="0.7"/>
+      <circle cx="846" cy="330" r="4" opacity="0.55"/>
+      <circle cx="176" cy="384" r="4" opacity="0.5"/>
+      <circle cx="320" cy="168" r="3.5" opacity="0.6"/>
+    </g>
+
+    <!-- meadow -->
+    <path d="M100 650 C 300 600, 724 600, 924 650 L 924 924 L 100 924 Z" fill="url(#grass)"/>
+
+    <!-- glow behind the sandbox -->
+    <circle cx="512" cy="410" r="300" fill="url(#glow)"/>
+
+    <!-- the sandbox: an isometric crate -->
+    <g filter="url(#soft)">
+      <path d="M512 184 L702 294 L512 404 L322 294 Z" fill="#FBE3A3"/>
+      <path d="M322 294 L512 404 L512 622 L322 512 Z" fill="#E9AE4E"/>
+      <path d="M512 404 L702 294 L702 512 L512 622 Z" fill="#C98330"/>
+      <path d="M512 184 L702 294 L512 404 L322 294 Z M512 404 L512 622" fill="none" stroke="#FFF6DC" stroke-opacity="0.5" stroke-width="4" stroke-linejoin="round"/>
+      <!-- a prompt on the left face, drawn in the face's plane -->
+      <path d="M362 395 L426 466 L362 463" fill="none" stroke="#5A3410" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M440 512 L488 540" fill="none" stroke="#5A3410" stroke-width="20" stroke-linecap="round"/>
+    </g>
+
+    <!-- fence in front -->
+    <g filter="url(#soft)">
+      <!-- rails -->
+      <rect x="60" y="600" width="904" height="40" rx="8" fill="url(#rail)"/>
+      <rect x="60" y="708" width="904" height="40" rx="8" fill="url(#rail)"/>
+      <!-- posts with pointed tops -->
+      <g fill="url(#rail)">
+        <path d="M206 560 L236 530 L266 560 L266 860 L206 860 Z"/>
+        <path d="M394 560 L424 530 L454 560 L454 860 L394 860 Z"/>
+        <path d="M570 560 L600 530 L630 560 L630 860 L570 860 Z"/>
+        <path d="M758 560 L788 530 L818 560 L818 860 L758 860 Z"/>
+      </g>
+    </g>
+
+    <!-- grass in front of the fence -->
+    <path d="M100 820 C 330 790, 694 790, 924 820 L 924 924 L 100 924 Z" fill="#2B6A3A"/>
+  </g>
+</svg>

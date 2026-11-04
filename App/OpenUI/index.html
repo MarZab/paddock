@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Paddock's host page for OpenUI's renderer (backlog doc Browser, OpenUI tabs). Everything it loads
+     comes from the app (paddock-ui://renderer/); the agent's document arrives only as data, through
+     paddockRender. No network: no fetches, no outside images, no frames. -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data: blob:; font-src 'self'; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="vendor/openui-styles.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--openui-background, transparent); }
+  #root { padding: 16px; max-width: 960px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="vendor/openui-bundle.min.js"></script>
+<script src="host.js"></script>
+</body>
+</html>

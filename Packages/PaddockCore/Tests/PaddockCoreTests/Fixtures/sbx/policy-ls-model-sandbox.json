@@ -1,0 +1,35 @@
+{
+  "rules": [
+    {
+      "id": "6537bac9-e080-4c9e-a769-9681b926cfa9",
+      "name": "kit:m0-model",
+      "policy_id": "d5498042-39dc-44e0-b003-286e07c46a15",
+      "scope": "sandbox:m0-model",
+      "applies_to": "sandbox:m0-model",
+      "resource_type": "network",
+      "decision": "allow",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "host2.example.test:443",
+        "mcp-proxy.anthropic.com:443",
+        "host3.example.test:443",
+        "localhost:17434"
+      ],
+      "origin": "scoped",
+      "layer": "local",
+      "status": "active",
+      "editable": false,
+      "sandbox_id": "m0-model",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "actions": [
+        "net:connect:tcp"
+      ]
+    }
+  ]
+}

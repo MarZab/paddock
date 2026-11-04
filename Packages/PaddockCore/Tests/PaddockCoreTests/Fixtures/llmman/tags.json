@@ -1,0 +1,21 @@
+{
+  "models": [
+    {
+      "name": "hf.co/unsloth/Qwen3.5-0.8B-GGUF:latest",
+      "model": "hf.co/unsloth/Qwen3.5-0.8B-GGUF:latest",
+      "size": 737504352,
+      "digest": "sha256:b17a799ff3525f1ab9e033d76aa59e2defc9d089ac534a1585c1002ec152be50",
+      "modified_at": "2026-10-23T20:15:06+00:00",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen35",
+        "families": [
+          "qwen35"
+        ],
+        "parameter_size": "752.4M",
+        "quantization_level": "Q4_K_M"
+      }
+    }
+  ]
+}

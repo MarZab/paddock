@@ -1,0 +1,26 @@
+version: 1
+
+models:
+  gatewayPorts: [17480, 17579]
+  maxBodyMB: 32
+  maxConcurrentPerProject: 2
+
+defaults:
+  agent: claude
+  provider: agent-default
+
+providers:
+  agent-default:
+    kind: agentDefault
+  local_qwen:
+    kind: local
+    model: "hf.co/unsloth/Qwen3.5-35B-A3B-GGUF:latest"
+
+agents:
+  claude:
+    kind: claudeCode
+  opencode:
+    kind: openCode
+
+ports:
+  publishRange: [18000, 18999]

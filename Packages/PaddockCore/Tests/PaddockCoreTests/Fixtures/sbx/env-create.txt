@@ -1,0 +1,95 @@
+
+ENVIRONMENT
+  Name:   m0-v3
+  Files:  /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml
+          /Users/operator/Projects/private/paddock/scratch/m0/run/v3/overlay/sbxenv.yaml
+
+SANDBOX
+  + m0-v3
+      agent: sbx-kit-claude
+
+KITS
+  + docker.io/docker/sbx-kit-claude:2.1.316
+  + /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/probe
+
+WORKSPACES
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project — present, not recorded as applied, needs your approval
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-ro — present, not recorded as applied, needs your approval
+      readOnly: true
+  ! /Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-rw — present, not recorded as applied, needs your approval
+
+ENV
+  + PADDOCK_M0_OVERLAY
+      value: 1
+
+PORTS
+  + 3000/tcp4
+      host: 18998
+
+  5 to add · 0 to change · 0 to destroy · 3 need approval
+
+SANDBOX
+  Name:       m0-v3
+  Agent:      sbx-kit-claude
+  Kits:       docker.io/docker/sbx-kit-claude:2.1.316
+              /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/probe
+  Workspace:  /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project (rw)
+              /Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-ro (ro)
+              /Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-rw (rw)
+              /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml (ro)
+  Skills:     0 entries · read-only
+    Source:   /Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills
+    Target:   /home/agent/.claude/skills
+  Image:      docker.io/docker/sbx-kit-claude@sha256:60a90df50354b1bb737b0f47bc2aad0475b36e019c65361173feace3efcf662a
+  CPU:        18
+  Memory:     32 GiB
+
+IMAGE
+  ○ image — checking…
+  ○ image — pulling…
+      60a90df50354 downloaded
+      e82fc0075447 downloaded
+      f98bd0a90047 downloaded
+      5b260df28516 downloaded
+      94cea96c9493 downloaded
+      c1c1f854e7f2 downloaded
+      bbbcb502b088 downloaded
+      c99975b418d1 downloaded
+      0f8f7db171b3 downloaded
+      4f4fb700ef54 already present
+      dc836fbd14a3 downloaded
+      f94b779107ab downloaded
+      7c9ef7e30be3 downloaded
+      5d6a89c8142b downloaded
+      fa4ac8adee1b downloaded
+      6e6545671a0e downloaded  154.1 MB
+      587fb02e6f0f downloaded  603.5 MB
+  ✓ image — ready
+
+AGENT
+    assembling kit image from 2 kits
+    loading kit image docker.io/docker/sbx-kit-claude:2.1.316
+    loading kit image /Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/probe
+  ✓ assembled kit image (13 layers)
+    setting 2 environment variables
+      +CLAUDE_MODEL +CLAUDE_REASONING_EFFORT
+    running 5 install commands
+      $ Seed Claude bypass/trust flags (root; overwrites image-ship… (kit=sbx-kit-claude, user=0)
+      ✓ Seed Claude bypass/trust flags (root; overwrites image-ship… (kit=sbx-kit-claude, user=0, 8ms)
+      $ Ensure ~/.claude is agent-owned before settings seed (kit=sbx-kit-claude, user=0)
+      ✓ Ensure ~/.claude is agent-owned before settings seed (kit=sbx-kit-claude, user=0, 10ms)
+      $ Seed Claude settings.json from the surfaced auth mode (kit=sbx-kit-claude, user=agent)
+      ✓ Seed Claude settings.json from the surfaced auth mode (kit=sbx-kit-claude, user=agent, 6ms)
+      $ Register the sandbox MCP gateway (install-time, race-free) (kit=sbx-kit-claude, user=agent)
+      ✓ Register the sandbox MCP gateway (install-time, race-free) (kit=sbx-kit-claude, user=agent, 410ms)
+      $ install-phase network (kit=probe, user=0)
+      ✓ install-phase network (kit=probe, user=0, 71ms)
+      view install logs: ls /var/log/sbx-kits
+    writing 1 init file
+    registering 3 startup commands, run on every container start
+      ○ Update apt package cache in background (kit=sbx-kit-claude, background, user=0)
+      ○ Register the sandbox MCP gateway (startup fallback) (kit=sbx-kit-claude, user=agent)
+      ○ startup timing (kit=probe, user=1000)
+      view startup log: cat /var/log/sbx-kit-startup.log
+
+  ✓ Created sandbox m0-v3

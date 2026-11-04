@@ -1,0 +1,106 @@
+# syntax=docker/sandbox-kit:3
+# yaml-language-server: $schema=https://raw.githubusercontent.com/docker/sandbox-kit-spec/main/schema/kit.schema.json
+#
+# The example app's mixin over the Claude Code workload (sbxenv.yaml at the repo root lists both).
+# Its files come from example-dev.dockerfile next to this one. sbx builds a local kit when it
+# creates the sandbox and reads it only then: after a change, `sbx env rm && sbx env run`.
+schemaVersion: "3"
+kind: mixin
+displayName: Example app dev
+description: mise and the pinned toolchain, system packages, and the hosts The example app's build and tests need.
+version: "0.1.0"  # sbx requires one for provides; bump it with each change
+provides: [example-dev]
+
+capabilities:
+  # Install is open only while the install hooks run; runtime is what the agent gets.
+  # On top of the workload's own rules (api.anthropic.com) and sbx's global rules.
+  - type: com.docker.sandbox/network-policy@2
+    config:
+      install:
+        allow:
+          - ports.ubuntu.com       # arm64 (Apple silicon)
+          - archive.ubuntu.com
+          - security.ubuntu.com
+      runtime:
+        allow:
+          # mise and its backends
+          - mise.jdx.dev
+          - github.com
+          - "*.github.com"
+          - objects.githubusercontent.com
+          - release-assets.githubusercontent.com
+          - raw.githubusercontent.com
+          # node, pnpm, npm packages
+          - nodejs.org
+          - registry.npmjs.org
+          # .NET SDK 10 (dotnet-install.sh and its fallbacks) and NuGet
+          - dot.net
+          - "*.dot.net"
+          - builds.dotnet.microsoft.com
+          - download.visualstudio.microsoft.com
+          - dotnetcli.azureedge.net
+          - dotnetcli.blob.core.windows.net
+          - aka.ms
+          - api.nuget.org
+          - "*.nuget.org"
+          # images for `mise run docker:up` (the workload ships a Docker engine)
+          - registry-1.docker.io
+          - auth.docker.io
+          - production.cloudflare.docker.com
+          - mcr.microsoft.com
+          - "*.data.mcr.microsoft.com"
+          - docker.elastic.co
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        # libatomic1: prebuilt node; build-essential, pkg-config, libssl-dev: native modules;
+        # libunwind8: .NET; postgresql-client: psql.
+        - description: System packages for the mise toolchains
+          user: "0"
+          command:
+            - sh
+            - -c
+            - >-
+              apt-get update && apt-get install -y --no-install-recommends
+              build-essential libatomic1 libssl-dev libunwind8 pkg-config
+              postgresql-client unzip && rm -rf /var/lib/apt/lists/*
+      startup:
+        # mise's global config, so every process (the agent, its Bash tool, a shell tab) trusts
+        # the workspace at its real mount path. Written at start from $WORKSPACE_DIR in the
+        # running sandbox: sbx fills ${{ kit.env.* }} from the image's environment when it builds
+        # the sandbox, where WORKSPACE_DIR does not exist (sbx 0.51 refuses it). Trust by path,
+        # not `mise trust` (that is per file hash).
+        - description: Trust the workspace's mise configs; skip azure-cli
+          command:
+            - sh
+            - -c
+            - >-
+              mkdir -p "$HOME/.config/mise" &&
+              printf '[settings]\ntrusted_config_paths = ["%s"]\ndisable_tools = ["azure-cli"]\nyes = true\nquiet = true\n'
+              "$WORKSPACE_DIR" > "$HOME/.config/mise/config.toml"
+        # Every start: tools follow the repo's mise.toml without a rebuild. CI=true lets the
+        # postinstall hook's `pnpm install` purge a host-made node_modules without a TTY. 
+        - description: Sync the workspace's tool versions with mise
+          command:
+            - sh
+            - -c
+            - >-
+              cd "$WORKSPACE_DIR" && [ -f mise.toml ] &&
+              CI=true mise install || true
+
+  # @1, as sbx's own claude and playwright kits use: the two versions do not compose.
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      content: |
+        ## Toolchain: mise
+
+        mise manages every runtime and CLI tool; versions are pinned in the root `mise.toml`
+        and installed on each start. `mise run <task>` runs a task, `mise tasks` lists them..
+
+        ## This sandbox
+
+        - **The network is default-deny.** A host not allowed by `tools/sandbox/example-dev/example-dev.yaml`
+          fails with HTTP 403 and a body naming it. That is a policy block, not a broken build:
+          say so rather than working around it. System packages belong in that kit too; nothing
+          installed by hand survives the next sandbox.

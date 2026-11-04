@@ -1,0 +1,10 @@
+version: 1
+
+modles:
+
+models:
+  gatewayPrt: 1
+
+ports:
+  hostServices: []
+  publish: []

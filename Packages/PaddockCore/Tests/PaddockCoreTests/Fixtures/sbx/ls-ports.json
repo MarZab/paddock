@@ -1,0 +1,49 @@
+[
+  {
+    "name": "paddock-project-a",
+    "id": "57c86b65-96b8-4d6a-9b7e-95db4e7c8ee3",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-10-30T07:34:04.861914Z",
+    "ports": [
+      {
+        "host_ip": "127.0.0.1",
+        "host_port": 49170,
+        "sandbox_port": 38323,
+        "protocol": "tcp"
+      },
+      {
+        "host_ip": "::1",
+        "host_port": 49170,
+        "sandbox_port": 38323,
+        "protocol": "tcp"
+      }
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/project-a"
+    ],
+    "created_at": "2026-10-30T07:32:18Z"
+  },
+  {
+    "name": "paddock-project-b",
+    "id": "04645495-36b8-4afa-b141-734f376638e2",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-10-30T07:32:51.581318Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-b"
+    ],
+    "created_at": "2026-10-25T17:14:06Z"
+  },
+  {
+    "name": "project-c",
+    "id": "ce11e64c-8b2f-4cfd-ac53-3093ce5d7afd",
+    "agent": "project-c",
+    "status": "stopped",
+    "last_used_at": "2026-10-29T19:15:30.717578Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-c"
+    ],
+    "created_at": "2026-10-26T05:56:49Z"
+  }
+]

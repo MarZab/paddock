@@ -1,0 +1,14 @@
+[
+  {
+    "host_ip": "127.0.0.1",
+    "host_port": 49154,
+    "sandbox_port": 38323,
+    "protocol": "tcp"
+  },
+  {
+    "host_ip": "::1",
+    "host_port": 49154,
+    "sandbox_port": 38323,
+    "protocol": "tcp"
+  }
+]

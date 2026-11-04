@@ -1,0 +1,612 @@
+{
+  "allowed_hosts": [
+    {
+      "host": "api.anthropic.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:57:05.88503+02:00",
+      "since": "2026-10-24T14:33:28.617353+02:00",
+      "count_since": 663
+    },
+    {
+      "host": "downloads.claude.ai:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:54:59.958123+02:00",
+      "since": "2026-10-24T14:33:38.930961+02:00",
+      "count_since": 33
+    },
+    {
+      "host": "api.github.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:48:08.963856+02:00",
+      "since": "2026-10-24T18:29:46.767838+02:00",
+      "count_since": 3
+    },
+    {
+      "host": "raw.githubusercontent.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:48:08.327526+02:00",
+      "since": "2026-10-24T14:33:29.02452+02:00",
+      "count_since": 16
+    },
+    {
+      "host": "github.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:45:49.227938+02:00",
+      "since": "2026-10-24T18:45:49.227938+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "mcp-proxy.anthropic.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:45:01.995015+02:00",
+      "since": "2026-10-24T14:33:30.101148+02:00",
+      "count_since": 6
+    },
+    {
+      "host": "host2.example.test:80",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "last_seen": "2026-10-24T18:45:01.627193+02:00",
+      "since": "2026-10-24T14:33:29.659697+02:00",
+      "count_since": 28
+    },
+    {
+      "host": "github.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "transparent",
+      "rule": "",
+      "last_seen": "2026-10-24T18:38:15.263373+02:00",
+      "since": "2026-10-24T18:38:10.047404+02:00",
+      "count_since": 29
+    },
+    {
+      "host": "production.cloudfront.docker.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:37:40.793223+02:00",
+      "since": "2026-10-24T18:37:40.455368+02:00",
+      "count_since": 3
+    },
+    {
+      "host": "auth.docker.io:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:37:39.115522+02:00",
+      "since": "2026-10-24T18:37:39.115522+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "registry-1.docker.io:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:37:38.776122+02:00",
+      "since": "2026-10-24T18:37:38.776122+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:28:56.930117+02:00",
+      "since": "2026-10-24T14:33:28.383671+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "cli.github.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:28:56.906242+02:00",
+      "since": "2026-10-24T14:33:28.34372+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:28:56.89831+02:00",
+      "since": "2026-10-24T14:33:28.349915+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "api.anthropic.com:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:23:28.538656+02:00",
+      "since": "2026-10-24T14:50:15.587385+02:00",
+      "count_since": 175
+    },
+    {
+      "host": "downloads.claude.ai:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:22:37.863211+02:00",
+      "since": "2026-10-24T14:59:32.992959+02:00",
+      "count_since": 8
+    },
+    {
+      "host": "mcp-proxy.anthropic.com:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:22:28.8084+02:00",
+      "since": "2026-10-24T14:59:24.232404+02:00",
+      "count_since": 4
+    },
+    {
+      "host": "host4.example.test:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:22:28.668486+02:00",
+      "since": "2026-10-24T14:59:23.821698+02:00",
+      "count_since": 18
+    },
+    {
+      "host": "host2.example.test:80",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "last_seen": "2026-10-24T18:22:28.44042+02:00",
+      "since": "2026-10-24T14:59:23.730592+02:00",
+      "count_since": 22
+    },
+    {
+      "host": "host6.example.test:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:22:28.42141+02:00",
+      "since": "2026-10-24T18:17:49.722287+02:00",
+      "count_since": 4
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T18:17:48.665626+02:00",
+      "since": "2026-10-24T14:50:15.58027+02:00",
+      "count_since": 3
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T18:17:48.57319+02:00",
+      "since": "2026-10-24T14:50:15.46934+02:00",
+      "count_since": 3
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "m0-build-1",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:24.158668+02:00",
+      "since": "2026-10-24T17:14:24.158668+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "m0-build-1",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:24.06985+02:00",
+      "since": "2026-10-24T17:14:24.06985+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "cli.github.com:443",
+      "vm_name": "m0-build-1",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:24.061971+02:00",
+      "since": "2026-10-24T17:14:24.061971+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "api.anthropic.com:443",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:20.326555+02:00",
+      "since": "2026-10-24T17:14:11.47835+02:00",
+      "count_since": 17
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:20.158805+02:00",
+      "since": "2026-10-24T17:14:12.486428+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "cli.github.com:443",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:20.14852+02:00",
+      "since": "2026-10-24T17:14:12.477911+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "l7-required",
+      "last_seen": "2026-10-24T17:14:14.796143+02:00",
+      "since": "2026-10-24T17:14:14.796143+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T17:14:12.576898+02:00",
+      "since": "2026-10-24T17:14:12.576898+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "m0-build-2",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T16:34:03.7199+02:00",
+      "since": "2026-10-24T16:34:03.7199+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "m0-build-2",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T16:34:03.68946+02:00",
+      "since": "2026-10-24T16:34:03.68946+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "cli.github.com:443",
+      "vm_name": "m0-build-2",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T16:34:03.681467+02:00",
+      "since": "2026-10-24T16:34:03.681467+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "api.anthropic.com:443",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T16:33:59.914616+02:00",
+      "since": "2026-10-24T16:33:52.224246+02:00",
+      "count_since": 17
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T16:33:59.743181+02:00",
+      "since": "2026-10-24T16:33:53.334387+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "cli.github.com:443",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T16:33:59.734319+02:00",
+      "since": "2026-10-24T16:33:53.351905+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "l7-required",
+      "last_seen": "2026-10-24T16:33:55.565127+02:00",
+      "since": "2026-10-24T16:33:55.565127+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T16:33:53.396615+02:00",
+      "since": "2026-10-24T16:33:53.396615+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "project-c",
+      "proxy_type": "forward",
+      "rule": "l7-required",
+      "last_seen": "2026-10-24T15:50:35.182803+02:00",
+      "since": "2026-10-24T15:50:34.836223+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "host2.example.test:80",
+      "vm_name": "project-c",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "last_seen": "2026-10-24T15:50:24.262263+02:00",
+      "since": "2026-10-24T15:50:23.905833+02:00",
+      "count_since": 2
+    },
+    {
+      "host": "host3.example.test:443",
+      "vm_name": "project-c",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T15:50:23.425076+02:00",
+      "since": "2026-10-24T15:50:23.425076+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "docs.docker.com:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T15:33:34.623694+02:00",
+      "since": "2026-10-24T15:33:11.018775+02:00",
+      "count_since": 4
+    },
+    {
+      "host": "platform.claude.com:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "",
+      "last_seen": "2026-10-24T15:15:32.993133+02:00",
+      "since": "2026-10-24T15:15:32.993133+02:00",
+      "count_since": 1
+    },
+    {
+      "host": "mise-versions.jdx.dev:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward-bypass",
+      "rule": "",
+      "last_seen": "2026-10-24T14:37:53.671249+02:00",
+      "since": "2026-10-24T14:37:53.665293+02:00",
+      "count_since": 2
+    }
+  ],
+  "blocked_hosts": [
+    {
+      "host": "host5.example.test:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "last_seen": "2026-10-24T18:56:50.851876+02:00",
+      "since": "2026-10-24T14:33:28.41266+02:00",
+      "count_since": 446,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "host18.example.test:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host18.example.test:443)",
+      "last_seen": "2026-10-24T18:37:32.235942+02:00",
+      "since": "2026-10-24T18:37:29.317092+02:00",
+      "count_since": 2,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "host19.example.test:443",
+      "vm_name": "project-b",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host19.example.test:443)",
+      "last_seen": "2026-10-24T18:29:38.626566+02:00",
+      "since": "2026-10-24T18:29:34.885959+02:00",
+      "count_since": 2,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "host5.example.test:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "last_seen": "2026-10-24T18:23:13.511517+02:00",
+      "since": "2026-10-24T14:50:15.548428+02:00",
+      "count_since": 19,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "host20.example.test:498:e10b::c]:3128",
+      "vm_name": "m0-build-1",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "last_seen": "2026-10-24T17:14:26.595669+02:00",
+      "since": "2026-10-24T17:14:26.595669+02:00",
+      "count_since": 1,
+      "reason": "Direct TCP connections not allowed"
+    },
+    {
+      "host": "172.17.0.12:3128",
+      "vm_name": "m0-build-1",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "last_seen": "2026-10-24T17:14:26.595526+02:00",
+      "since": "2026-10-24T17:14:26.595526+02:00",
+      "count_since": 1,
+      "reason": "Direct TCP connections not allowed"
+    },
+    {
+      "host": "host7.example.test:443",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host7.example.test:443)",
+      "last_seen": "2026-10-24T17:14:15.957923+02:00",
+      "since": "2026-10-24T17:14:15.957923+02:00",
+      "count_since": 1,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=http:request:post, via=net:connect:tcp, resource=http:endpoint[http:domain[net:domain:localhost:17480,http:path:/v1/ok.txt]])",
+      "last_seen": "2026-10-24T17:14:15.468948+02:00",
+      "since": "2026-10-24T17:14:15.468948+02:00",
+      "count_since": 1,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=http:request:get, via=net:connect:tcp, resource=http:endpoint[http:domain[net:domain:localhost:17480,http:path:/other.txt]])",
+      "last_seen": "2026-10-24T17:14:15.127706+02:00",
+      "since": "2026-10-24T17:14:15.127706+02:00",
+      "count_since": 1,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "localhost:17434",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:0fbd9d7b-8631-4c9c-a1da-bd1ba0872927\" matched op(action=net:connect:tcp, resource=net:domain:localhost:17434)",
+      "last_seen": "2026-10-24T17:14:14.441859+02:00",
+      "since": "2026-10-24T17:14:14.441859+02:00",
+      "count_since": 1,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "localhost:5432",
+      "vm_name": "m0-claude-1",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:d0e680f1-5a50-4cbe-bde6-9b0023b758f3\" matched op(action=net:connect:tcp, resource=net:domain:localhost:5432)",
+      "last_seen": "2026-10-24T17:14:14.064097+02:00",
+      "since": "2026-10-24T17:14:14.064097+02:00",
+      "count_since": 1,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=http:request:post, via=net:connect:tcp, resource=http:endpoint[http:domain[net:domain:localhost:17480,http:path:/v1/ok.txt]])",
+      "last_seen": "2026-10-24T16:33:56.295007+02:00",
+      "since": "2026-10-24T16:33:56.295007+02:00",
+      "count_since": 1,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "localhost:17480",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=http:request:get, via=net:connect:tcp, resource=http:endpoint[http:domain[net:domain:localhost:17480,http:path:/other.txt]])",
+      "last_seen": "2026-10-24T16:33:55.979958+02:00",
+      "since": "2026-10-24T16:33:55.979958+02:00",
+      "count_since": 1,
+      "reason": "No matching allow rule (default deny)"
+    },
+    {
+      "host": "localhost:17434",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:dde7afb5-cbf4-4fce-83cd-13782772ce10\" matched op(action=net:connect:tcp, resource=net:domain:localhost:17434)",
+      "last_seen": "2026-10-24T16:33:55.237575+02:00",
+      "since": "2026-10-24T16:33:55.237575+02:00",
+      "count_since": 1,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "localhost:5432",
+      "vm_name": "m0-claude-2",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:60759aa8-e824-4135-b4aa-11d7ac0ed8f8\" matched op(action=net:connect:tcp, resource=net:domain:localhost:5432)",
+      "last_seen": "2026-10-24T16:33:54.945226+02:00",
+      "since": "2026-10-24T16:33:54.945226+02:00",
+      "count_since": 1,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "registry.npmjs.org:443",
+      "vm_name": "project-c",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:d0afc270-ecc1-423d-aa38-424110503851\" matched op(action=net:connect:tcp, resource=net:domain:registry.npmjs.org:443)",
+      "last_seen": "2026-10-24T15:50:24.437011+02:00",
+      "since": "2026-10-24T15:50:23.838179+02:00",
+      "count_since": 2,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "project-c",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:553b3cbf-7e22-4720-8f74-3d6fcae59adb\" matched op(action=net:connect:tcp, resource=net:domain:ports.ubuntu.com:80)",
+      "last_seen": "2026-10-24T15:50:10.417547+02:00",
+      "since": "2026-10-24T15:50:10.414798+02:00",
+      "count_since": 4,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "project-c",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:bab0dce2-d166-400b-a65a-215c35a82e36\" matched op(action=net:connect:tcp, resource=net:domain:download.docker.com:443)",
+      "last_seen": "2026-10-24T15:50:10.414816+02:00",
+      "since": "2026-10-24T15:50:10.414816+02:00",
+      "count_since": 1,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "ports.ubuntu.com:80",
+      "vm_name": "project-d",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:cf8d1b78-887c-41e1-a372-9adad96685fa\" matched op(action=net:connect:tcp, resource=net:domain:ports.ubuntu.com:80)",
+      "last_seen": "2026-10-24T15:06:46.383868+02:00",
+      "since": "2026-10-24T15:06:46.381468+02:00",
+      "count_since": 4,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "download.docker.com:443",
+      "vm_name": "project-d",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:9226b4d0-b042-493f-a43a-c97eec2c92d3\" matched op(action=net:connect:tcp, resource=net:domain:download.docker.com:443)",
+      "last_seen": "2026-10-24T15:06:46.381494+02:00",
+      "since": "2026-10-24T15:06:46.381494+02:00",
+      "count_since": 1,
+      "reason": "Denied by local rule"
+    },
+    {
+      "host": "host6.example.test:443",
+      "vm_name": "project-a",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host6.example.test:443)",
+      "last_seen": "2026-10-24T14:59:23.846689+02:00",
+      "since": "2026-10-24T14:59:23.750374+02:00",
+      "count_since": 2,
+      "reason": "No matching allow rule (default deny)"
+    }
+  ]
+}

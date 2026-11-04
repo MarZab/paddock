@@ -1,0 +1,87 @@
+{
+  "allowed": [
+    {
+      "sandbox_id": "m0-claude",
+      "host": "localhost:17480",
+      "proxy_type": "forward",
+      "rule": "l7-required",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:55.565127+02:00",
+      "last_seen": "2026-10-24T16:33:55.565127+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "api.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 11,
+      "first_seen": "2026-10-24T16:33:52.224246+02:00",
+      "last_seen": "2026-10-24T16:33:53.447985+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "ports.ubuntu.com:80",
+      "proxy_type": "forward",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:53.396615+02:00",
+      "last_seen": "2026-10-24T16:33:53.396615+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "cli.github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:53.351905+02:00",
+      "last_seen": "2026-10-24T16:33:53.351905+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "download.docker.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:53.334387+02:00",
+      "last_seen": "2026-10-24T16:33:53.334387+02:00"
+    }
+  ],
+  "blocked": [
+    {
+      "sandbox_id": "m0-claude",
+      "host": "localhost:17480",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=http:request:post, via=net:connect:tcp, resource=http:endpoint[http:domain[net:domain:localhost:17480,http:path:/v1/ok.txt]])",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:56.295007+02:00",
+      "last_seen": "2026-10-24T16:33:56.295007+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "localhost:17480",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=http:request:get, via=net:connect:tcp, resource=http:endpoint[http:domain[net:domain:localhost:17480,http:path:/other.txt]])",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:55.979958+02:00",
+      "last_seen": "2026-10-24T16:33:55.979958+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "localhost:17434",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:dde7afb5-cbf4-4fce-83cd-13782772ce10\" matched op(action=net:connect:tcp, resource=net:domain:localhost:17434)",
+      "reason": "Denied by local rule",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:55.237575+02:00",
+      "last_seen": "2026-10-24T16:33:55.237575+02:00"
+    },
+    {
+      "sandbox_id": "m0-claude",
+      "host": "localhost:5432",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:60759aa8-e824-4135-b4aa-11d7ac0ed8f8\" matched op(action=net:connect:tcp, resource=net:domain:localhost:5432)",
+      "reason": "Denied by local rule",
+      "count": 1,
+      "first_seen": "2026-10-24T16:33:54.945226+02:00",
+      "last_seen": "2026-10-24T16:33:54.945226+02:00"
+    }
+  ]
+}

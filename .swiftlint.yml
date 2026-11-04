@@ -1,0 +1,9 @@
+# SwiftLint's rules are its defaults (run with --strict); this file only says what to look at.
+included:
+  - App
+  - Packages
+excluded:
+  - Packages/PaddockCore/.build
+  - Packages/PaddockShell/.build
+  - build
+  - scratch

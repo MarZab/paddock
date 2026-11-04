@@ -1,0 +1,18 @@
+{
+  "default": {
+    "enabled": false,
+    "variant": "",
+    "variantPayload": ""
+  },
+  "description": "Enables `sbx run --model` to serve a local GGUF model via llmman (or a real Ollama install) and route an agent's API calls to it. Experimental \u2014 gated by platform.allowExperimentalFeatures.",
+  "env_var": "DOCKER_SANDBOXES_FEATURE_MODEL",
+  "feature_flag": true,
+  "key": "feature.model",
+  "source": "override",
+  "type": "json",
+  "value": {
+    "enabled": true,
+    "variant": "",
+    "variantPayload": ""
+  }
+}

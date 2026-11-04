@@ -1,0 +1,2 @@
+error: /Users/operator/Projects/private/paddock/scratch/m0/run/v3/broken/sbxenv.yaml:3:1: unknown field "notAField"
+  try: sbx env --help

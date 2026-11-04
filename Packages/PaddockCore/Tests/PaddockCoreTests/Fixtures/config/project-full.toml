@@ -1,0 +1,18 @@
+version = 1
+agent = "opencode"
+provider = "local_qwen"
+
+[image]
+dockerfile = "Dockerfile.sandbox"
+buildContext = "."
+
+[image.buildArgs]
+NODE_VERSION = "22"
+
+[ports]
+publish = [3000]
+hostServices = [5432]
+
+[network]
+allow = ["registry.npmjs.org"]
+deny = ["ads.example.com"]

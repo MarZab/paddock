@@ -1,0 +1,80 @@
+# XcodeGen spec. Generate the project with `mise run generate`; Paddock.xcodeproj is not committed.
+name: Paddock
+options:
+  bundleIdPrefix: net.zabreznik
+  deploymentTarget:
+    # SpeechAnalyzer (voice, backlog doc Voice) needs macOS 26; older macOS is not supported
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+packages:
+  PaddockCore:
+    path: Packages/PaddockCore
+  PaddockShell:
+    path: Packages/PaddockShell
+targets:
+  Paddock:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        excludes:
+          - "OpenUI/**"
+      # OpenUI's renderer and Paddock's host page, copied as a folder (OpenUIPolicy.files)
+      - path: App/OpenUI
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: PaddockCore
+      # through its public API only, like any other app embedding the shell
+      - package: PaddockShell
+        product: PaddockShellCore
+      - package: PaddockShell
+        product: PaddockShellUI
+    info:
+      path: App/Info.plist
+      properties:
+        # Paddock, or Paddock Dev for Debug builds (APP_DISPLAY_NAME below)
+        CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        CFBundleName: $(APP_DISPLAY_NAME)
+        LSApplicationCategoryType: public.app-category.developer-tools
+        # llmman's web UI is loaded from localhost in a web view
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        # voice (backlog doc Voice): push-to-talk to agents, transcribed on this Mac only
+        NSMicrophoneUsageDescription: Paddock listens while you hold the talk button, so you can speak to an agent. Speech is turned into text on this Mac and never recorded.
+        NSSpeechRecognitionUsageDescription: Paddock turns what you say to an agent into text, on this Mac only.
+    # Hardened Runtime blocks the microphone without this entitlement
+    entitlements:
+      path: App/Paddock.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.zabreznik.paddock
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # App/Assets.xcassets, rendered from design/app-icon.svg by `mise run icon`
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # CLAUDE.md: App Sandbox stays off (Paddock runs sbx and reads ~/.config); Hardened Runtime stays on
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        # ad hoc signing for local builds
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+        APP_DISPLAY_NAME: Paddock
+      # Debug builds are their own app, so `mise run app` leaves the installed Paddock running
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: net.zabreznik.paddock.dev
+          APP_DISPLAY_NAME: Paddock Dev
+          # the Dock and Finder show the file name: Paddock Dev.app, process "Paddock Dev"; the module stays Paddock
+          PRODUCT_NAME: Paddock Dev
+          PRODUCT_MODULE_NAME: Paddock
+          ASSETCATALOG_COMPILER_APPICON_NAME: AppIconDev
+    scheme: {}

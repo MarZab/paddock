@@ -1,0 +1,57 @@
+[
+  {
+    "name": "project-a",
+    "id": "322b6b1e-9e74-4455-9fd1-a76b8539a6da",
+    "agent": "claude",
+    "status": "stopped",
+    "last_used_at": "2026-10-12T14:26:45.79528Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-a"
+    ],
+    "created_at": "2026-10-10T17:02:37Z"
+  },
+  {
+    "name": "project-b",
+    "id": "6882b112-8b75-4e69-9801-aa0f42b5266b",
+    "agent": "claude",
+    "status": "stopped",
+    "last_used_at": "2026-10-20T20:16:33.577813Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-b"
+    ],
+    "created_at": "2026-10-17T12:30:56Z"
+  },
+  {
+    "name": "project-c",
+    "id": "12557394-b7c9-4190-bcdc-d64840acfa0c",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-10-23T20:10:51.222255Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-c"
+    ],
+    "created_at": "2026-10-23T19:06:53Z"
+  },
+  {
+    "name": "project-d",
+    "id": "bd978a58-9272-425b-97bb-d4da217973b8",
+    "agent": "claude",
+    "status": "stopped",
+    "last_used_at": "2026-10-23T13:14:41.824916Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-d"
+    ],
+    "created_at": "2026-10-23T08:27:48Z"
+  },
+  {
+    "name": "project-e",
+    "id": "cd3af57d-5529-49ba-9222-b8ce327bf71f",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-10-23T20:10:31.228244Z",
+    "workspaces": [
+      "/Users/operator/Projects/project-e"
+    ],
+    "created_at": "2026-09-07T19:55:56Z"
+  }
+]

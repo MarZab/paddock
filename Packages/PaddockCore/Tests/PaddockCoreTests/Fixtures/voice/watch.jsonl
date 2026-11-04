@@ -1,0 +1,4 @@
+{"id":"v-00000000","kind":"words","words":["PolicyPlanner","sbx","llmman"],"tab":"","time":1761700000}
+{"id":"v-1a2b3c4d","kind":"say","text":"The tests pass; the fix is in the terminal.","tab":"6D3F2C1E-1B2A-4C5D-8E9F-0A1B2C3D4E5F","time":1761700000}
+{"id":"v-5e6f7a8b","kind":"ask","text":"Deploy to staging now?","choices":["yes","no"],"deadline":1761700300,"tab":"6D3F2C1E-1B2A-4C5D-8E9F-0A1B2C3D4E5F","time":1761700000}
+{"id":"v-5e6f7a8b","kind":"cancel","tab":"6D3F2C1E-1B2A-4C5D-8E9F-0A1B2C3D4E5F","time":1761700300}

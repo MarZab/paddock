@@ -1,0 +1,114 @@
+{
+  "rules": [
+    {
+      "id": "66e8018e-672e-4737-91a7-4c097fb3f1b8",
+      "name": "kit:m0-claude",
+      "policy_id": "2317a963-7f12-4e18-9eb2-ecb0653f188c",
+      "scope": "sandbox:m0-claude",
+      "applies_to": "sandbox:m0-claude",
+      "resource_type": "network",
+      "decision": "allow",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "host2.example.test:443",
+        "mcp-proxy.anthropic.com:443",
+        "host3.example.test:443"
+      ],
+      "origin": "scoped",
+      "layer": "local",
+      "status": "active",
+      "editable": false,
+      "sandbox_id": "m0-claude",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "actions": [
+        "net:connect:tcp"
+      ]
+    },
+    {
+      "id": "19563535-b127-4d81-b93b-9d93c9e6f21b",
+      "name": "19563535-b127-4d81-b93b-9d93c9e6f21b",
+      "policy_id": "de396d5b-311e-4019-9a24-77fc557f7240",
+      "scope": "sandbox:m0-claude",
+      "applies_to": "sandbox:m0-claude",
+      "resource_type": "network",
+      "decision": "deny",
+      "resources": [
+        "localhost:5432"
+      ],
+      "origin": "scoped",
+      "layer": "local",
+      "status": "active",
+      "editable": true,
+      "sandbox_id": "m0-claude",
+      "provenance": {
+        "created_via": "added"
+      },
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ]
+    },
+    {
+      "id": "b9764719-02e4-44e6-ac3e-01d5d64350dc",
+      "name": "b9764719-02e4-44e6-ac3e-01d5d64350dc",
+      "policy_id": "de396d5b-311e-4019-9a24-77fc557f7240",
+      "scope": "sandbox:m0-claude",
+      "applies_to": "sandbox:m0-claude",
+      "resource_type": "network",
+      "decision": "deny",
+      "resources": [
+        "localhost:17434"
+      ],
+      "origin": "scoped",
+      "layer": "local",
+      "status": "active",
+      "editable": true,
+      "sandbox_id": "m0-claude",
+      "provenance": {
+        "created_via": "added"
+      },
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ]
+    },
+    {
+      "id": "41227314-1706-4850-a08c-6fe8ec124d17",
+      "name": "41227314-1706-4850-a08c-6fe8ec124d17",
+      "policy_id": "de396d5b-311e-4019-9a24-77fc557f7240",
+      "scope": "sandbox:m0-claude",
+      "applies_to": "sandbox:m0-claude",
+      "resource_type": "http",
+      "decision": "allow",
+      "resources": [
+        "localhost:17480"
+      ],
+      "origin": "scoped",
+      "layer": "local",
+      "status": "active",
+      "editable": true,
+      "sandbox_id": "m0-claude",
+      "provenance": {
+        "created_via": "added"
+      },
+      "actions": [
+        "http:request:get"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "http_targets": [
+        {
+          "host": "localhost:17480",
+          "path": "/v1/**"
+        }
+      ]
+    }
+  ]
+}

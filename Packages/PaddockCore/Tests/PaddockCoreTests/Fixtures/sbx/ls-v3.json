@@ -1,0 +1,46 @@
+[
+  {
+    "name": "m0-v3",
+    "id": "f36b2543-833e-412b-9d82-0082949f8c18",
+    "agent": "sbx-kit-claude",
+    "status": "running",
+    "last_used_at": "2026-11-04T12:44:11.218384Z",
+    "ports": [
+      {
+        "host_ip": "127.0.0.1",
+        "host_port": 18998,
+        "sandbox_port": 3000,
+        "protocol": "tcp4"
+      }
+    ],
+    "mounts": [
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project:/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project",
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-ro:/Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-ro:ro",
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-rw:/Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-rw",
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml:/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml:ro",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project",
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-ro:ro",
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/extra-rw",
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project/sbxenv.yaml:ro"
+    ],
+    "created_at": "2026-11-04T12:44:09Z"
+  },
+  {
+    "name": "m0-v2mix",
+    "id": "df630875-35c4-48dc-a63d-b7803ee5fc25",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-11-04T12:44:44.143686Z",
+    "mounts": [
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project:/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/private/paddock/scratch/m0/run/v3/project"
+    ],
+    "created_at": "2026-11-04T12:44:42Z"
+  }
+]

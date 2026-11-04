@@ -1,0 +1,22 @@
+  PID  PPID USER                RSS  %CPU     ELAPSED COMMAND
+    1     0 root              23024   0.0 39-08:09:10 /sbin/launchd
+  405     1 _windowserver    160368  20.4 39-08:08:55 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon
+ 1306     1 operator            368   0.0 39-08:07:52 /usr/bin/ssh-agent -l
+ 2337 99163 operator          50160   0.0 01-12:24:53 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/156.0.8078.48/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif) --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=audio --message-loop-type-ui --shared-files --metrics-shmem-handle=1752395122,r,12838051542632879009,17107998207658572869,524288 --field-trial-handle=1718379636,r,14728527315845931972,10242946546370428480,262144 --variations-seed-version=20261026-010056.905000-production --pseudonymization-salt-handle=1935764596,r,17757322843749350935,13319583443760654398,4 --trace-process-track-uuid=3190709005052708474 --seatbelt-client=232
+19786     1 operator         1747200   4.4    01:57:25 /opt/homebrew/Caskroom/sbx/0.49.2/Sbx.app/Contents/Helpers/containerd-shim-nerdbox-v1 -namespace docker -id 2dd33fce1ab79f42f07ed0a9f5a78588d7c44ed4ec8a742bc14d56d878c7d067 -address /var/run/containerd/containerd.sock
+20206     1 operator         3666608  85.4    01:52:07 /opt/homebrew/Caskroom/sbx/0.49.2/Sbx.app/Contents/Helpers/containerd-shim-nerdbox-v1 -namespace docker -id be318788758086599d590834809dee7ca4e056b58aea3f437dc5a21bfd4cd1ab -address /var/run/containerd/containerd.sock
+29192     1 operator         2117296   4.5 02-14:54:40 /System/Library/Frameworks/Virtualization.framework/Versions/A/XPCServices/com.apple.Virtualization.VirtualMachine.xpc/Contents/MacOS/com.apple.Virtualization.VirtualMachine
+36688     1 operator         130704   8.4       17:10 /Applications/Paddock.app/Contents/MacOS/Paddock
+36710 36688 operator          86160   0.0       17:08 /opt/homebrew/bin/sbx exec paddock-project-a paddock-agent-watch
+36711 36688 operator          86304   0.0       17:08 /opt/homebrew/bin/sbx exec paddock-project-a paddock-browser-watch
+81351     1 operator         241088   1.0 04-08:14:00 /opt/homebrew/bin/sbx daemon start
+81365 81351 operator          20080   0.0 04-08:13:58 /opt/homebrew/Caskroom/sbx/0.49.2/Sbx.app/Contents/MacOS/llmman serve
+90476     1 operator         131264   9.9 04-07:23:37 /opt/homebrew/bin/sbx
+91574     1 operator         125344   7.0 04-07:11:46 /opt/homebrew/bin/sbx
+93238     1 operator         128416   9.8 04-07:05:13 /opt/homebrew/bin/sbx
+93979     1 operator         126864   9.2 04-07:00:37 /opt/homebrew/bin/sbx
+20191 20147 operator          96320   0.0    01:52:25 sbx
+20203 20191 operator          86144   0.0    01:52:08 /opt/homebrew/bin/sbx --ui-origin=tui exec -it -w /Users/operator/Projects/project-a paddock-project-a bash -l
+37237 37235 operator          13776   0.0       13:45 pnpm --filter @project-a/site exec vite --host 127.0.0.1 --port 8787 --strictPort
+37253 37240 operator         237936   0.0       13:43 /Users/operator/Projects/project-a/node_modules/.pnpm/@cloudflare+workerd-darwin-arm64@1.20261019.1/node_modules/@cloudflare/workerd-darwin-arm64/bin/workerd serve --binary --experimental --socket-addr=entry=127.0.0.1:0 --external-addr=loopback=127.0.0.1:50701 --control-fd=3 - --inspector-addr=127.0.0.1:50704 --debug-port=127.0.0.1:0
+19782 19764 operator          87920   0.0    01:57:26 /opt/homebrew/bin/sbx --ui-origin=tui run --name paddock-project-b

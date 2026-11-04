@@ -1,0 +1,32 @@
+# The example app's sandbox, as an sbx environment file. Lives at the repo root, so from there
+#   sbx env plan      # what would be created, and what it asks for
+#   sbx env run       # create if needed, attach
+#   sbx env rm        # remove it
+# needs nothing but sbx >= 0.51 (`sbx env` is experimental in sbx; the format may change).
+#
+# Paddock reads this same file and overlays its own (backlog doc Project config file), so
+# everything here must also make sense without Paddock.
+#
+# Relative paths resolve from this file's directory.
+schemaVersion: "1"
+name: example
+
+# The v3 Claude Code workload's agent name is its repo name, not `claude` (that one is
+# sbx's built-in v2 agent, and v3 kits do not combine with v2 ones).
+agent: sbx-kit-claude
+
+workspace: .
+
+kits:
+  # Claude Code itself. Pin by digest once checked: `docker.io/docker/sbx-kit-claude:2.1.316@sha256:...`.
+  - docker.io/docker/sbx-kit-claude:2.1.316
+  # The repo's own mixin: mise, system packages, network, startup, agent context.
+  - ./tools/sandbox/example-dev
+
+ports:
+  - { sandbox: 3001, host: 3001 }   # Vite dev server
+  - { sandbox: 4000, host: 4000 }   # the API
+
+sandboxOptions:
+  cpus: 4
+  memory: 8g
