@@ -4,7 +4,7 @@ title: Voice picker and a hint for better voices
 status: In Progress
 assignee: []
 created_date: '2026-10-29 10:49'
-updated_date: '2026-10-29 10:54'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
   - app
@@ -35,4 +35,6 @@ Paddock spoke with the default system voice. Use what macOS has: pick the best i
 Not built yet. The System Settings URL (x-apple.systempreferences:com.apple.Accessibility-Settings.extension) opens Accessibility; whether a deeper anchor reaches Spoken Content directly is unverified.
 
 Operator reported a hang after this landed (no capture of Paddock Dev: mise run hang took the installed app). Hardened: voices are read off the main thread, one read at a time, and a change notice within 5 s of a read is ignored (reading may itself post it, which looped on the main thread); language and the offered list are worked out once per change instead of per view update. Cause not confirmed.
+
+Merged into PAD-35.
 <!-- SECTION:NOTES:END -->

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 08:07'
-updated_date: '2026-10-29 10:29'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
   - app
@@ -34,6 +34,9 @@ The operator wants to talk to an agent instead of typing, and to answer an agent
 - [ ] #4 UI doc and Voice doc updated
 - [ ] #5 Send writes the text to the session's PTY as a bracketed paste with control characters removed and submits it; the text can be edited first (clicking into it pauses the microphone); Cancel sends nothing
 - [ ] #6 An ask shows as a banner under that session's terminal with the question and its choices as buttons; the operator answers by voice (with Cancel and Send), clicking a choice, typing in the banner, or Dismiss; spoken answers to choices match by name or position (the second one, yes, no)
+- [ ] #7 (was PAD-55) Return in the dictation field sends it like Send (noise is still not sent) and hands the focus back, so hands-free listens again
+- [ ] #8 (was PAD-55) Checked on the Mac: builds, Return sends, Option-Return adds a line
+- [x] #9 (was PAD-55) Voice doc updated
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -46,4 +49,6 @@ Dictation is now click to open, not hold: the panel stays open with live text, i
 Apply is now Send (always submits); the text field is editable at any time, and clicking into it pauses the microphone. Hands-free toggle in the panel: PAD-38.
 
 All voice UI is one popup over the terminal (VoiceControls): the question banner is gone; a question opens the popup by itself with its choices, a typed answer, Dismiss, and Send. Cancel became the Listen pill (with Voice reply and Hands-free pills) and a small close button.
+
+Merged 2026-11-06 (criteria kept, marked with their old ticket): PAD-55 Return in the voice popup's text field sends
 <!-- SECTION:NOTES:END -->

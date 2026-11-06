@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 08:07'
-updated_date: '2026-10-29 08:29'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
   - core
@@ -33,6 +33,15 @@ Paddock needs speech in both directions without installing anything and without 
 - [x] #4 Text to speak is cleaned before speaking: control, bidi, and zero-width characters dropped, markdown and code blocks removed, cut to a fixed length, and plain text only (no SSML); tests cover each
 - [x] #5 Keyword lists are checked: a cap on count and length, letters, digits, and a few punctuation characters only; tests cover rejection
 - [x] #6 Logic lives in PaddockCore behind protocols so tests run with fakes; the Voice doc and Security rules doc are updated
+- [x] #7 (was PAD-45) SpeechVoices picks the operator's choice while installed, else the best voice for the language; novelty voices never; tested
+- [ ] #8 (was PAD-45) The microphone's right-click menu has Voice: Automatic (names the voice) and every offered voice with its quality, and Get Better Voices
+- [ ] #9 (was PAD-45) The popup shows a hideable hint with Get Voices when only basic voices are installed and voice reply is on
+- [ ] #10 (was PAD-45) A voice downloaded while Paddock runs is picked up without a restart
+- [x] #11 (was PAD-45) Voice doc updated
+- [x] #12 (was PAD-46) Speech plays through Paddock's own AVAudioEngine with voice processing on the input
+- [ ] #13 (was PAD-46) Saying stop or cancel over an agent being read aloud through the speakers cuts it off (checked on the Mac)
+- [ ] #14 (was PAD-46) Dictation and hands-free still work with the shared engine; no echo of the agent's words in the transcription
+- [x] #15 (was PAD-46) Voice doc updated
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,4 +56,6 @@ Paddock needs speech in both directions without installing anything and without 
 <!-- SECTION:NOTES:BEGIN -->
 PaddockCore: SpokenText, VoiceKeywords, VoiceChoice, BracketedPaste, SpeechQueue (fake synthesizer tests: one at a time, interrupt by tab, per-project cap), VoiceAnnouncements; 449 tests pass on Linux.
 App: project.yml (macOS 26, usage strings, App/Paddock.entitlements with audio-input), App/Info.plist, App/Voice.swift (SystemSpeech over AVSpeechSynthesizer, SpeechListener over SpeechAnalyzer/SpeechTranscriber with AVAudioEngine and AVAudioConverter). Not built: no macOS SDK here, and the SpeechAnalyzer calls are written from Apple's WWDC25 API, so expect compile fixes on the Mac. AC1 to AC3 stay open until it builds and runs there.
+
+Merged 2026-11-06 (criteria kept, marked with their old ticket): PAD-45 Voice picker and a hint for better voices; PAD-46 Echo cancellation so the operator can talk over an agent being read aloud
 <!-- SECTION:NOTES:END -->

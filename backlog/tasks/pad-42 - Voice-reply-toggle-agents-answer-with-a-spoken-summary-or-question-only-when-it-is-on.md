@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-10-29 10:12'
-updated_date: '2026-10-29 10:43'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
   - app
@@ -31,6 +31,12 @@ The operator turns voice reply on or off in Paddock (dictation panel checkbox, a
 - [x] #4 Voice doc and UI doc updated
 - [x] #5 The agent's interface is only what it acts on: say, ask, words; no status command and no say --wait; the instructions and hook notes are short and written from the agent's side
 - [ ] #6 Agents may always say and ask: it shows in the voice popup's conversation; voice reply decides only whether it is read aloud
+- [ ] #7 (was PAD-101) An agent's say or question is read aloud only while its tab's voice popup is open (and voice reply on, not muted); hands-free does not listen after one that was not read
+- [ ] #8 (was PAD-101) A say no longer opens the popup; it goes to the conversation, seen when the operator opens it. A question still opens the popup, silently
+- [ ] #9 (was PAD-101) Closing the popup cuts off what its agent is saying and drops what waits
+- [ ] #10 (was PAD-101) An agent outside a Paddock tab is never read aloud
+- [x] #11 (was PAD-101) doc Voice describes it
+- [ ] #12 (was PAD-101) The agent is told voice reply is off (--set-status) while its tab's popup is closed, and told again when the popup opens or closes
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -41,4 +47,6 @@ Kit and hook tested on Linux (VoiceKitTests, Node). App toggle written, not buil
 Simplified the agent interface: say/ask gated on voice reply in the kit and in the app; status command, the spoken/typed record, and say --wait removed; instructions rewritten from the agent's point of view.
 
 Reversed the gate: say/ask always work and always show in the popup's conversation (VoiceConversation, PaddockCore, tested); voice reply only decides reading aloud.
+
+Merged 2026-11-06 (criteria kept, marked with their old ticket): PAD-101 A closed voice popup keeps its agent silent
 <!-- SECTION:NOTES:END -->

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06 07:25'
-updated_date: '2026-11-06 07:30'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -36,4 +36,6 @@ Operator request 2026-11-06: when the voice popup is closed, the agent should no
 Implemented in App/Voice.swift: receive() speaks and listens hands-free only when panelOpen(for: message.tab); the onChange that opened the popup for a say is gone (questions still open it); closePanel interrupts the tab in SpeechQueue. doc Voice updated. NOT compiled here: needs a Mac build and a try with a say into a closed and an open popup.
 
 AC6: tell() sends voiceReply && popup open; showPanel and closePanel tell the tab's agent when the state changes. NOT compiled.
+
+Merged into PAD-42.
 <!-- SECTION:NOTES:END -->

@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-06 07:23'
-updated_date: '2026-11-06 07:38'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
   - kits
@@ -27,3 +27,9 @@ Operator log 2026-11-06 07:59: in one sandbox every voice action failed with exe
 - [ ] #1 Voice notices a sandbox without paddock-voice and shows one hint naming the fix (Sync / recreate with the voice kit), not one error per dictation
 - [ ] #2 sbx WARN lines about the sentinel connection are not logged as voice errors
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merged into PAD-36.
+<!-- SECTION:NOTES:END -->

@@ -4,7 +4,7 @@ title: Echo cancellation so the operator can talk over an agent being read aloud
 status: In Progress
 assignee: []
 created_date: '2026-10-29 11:19'
-updated_date: '2026-10-29 11:38'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
   - app
@@ -37,4 +37,6 @@ VoiceAudio: one AVAudioEngine, input voice processing on (ducking off), AVAudioP
 First run on the Mac: Listen failed, -10875 'client-side input and output formats do not match' (AUVPAggregate). Fix: mixer to output connected with the input node's output format; fallback without voice processing (logged) if the engine still will not start.
 
 Second run: Listen stays on, no text, no errors. Likely the voice-processed microphone has several channels and the converter to the analyzer's mono format was nil, so buffers went to the analyzer unconverted and were dropped. Now the first channel is taken first, a missing converter is an error (noConversion), and each start logs the microphone format and whether echo cancellation is on.
+
+Merged into PAD-35.
 <!-- SECTION:NOTES:END -->

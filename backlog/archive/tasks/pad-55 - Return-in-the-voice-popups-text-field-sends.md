@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 19:29'
-updated_date: '2026-10-29 19:29'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -25,3 +25,9 @@ After editing a dictation in the voice popup, the operator has to reach for the 
 - [ ] #2 Checked on the Mac: builds, Return sends, Option-Return adds a line
 - [x] #3 Voice doc updated
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merged into PAD-37.
+<!-- SECTION:NOTES:END -->

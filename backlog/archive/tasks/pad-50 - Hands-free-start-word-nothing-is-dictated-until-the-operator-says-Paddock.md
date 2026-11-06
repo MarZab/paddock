@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 19:11'
-updated_date: '2026-10-29 19:14'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -44,4 +44,6 @@ With hands-free on, the microphone reopens on its own after every send and after
 Core tested on Linux (WakeWordTests). App/Voice.swift cannot build here (Linux); the Mac build and a real hands-free run are AC6.
 
 Operator asked for "computer" as a second start word: the setting is now a comma-separated list (WakeWords), default "Paddock, computer"; tested in WakeWordTests.
+
+Merged into PAD-38.
 <!-- SECTION:NOTES:END -->

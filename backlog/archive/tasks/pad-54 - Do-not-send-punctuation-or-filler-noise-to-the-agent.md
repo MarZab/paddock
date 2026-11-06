@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 19:26'
-updated_date: '2026-10-29 19:26'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -31,4 +31,6 @@ The recognizer turns noise into "." or "Hmm.", and stripping a start word or com
 
 <!-- SECTION:NOTES:BEGIN -->
 DictationText in PaddockCore with DictationTextTests; App/Voice.swift uses it in send, the countdown, the Send button, typed answers, and the start-word check. App not built here.
+
+Merged into PAD-38.
 <!-- SECTION:NOTES:END -->

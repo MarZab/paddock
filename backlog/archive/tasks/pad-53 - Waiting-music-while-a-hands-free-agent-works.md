@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 19:24'
-updated_date: '2026-10-29 19:24'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -33,4 +33,6 @@ In hands-free the operator is away from the screen and hears nothing while the a
 
 <!-- SECTION:NOTES:BEGIN -->
 Synth and renderer tested on Linux (WaitingMusicTests). App side (WaitingMusicPlayer, VoiceModel.followMusic, menu toggle) not built here. A 90 s preview rendered from a Python port of the synth is in scratch/waiting-music.wav (gitignored), 2.5x louder than in the app.
+
+Merged into PAD-38.
 <!-- SECTION:NOTES:END -->

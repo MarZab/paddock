@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 19:13'
-updated_date: '2026-10-29 19:13'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -31,4 +31,6 @@ With hands-free on, the microphone came back by itself after each agent reply, s
 
 <!-- SECTION:NOTES:BEGIN -->
 App/Voice.swift only (listenTurnedOff); cannot build on Linux, so AC1-3 wait for the Mac.
+
+Merged into PAD-38.
 <!-- SECTION:NOTES:END -->

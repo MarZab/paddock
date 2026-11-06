@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-29 19:20'
-updated_date: '2026-10-29 19:20'
+updated_date: '2026-11-06 10:27'
 labels:
   - voice
 dependencies: []
@@ -30,4 +30,6 @@ In hands-free the operator often is not looking at the screen, so they cannot te
 
 <!-- SECTION:NOTES:BEGIN -->
 App/Voice.swift (Chime, NSSound Pop and Bottle); not built here (Linux).
+
+Merged into PAD-38.
 <!-- SECTION:NOTES:END -->
