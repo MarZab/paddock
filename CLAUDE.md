@@ -12,10 +12,10 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 - Tasks are mise file tasks in `tools/tasks` (`tools/tasks/README.md`; `mise tasks` lists them, `mr` is `mise run` where mise is activated). Helpers a task uses but that are no task go in `tools/tasks/lib`, not executable, so mise does not list them.
 - Generate project: `mise run generate`
 - First build in a fresh checkout: open `Paddock.xcodeproj`, build once, and approve SwiftTerm's build plugin (Trust & Enable). Never pass `-skipPackagePluginValidation`.
-- Build: `mise run build`
+- Build: `mise run build` (the raw xcodebuild output of each run is kept in `.tmp/build-runs/`, `latest.log` is the newest: read it there when the operator built on the Mac)
 - Install (Release build into `/Applications`, personal use, ad hoc signed): `mise run install`
 - Tests: `mise run test` (arguments go to `swift test`, e.g. `--filter AppVersion`). Each run's whole output is kept in `.tmp/test-runs/` (`latest.log` is the newest): read it there when the operator ran the tests on the Mac.
-- Lint / format: `mise run lint`, `mise run fmt`
+- Lint / format: `mise run lint` (each run's output is kept in `.tmp/lint-runs/`, like the tests'), `mise run fmt`
 - Captures (on the Mac): `mise run capture:cli readonly` (sbx and llmman CLI), `mise run capture:socket probe` (sandboxd socket), then `mise run capture:fixtures` for the sanitized fixtures
 - Hang capture (on the Mac, while Paddock is stuck): `mise run hang [--dev] [--spindump]` (`--dev` for Paddock Dev), into `.tmp/hangs/`
 - Local output and test workspaces mounted into sandboxes always live in `.tmp/` (gitignored): builds, test runs, captures, hang captures, trial projects. `mise run clean` removes builds, caches, and test runs (`--all` also captures; `-n` lists first); it fixes a SwiftPM cache from a moved checkout.

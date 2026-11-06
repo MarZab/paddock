@@ -16,7 +16,7 @@ disabled_rules:
   # The POSIX pty API's own term (master/slave), used for the pseudo-terminal.
   - inclusive_language
 line_length:
-  warning: 210
+  warning: 230
   error: 400
   ignores_urls: true
   ignores_comments: true

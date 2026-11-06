@@ -86,7 +86,6 @@ struct ProjectRunnerPortsTests {
 
     func rule(id: String, decision: String, resources: [String], scope: String = "sandbox:paddock-app", editable: Bool = true) -> String {
         let list = resources.map { "\"\($0)\"" }.joined(separator: ",")
-        // swiftlint:disable:next line_length
         return #"{"id":"\#(id)","name":"\#(id)","policy_id":"p","scope":"\#(scope)","applies_to":"\#(scope)","resource_type":"network","decision":"\#(decision)","resources":[\#(list)],"origin":"scoped","layer":"local","status":"active","editable":\#(editable),"provenance":{"created_via":"added"},"actions":["net:connect:tcp"]}"#
     }
 

@@ -80,7 +80,6 @@ struct SandboxSyncTests {
     }
 
     @Test func unsavedProjectsKeepSbxsID() throws {
-        // swiftlint:disable:next line_length
         let sandbox = try JSONCoding.decode(SbxSandbox.self, from: Data(#"{"name":"example","id":"12557394-b7c9-4190-bcdc-d64840acfa0c","agent":"example","status":"running","workspaces":["/Users/op/src/example"],"created_at":"2026-10-24T10:00:00Z"}"#.utf8))
         let first = SandboxSync.unsaved(sandbox, app: app)
         #expect(first.id == UUID(uuidString: "12557394-b7c9-4190-bcdc-d64840acfa0c"))

@@ -5,11 +5,30 @@ import Testing
 /// The kits' Node scripts start with whatever node works (backlog doc Kits, Node scripts; PAD-60).
 @Suite("NodeScript")
 struct NodeScriptTests {
-    /// A node on PATH, for the tests that run one; nil skips them.
+    /// The node binary itself, for the tests that run one; nil skips them. The first node on PATH
+    /// may be a version manager's shim (mise, asdf), which needs its manager on the PATH and fails
+    /// with 127 under the tests' short PATHs, so the binary is asked for its own path (PAD-112).
     static let realNode: String? = (ProcessInfo.processInfo.environment["PATH"] ?? "")
         .split(separator: ":")
         .map { "\($0)/node" }
-        .first { FileManager.default.isExecutableFile(atPath: $0) }
+        .filter { FileManager.default.isExecutableFile(atPath: $0) }
+        .lazy.compactMap { executablePath(of: $0) }.first
+
+    /// What `node -p process.execPath` prints, or nil when that node does not run.
+    private static func executablePath(of node: String) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: node)
+        process.arguments = ["-p", "process.execPath"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+        let path = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return FileManager.default.isExecutableFile(atPath: path) ? path : nil
+    }
 
     /// The folder of the node on PATH.
     static var realNodeFolder: String {

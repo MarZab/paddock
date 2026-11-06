@@ -1,0 +1,4 @@
+# Test data is JSON and YAML fixtures inline in single lines; SwiftLint measures them differently
+# on the Mac and on Linux (PAD-113), so tests are not held to a line length.
+disabled_rules:
+  - line_length

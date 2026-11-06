@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Remove build output, caches, and test runs (--all also captures and hang captures)"
+#MISE description="Remove build output, caches, and test, lint, and build runs (--all also captures and hang captures)"
 #USAGE flag "--all" help="also remove .tmp/captures and .tmp/hangs (raw captures, which fixtures are made from)"
 #USAGE flag "-n --dry-run" help="list what would be removed, with sizes, and remove nothing"
 # Never touches scratch/ (its folders may be Paddock projects with sandboxes) or a project in .tmp/
@@ -20,6 +20,8 @@ done
 paths=(
   .tmp/build
   .tmp/test-runs
+  .tmp/lint-runs
+  .tmp/build-runs
   .tmp/capture-projects
   Packages/PaddockCore/.build
   Packages/PaddockShell/.build

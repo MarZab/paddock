@@ -3,9 +3,10 @@ id: PAD-111
 title: >-
   AgentStatusKitTests.theKitIsWrittenOnceAndHoldsEveryPiece expects blank guide
   lines to be indented
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-06 08:47'
+updated_date: '2026-11-06 09:09'
 labels:
   - tests
   - kits
@@ -22,7 +23,13 @@ AgentStatusKit indents SandboxGuide.context under content: | and leaves blank li
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The test allows empty lines in the guide and still fails for a non-empty line that is not indented
+- [x] #1 The test allows empty lines in the guide and still fails for a non-empty line that is not indented
 - [ ] #2 The written kit still parses as YAML with the guide as the agent-context content
 - [ ] #3 mise run test passes this test on the Mac and in a sandbox
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Cause: the test split on content: | at 14 spaces, but the kit has it at 6, so it checked the whole file. Fixed in Linux sandbox. AC2 (YAML parse) and AC3 (Mac) still to verify.
+<!-- SECTION:NOTES:END -->

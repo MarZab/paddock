@@ -1,9 +1,10 @@
 ---
 id: PAD-110
 title: GatewayTests.forwardsOnlyAllowedHeaders sends a Host the gateway now refuses
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-06 08:47'
+updated_date: '2026-11-06 09:09'
 labels:
   - tests
   - gateway
@@ -20,7 +21,13 @@ The test sends Host: evil among the headers it expects to be stripped, but since
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 forwardsOnlyAllowedHeaders uses an allowed Host and still checks that only anthropic-version and content-type are forwarded
-- [ ] #2 A refused Host is covered by its own test (if PAD-82's tests do not already)
+- [x] #1 forwardsOnlyAllowedHeaders uses an allowed Host and still checks that only anthropic-version and content-type are forwarded
+- [x] #2 A refused Host is covered by its own test (if PAD-82's tests do not already)
 - [ ] #3 mise run test passes this test on the Mac and in a sandbox
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fixed in Linux sandbox: test uses Host localhost:17500; refused hosts covered by refusesRebindingHostsAndBrowserOrigins. AC3 needs a run on the Mac.
+<!-- SECTION:NOTES:END -->
