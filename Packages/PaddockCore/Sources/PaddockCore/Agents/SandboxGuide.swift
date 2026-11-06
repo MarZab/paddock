@@ -51,9 +51,11 @@ enum SandboxGuide {
         reach it, so the operator can run the same thing from a terminal on the Mac (sbx is not
         available in this sandbox) with `tools/sandbox/run.sh` (`plan`, `create`, `run`, `rm`),
         which Paddock writes with the project's files. It uses the project's name and the overlay
-        when it exists, so `create` and `run` replace the sandbox Paddock manages, you included;
-        `RUN_SANDBOX_NAME=other` tries the files in a sandbox of their own. If the project has no
-        such script, ask the operator before adding one.
+        when it exists, so it acts on the sandbox Paddock manages, you included: `run` attaches to
+        it, and `create` fails while it exists, so a kit change needs `rm` first (`rm --force` while
+        it is in use), which ends this sandbox and you with it. `RUN_SANDBOX_NAME=other` tries the
+        files in a sandbox of their own. If the project has no such script, ask the operator
+        before adding one.
 
         `plan` changes nothing, so start there. The test sandbox has no gateway and no models.
 
