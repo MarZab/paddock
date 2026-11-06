@@ -26,7 +26,7 @@ struct TerminalCopyTests {
         ("c", false, true, false, false, false),  // Cmd-C is the Edit menu's Copy
         ("d", true, false, false, false, false),
         (nil, true, false, false, false, false),
-    ] as [(String?, Bool, Bool, Bool, Bool, Bool)])
+    ] as [(String?, Bool, Bool, Bool, Bool, Bool)]) // swiftlint:disable:this large_tuple
     func onlyPlainControlCCounts(key: String?, control: Bool, command: Bool, option: Bool, shift: Bool, expected: Bool) {
         #expect(TerminalCopy.isControlC(key: key, control: control, command: command, option: option, shift: shift) == expected)
     }

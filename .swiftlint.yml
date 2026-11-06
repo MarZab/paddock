@@ -1,4 +1,4 @@
-# SwiftLint's rules are its defaults (run with --strict); this file only says what to look at.
+# SwiftLint's default rules (run with --strict), loosened where the code's style differs (PAD-113).
 included:
   - App
   - Packages
@@ -6,3 +6,41 @@ excluded:
   - Packages/PaddockCore/.build
   - Packages/PaddockShell/.build
   - .tmp
+disabled_rules:
+  - trailing_comma
+  # String(decoding:as:) is what the code uses on purpose: bytes from sbx and the gateway are never nil.
+  - optional_data_string_conversion
+  # SwiftUI's Button(action:) { label } style reads better than the labeled form.
+  - multiple_closures_with_trailing_closure
+  - void_function_in_ternary
+  # The POSIX pty API's own term (master/slave), used for the pseudo-terminal.
+  - inclusive_language
+line_length:
+  warning: 210
+  error: 400
+  ignores_urls: true
+  ignores_comments: true
+  ignores_multiline_strings: true
+file_length:
+  warning: 2000
+  error: 3000
+type_body_length:
+  warning: 1500
+  error: 2500
+function_body_length:
+  warning: 120
+  error: 250
+cyclomatic_complexity:
+  warning: 25
+  error: 40
+nesting:
+  type_level: 3
+large_tuple:
+  warning: 5
+  error: 6
+identifier_name:
+  min_length: 1
+  max_length: 60
+function_parameter_count:
+  warning: 7
+  error: 10

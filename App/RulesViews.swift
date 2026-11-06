@@ -166,7 +166,7 @@ struct RuleRowsTable: View {
     let rows: [RuleRow]
     var showsActivity = true
     /// The sandbox the table is filtered to, for actions on rows that apply to every sandbox.
-    var context: String? = nil
+    var context: String?
     /// The row under the pointer, slightly highlighted (every cell of it).
     @State private var hovered: String?
 

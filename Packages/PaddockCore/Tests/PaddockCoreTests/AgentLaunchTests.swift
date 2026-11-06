@@ -132,5 +132,3 @@ struct AgentLaunchTests {
         await #expect(throws: SbxError.self) { try await sbx.perform(["policy", "allow", "network", "x"]) }
     }
 }
-
-

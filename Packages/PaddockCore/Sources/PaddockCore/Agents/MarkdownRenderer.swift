@@ -109,8 +109,7 @@ struct MarkdownRenderer {
         while let match = rest.firstMatch(of: /https?:\/\/[^\s<>"'`]+/) {
             var url = match.output
             while let last = url.last, ".,:;!?*_~".contains(last)
-                || (last == ")" && url.filter { $0 == "(" }.count < url.filter { $0 == ")" }.count)
-            {
+                || (last == ")" && url.filter { $0 == "(" }.count < url.filter { $0 == ")" }.count) {
                 url = url.dropLast()
             }
             result += MarkdownPage.escape(String(rest[..<match.range.lowerBound]))

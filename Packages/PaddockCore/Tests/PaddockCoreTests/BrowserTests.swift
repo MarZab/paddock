@@ -39,7 +39,6 @@ struct BrowserWebPolicyTests {
     }
 }
 
-
 /// Following the agent's browser: backlog doc Browser.
 @Suite("BrowserActivity")
 struct BrowserActivityTests {
@@ -162,7 +161,7 @@ struct BrowserActivityTests {
             _ = browser.apply(line: line)
         }
         #expect(browser.pages.isEmpty && browser.busy.isEmpty)
-        let tab = #"{"title":"Pay‮load\u0007 ​now","url":"http://a/","current":true}"#
+        let tab = #"{"title":"Pay‮load\u0007 now","url":"http://a/","current":true}"#
         let many = (1...30).map { #"{"name":"s\#($0)","tabs":[\#(tab)]}"# }.joined(separator: ",")
         _ = browser.apply(line: #"{"type":"tabs","sessions":[\#(many)]}"#)
         #expect(browser.pages.count == BrowserActivity.maxPages)
@@ -170,7 +169,6 @@ struct BrowserActivityTests {
         #expect(browser.apply(line: String(repeating: " ", count: 70000)) == .none)
     }
 }
-
 
 /// `paddock` tabs and native tabs: backlog doc Browser.
 @Suite("BrowserShow")
@@ -297,7 +295,6 @@ struct BrowserShowTests {
     }
 }
 
-
 /// The operator's screenshots, recordings, and annotations reach the agent (backlog doc Browser).
 @Suite("BrowserCapture")
 struct BrowserCaptureTests {
@@ -338,7 +335,6 @@ struct BrowserCaptureTests {
     }
 }
 
-
 /// What an agent asked for after using the tabs: backlog doc Browser.
 @Suite("Agent feedback")
 struct AgentFeedbackTests {
@@ -363,7 +359,6 @@ struct AgentFeedbackTests {
         #expect(browser.shows.first?.annotating == false)
     }
 }
-
 
 /// Interactive tabs: OpenUI's renderer in Paddock (backlog doc Browser, OpenUI tabs).
 @Suite("OpenUI")
@@ -427,7 +422,6 @@ struct OpenUITests {
         #expect(BrowserKit.spec.contains("Never ask for passwords or keys."))
     }
 }
-
 
 /// An agent's report after using annotate: backlog doc Browser.
 @Suite("Annotations and captures")

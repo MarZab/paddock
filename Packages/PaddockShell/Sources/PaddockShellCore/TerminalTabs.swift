@@ -226,7 +226,6 @@ public struct TerminalTabs: Sendable, Equatable {
         }
     }
 
-
     /// The title a tab's program set; an empty one brings back the tab's own title.
     public mutating func setTerminalTitle(_ raw: String, for id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }

@@ -57,7 +57,7 @@ public struct RuleRow: Sendable, Equatable, Identifiable {
     /// or denied for its sandbox.
     public let host: String?
     /// What the sandbox did with the hosts this row covers, from the network log.
-    public var activity: HostActivity? = nil
+    public var activity: HostActivity?
 
     /// Not in sbx yet: a deny Paddock suggests. Shown disabled.
     public var isSuggestion: Bool { source == .paddockSuggestion }

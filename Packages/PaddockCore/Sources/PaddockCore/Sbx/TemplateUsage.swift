@@ -142,4 +142,3 @@ public struct TemplateRemoval: Sendable, Equatable {
     public var removed: [String] = []
     public var failed: [Failure] = []
 }
-

@@ -111,6 +111,7 @@ struct ProjectFilesAndGlobalRulesTests {
 
     @Test func oldFilesWithPortsAndNetworkStillLoad() throws {
         // Those keys are from before sbx was the only store for ports and rules; they are ignored.
+        // swiftlint:disable:next line_length
         let json = #"{"version":1,"id":"6F1C2D3E-4A5B-4C6D-8E7F-0123456789AB","name":"paddock-x","folder":"/x","agent":"claude","provider":"agent-default","policy":"default","ports":{"publish":[{"sandboxPort":1,"hostPort":18001}],"hostServices":[]},"network":{"allow":["a.com"],"deny":[]}}"#
         let project = try ProjectDirectory.decode(file: "paddock-x.json", data: Data(json.utf8))
         #expect(project.name == "paddock-x")

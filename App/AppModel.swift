@@ -424,7 +424,7 @@ final class AppModel {
     // MARK: - Sandboxes
 
     enum SandboxAction: String {
-        case create = "create", start = "start", stop = "stop", remove = "remove"
+        case create, start, stop, remove
 
         var activity: String {
             switch self {
@@ -1637,7 +1637,6 @@ final class AppModel {
         terminals[name] = nil
     }
 
-    /// The colors of the project's terminals (kept in its project file); nil for the terminal's own.
     // MARK: - Extra folders (PAD-73.5)
 
     /// Adds a folder the operator chose to the project, read-only, after the same checks as a

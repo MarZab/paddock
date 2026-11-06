@@ -136,8 +136,7 @@ public enum MarkdownPage {
                     }
                 }
             } else if index + 1 < lines.count, trimmed.contains("|"), isDelimiterRow(lines[index + 1]),
-                      cellCount(lines[index + 1]) == cellCount(line)
-            {
+                      cellCount(lines[index + 1]) == cellCount(line) {
                 columns = cellCount(line)
                 index += 2
                 continue
