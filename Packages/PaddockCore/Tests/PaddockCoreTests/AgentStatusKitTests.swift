@@ -163,7 +163,7 @@ struct AgentStatusKitTests {
         process.standardError = Pipe()
         try process.run()
         if let limit {
-            DispatchQueue.global().asyncAfter(deadline: .now() + limit) { if process.isRunning { process.terminate() } }
+            process.stop(after: limit)
         }
         input.fileHandleForWriting.write(Data(stdin.utf8))
         try input.fileHandleForWriting.close()

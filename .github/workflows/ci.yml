@@ -12,10 +12,11 @@ permissions:
 
 jobs:
   macos:
-    runs-on: macos-15
+    runs-on: macos-26
     env:
-      # The image's default Xcode (16.4, Swift 6.1) cannot resolve swift-crypto 5 (tools 6.2).
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      # The Xcode the operator builds with (MacOSX26.5 SDK, Swift 6.3), not the image's default.
+      # macos-15 has no Xcode past 26.3, and its default 16.4 (Swift 6.1) cannot resolve swift-crypto 5.
+      DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
     steps:
       # TODO: pin these actions by commit SHA (look the SHAs up on each action's releases page).
       - uses: actions/checkout@v4
