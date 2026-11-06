@@ -1,11 +1,11 @@
 ---
 id: PAD-115
 title: mise run lint and build keep each run's output in .tmp
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06 09:11'
-updated_date: '2026-11-06 09:11'
+updated_date: '2026-11-06 09:22'
 labels:
   - tooling
 dependencies: []
@@ -22,7 +22,7 @@ Tests keep each run's output in .tmp/test-runs (PAD-107) so an agent in a sandbo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 mise run lint and mise run build write their whole output to .tmp/lint-runs and .tmp/build-runs (<time>.log, latest.log, the newest 20), under a header with the commit and ending with the exit status
+- [x] #1 mise run lint and mise run build write their whole output to .tmp/lint-runs and .tmp/build-runs (<time>.log, latest.log, the newest 20), under a header with the commit and ending with the exit status
 - [x] #2 Both tasks still print live and fail when the command fails
 - [x] #3 mise run clean removes both folders; README and CLAUDE.md name them
 <!-- AC:END -->
@@ -31,4 +31,12 @@ Tests keep each run's output in .tmp/test-runs (PAD-107) so an agent in a sandbo
 
 <!-- SECTION:NOTES:BEGIN -->
 Shared helper tools/tasks/lib/logged.sh. Lint verified in the sandbox (log, latest.log, exit status, header). Build verified only with stand-in xcodebuild and xcbeautify (exit 65 kept, raw log, beautified live); AC1 needs a real build on the Mac.
+
+Mac run 2026-11-06: build log has the raw xcodebuild output, BUILD SUCCEEDED and '## build exit 0'; lint and test logs are written the same way. AC1 verified.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+mise run lint and build write each run to .tmp/lint-runs and .tmp/build-runs (shared tools/tasks/lib/logged.sh: header with commit, exit status, latest.log, newest 20), still print live and fail with the command; mise run clean, README and CLAUDE.md cover them. Verified on the Mac and in Linux.
+<!-- SECTION:FINAL_SUMMARY:END -->

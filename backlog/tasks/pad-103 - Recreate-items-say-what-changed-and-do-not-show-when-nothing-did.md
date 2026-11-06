@@ -1,11 +1,11 @@
 ---
 id: PAD-103
 title: 'Recreate items say what changed, and do not show when nothing did'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06 07:43'
-updated_date: '2026-11-06 07:46'
+updated_date: '2026-11-06 09:22'
 labels:
   - sync
   - app
@@ -34,4 +34,12 @@ Operator request 2026-11-06: the sync items saying the sandbox differs from what
 
 <!-- SECTION:NOTES:BEGIN -->
 EnvironmentRecord (Core) keeps each sbxenv.yaml key by its parsed value and each project-kit file by hash, without .DS_Store; ProjectRunner stores it as Project.sandboxEnvironmentRecord at create; SandboxSync.environmentSummary and kitChanges word the items, nil/empty when nothing counts. EnvironmentRecordTests pass on Linux; the full suite has only the 3 failures origin/main has. App/AppModel.syncItems passes the record of the confirmed version: NOT compiled here, needs a Mac build. Sandboxes created before this keep a plain item until recreated.
+
+Mac build at 1281f47 (includes 81f2c45) succeeded (.tmp/build-runs/2026-11-06_10-12-41.log), so App/AppModel.syncItems compiles. Not yet seen in the running app.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Create records sbxenv.yaml keys by parsed value and project-kit files by hash (EnvironmentRecord); sync items name the files and kits that changed and stay away when only formatting, comments, .DS_Store or kit order differ; older sandboxes get a plain no-details message. Core tests pass in Linux; the app builds on the Mac. Follow-up if needed: watch the items in the running app after a real kit change.
+<!-- SECTION:FINAL_SUMMARY:END -->
