@@ -32,11 +32,12 @@ mise run app        # build and open Paddock Dev (the Debug build)
 mise run install    # Release build into /Applications (personal use, ad hoc signed)
 mise run test       # tests
 mise run lint       # lint; `mise run fmt` formats
+mise run clean      # remove builds, caches, and test runs in .tmp (--all: captures too)
 ```
 
 Debug builds are a separate app, Paddock Dev (`Paddock Dev.app`, bundle ID `net.zabreznik.paddock.dev`, a purple icon), so `mise run app` quits only Paddock Dev and `mise run install` only the installed Paddock. The two can run side by side, with their own settings and macOS permissions (microphone, speech), but they share `~/.config/paddock` and the same sandboxes: don't open the same project in both, or their gateway ports and in-sandbox watchers clash.
 
-If the window goes fuzzy or Paddock stops responding, run `mise run hang` before you quit it (`mise run hang --dev` for Paddock Dev; add `--spindump` for a `sudo spindump` as well). It writes the main thread's stacks, memory use, and recent logs to `scratch/hangs/<time>/`. A force quit leaves no crash report, so this capture is the only record.
+If the window goes fuzzy or Paddock stops responding, run `mise run hang` before you quit it (`mise run hang --dev` for Paddock Dev; add `--spindump` for a `sudo spindump` as well). It writes the main thread's stacks, memory use, and recent logs to `.tmp/hangs/<time>/`. A force quit leaves no crash report, so this capture is the only record.
 
 ## Make it your own
 

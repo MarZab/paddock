@@ -1,4 +1,4 @@
-# Development tools for Paddock. Run `mise install` once, then `mise run <task>`.
+# Development tools for Paddock. Run `mise install` once, then `mise run <task>` (`mr <task>`).
 # Xcode 16+ (and its Swift toolchain) is installed separately from the App Store or developer.apple.com.
 
 [tools]
@@ -10,94 +10,12 @@ shellcheck = "0.11.0"
 # Backlog.md CLI for tickets and docs (needs Node)
 "npm:backlog.md" = "1.54.0"
 
-[tasks.generate]
-description = "Generate Paddock.xcodeproj from project.yml"
-run = "xcodegen"
+# Tasks are files in tools/tasks, one script each, with their description, dependencies, and
+# arguments in #MISE and #USAGE lines at the top; a task's name is its file name without the
+# extension (tools/tasks/hang.sh is `mise run hang`). `mise tasks` lists them.
+[task_config]
+includes = ["tools/tasks"]
 
-[tasks.build]
-description = "Build the app"
-depends = ["generate"]
-run = "set -o pipefail && xcodebuild -scheme Paddock -destination 'platform=macOS' -derivedDataPath build/DerivedData build | xcbeautify"
-
-[tasks.app]
-description = "Build and open the app"
-depends = ["build"]
-# Debug builds are Paddock Dev (net.zabreznik.paddock.dev), so the installed Paddock keeps running.
-# Quit a running Paddock Dev first, otherwise `open` just brings the old build to the front.
-# The quit returns before the app has exited, so wait for it (up to 5 s) before opening.
-run = """
-osascript -e 'tell application id "net.zabreznik.paddock.dev" to quit' 2>/dev/null || true
-for _ in $(seq 50); do [ "$(osascript -e 'application id "net.zabreznik.paddock.dev" is running' 2>/dev/null)" = true ] || break; sleep 0.1; done
-open "build/DerivedData/Build/Products/Debug/Paddock Dev.app"
-"""
-
-[tasks.install]
-description = "Build a Release Paddock and install it into /Applications"
-depends = ["generate"]
-# The build number is the commit count, so About Paddock shows which commit is installed.
-# Quit the installed Paddock first (not Paddock Dev, which has its own bundle ID), then replace the app.
-run = """
-set -euo pipefail
-xcodebuild -scheme Paddock -configuration Release -destination 'platform=macOS' \
-  -derivedDataPath build/DerivedData CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" build | xcbeautify
-osascript -e 'tell application id "net.zabreznik.paddock" to quit' 2>/dev/null || true
-for _ in $(seq 50); do [ "$(osascript -e 'application id "net.zabreznik.paddock" is running' 2>/dev/null)" = true ] || break; sleep 0.1; done
-rm -rf /Applications/Paddock.app
-ditto build/DerivedData/Build/Products/Release/Paddock.app /Applications/Paddock.app
-open /Applications/Paddock.app
-"""
-
-[tasks.test]
-description = "Run PaddockCore and PaddockShell tests"
-run = [
-  "cd Packages/PaddockCore && swift test",
-  "cd Packages/PaddockShell && swift test",
-]
-
-[tasks.swift-linux]
-description = "Install Swift for Linux in a Paddock sandbox (once per sandbox; not in the image)"
-run = "bash scripts/install-swift.sh"
-
-[tasks.lint]
-description = "Lint Swift sources and shell scripts"
-run = [
-  "swiftlint lint --strict",
-  "shellcheck scripts/*.sh tools/sandbox/*.sh",
-]
-
-[tasks.fmt]
-description = "Format Swift sources"
-run = "swiftformat ."
-
-[tasks.gateway]
-description = "Gateway trial on the Mac in scratch/trial, e.g. mise run gateway --model MODEL"
-run = "bash scripts/gateway-trial.sh"
-
-[tasks.hang]
-description = "On the Mac: capture a stuck or broken Paddock into scratch/hangs before killing it (--dev for Paddock Dev, --spindump for sudo spindump)"
-run = "bash scripts/capture-hang.sh"
-
-[tasks.openui-vendor]
-description = "Vendor OpenUI's renderer into App/OpenUI/vendor and regenerate the agents' OpenUI Lang reference"
-run = "bash scripts/openui-vendor.sh"
-
-[tasks.m0]
-description = "M0 fixture capture on the operator's Mac"
-usage = '''
-arg "<phase>" help="readonly first, then lifecycle, models; v3 for sbx >= 0.51 kits and sbx env (PAD-73.1), kits for Paddock's own kits (PAD-73.2)" {
-  choices "readonly" "lifecycle" "models" "v3" "kits"
-}
-arg "[parts]" help="kits only: a comma-separated choice of status, voice, browser, gateway, claude, opencode (all when left out)"
-'''
-run = 'bash scripts/m0-capture.sh "${usage_phase?}" "${usage_parts:-}"'
-
-[tasks.socket]
-description = "sandboxd socket capture on the Mac: mise run socket probe, then mise run socket proxy [--swap]"
-run = "python3 -I scripts/socket-capture.py"
-
-[tasks.icon]
-description = "Render design/app-icon.svg into App/Assets.xcassets, AppIcon and the purple AppIconDev (needs node)"
-run = [
-  "npm install --silent --no-save --prefix build/icon-tools @resvg/resvg-js@2.6.2",
-  "NODE_PATH=build/icon-tools/node_modules node scripts/render-icon.js",
-]
+# In a shell where mise is activated (`mise activate`)
+[shell_alias]
+mr = "mise run"

@@ -1,12 +1,12 @@
-// Renders design/app-icon.svg into the app's AppIcon asset and a purple AppIconDev for the Debug build
+// Renders App/AppIcon.svg into the app's AppIcon asset and a purple AppIconDev for the Debug build
 // (every size macOS asks for).
 // Run with `mise run icon`, which installs the renderer (resvg) under build/.
 const { Resvg } = require('@resvg/resvg-js')
 const fs = require('fs')
 const path = require('path')
 
-const root = path.join(__dirname, '..')
-const source = fs.readFileSync(path.join(root, 'design/app-icon.svg'), 'utf8')
+const root = path.join(__dirname, '../../..')
+const source = fs.readFileSync(path.join(root, 'App/AppIcon.svg'), 'utf8')
 
 // The installed app keeps the blue sky; Paddock Dev (the Debug build) gets a purple one so the two
 // are told apart in the Dock.

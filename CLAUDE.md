@@ -9,17 +9,18 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 ## Commands
 
 - Dev tools: `mise install` (versions pinned in `mise.toml`; Xcode is installed separately)
+- Tasks are mise file tasks in `tools/tasks` (`tools/tasks/README.md`; `mise tasks` lists them, `mr` is `mise run` where mise is activated). Helpers a task uses but that are no task go in `tools/tasks/lib`, not executable, so mise does not list them.
 - Generate project: `mise run generate`
 - First build in a fresh checkout: open `Paddock.xcodeproj`, build once, and approve SwiftTerm's build plugin (Trust & Enable). Never pass `-skipPackagePluginValidation`.
 - Build: `mise run build`
 - Install (Release build into `/Applications`, personal use, ad hoc signed): `mise run install`
-- Tests: `mise run test`
+- Tests: `mise run test` (arguments go to `swift test`, e.g. `--filter AppVersion`). Each run's whole output is kept in `.tmp/test-runs/` (`latest.log` is the newest): read it there when the operator ran the tests on the Mac.
 - Lint / format: `mise run lint`, `mise run fmt`
-- M0 capture (on the Mac): `mise run m0 readonly`
-- Hang capture (on the Mac, while Paddock is stuck): `mise run hang [--dev] [--spindump]` (`--dev` for Paddock Dev), into `scratch/hangs/`
-- Gateway trial (on the Mac): `mise run gateway --model MODEL` (mounts only `scratch/trial`, gitignored; test workspaces always live in `scratch/`)
+- Captures (on the Mac): `mise run capture:cli readonly` (sbx and llmman CLI), `mise run capture:socket probe` (sandboxd socket), then `mise run capture:fixtures` for the sanitized fixtures
+- Hang capture (on the Mac, while Paddock is stuck): `mise run hang [--dev] [--spindump]` (`--dev` for Paddock Dev), into `.tmp/hangs/`
+- Local output and test workspaces mounted into sandboxes always live in `.tmp/` (gitignored): builds, test runs, captures, hang captures, trial projects. `mise run clean` removes builds, caches, and test runs (`--all` also captures; `-n` lists first); it fixes a SwiftPM cache from a moved checkout.
 - Backlog: `backlog` (pinned in `mise.toml`); `backlog board` or `backlog browser` to look around
-- In a sandbox on this repo (Linux, `sbxenv.yaml` and `tools/sandbox/paddock-dev`; `sbx env run` works without Paddock): Swift's libraries are installed by the kit but not the toolchain; run `mise install` once for the Linux tools in `mise.toml` and `mise run swift-linux` once for Swift, then `mise run test` and `mise run lint`. Building the app (Xcode, xcodegen) and anything that needs sbx happen on the Mac.
+- In a sandbox on this repo (Linux, `sbxenv.yaml` and `tools/sandbox/paddock`; on the Mac, `mise run sandbox:plan`, `sandbox:create --replace`, `sandbox:run`, `sandbox:rm` work without Paddock): Swift's libraries are installed by the kit but not the toolchain; run `mise install` once for the Linux tools in `mise.toml` and `mise run swift-linux` once for Swift, then `mise run test` and `mise run lint`. Building the app (Xcode, xcodegen) and anything that needs sbx happen on the Mac.
 
 ## Backlog and commits
 
@@ -37,7 +38,7 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 - Swift 6 with strict concurrency. Services are `actor`s; view models are `@Observable` and `@MainActor`.
 - Shell out only through the `ProcessRunner` protocol. Tests use a fake runner that returns fixtures.
 - sbx: use `--json` / `--format json` only. Never parse human-readable tables. Require sbx >= 0.51 (its built-in agents are v3 kits, and so are Paddock's; PAD-73.2).
-- sbx reads (`SbxReads`: sandboxes, rules, network log, approvals, events) may come from sandboxd's socket instead (`SandboxdReads`, GET only, through `SandboxdTransport`), only while `/daemon/health` reports a captured API version; `FallbackSbxReads` answers with the CLI otherwise. Every command that changes something stays an sbx command. Socket shapes come from `scripts/socket-capture.py`, with fixtures next to the CLI output for the same request.
+- sbx reads (`SbxReads`: sandboxes, rules, network log, approvals, events) may come from sandboxd's socket instead (`SandboxdReads`, GET only, through `SandboxdTransport`), only while `/daemon/health` reports a captured API version; `FallbackSbxReads` answers with the CLI otherwise. Every command that changes something stays an sbx command. Socket shapes come from `tools/tasks/capture/socket.py`, with fixtures next to the CLI output for the same request.
 - Models: use sbx's bundled llmman. Do not build a model manager; embed llmman's web UI. Paddock's own llmman code is read-mostly (`/api/version`, `/api/tags`, `/api/ps`, `/llmman/node`, `GET /llmman/shell` status). Agents get models only through Paddock's ModelGateway; never pass sbx `--model` (it opens llmman's whole API to the sandbox).
 - Every CLI or API response gets a typed `Codable` model and a fixture-based test.
 - No dependency management: the app never installs or updates sbx, Docker, model servers, or anything else. It detects them and shows example `brew` commands for the operator to run.

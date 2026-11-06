@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
+#MISE description="On the Mac: capture a stuck or broken Paddock into .tmp/hangs before killing it (--dev for Paddock Dev, --spindump for sudo spindump)"
 # Captures a stuck or broken Paddock before it is killed (PAD-27): where the main thread is
 # (sample), how much memory it holds and in what (footprint, vmmap, heap), what it and the window
 # server logged, and Paddock's own log. A force quit leaves no crash report, so this is all there
 # is to go on.
-# Usage: scripts/capture-hang.sh [--dev] [--spindump]   (spindump needs sudo; it also sees the window server)
+# Usage: mise run hang [--dev] [--spindump]   (spindump needs sudo; it also sees the window server)
 # --dev captures Paddock Dev (the Debug build, `mise run app`, process "Paddock Dev") instead of the
 # installed Paddock (process "Paddock").
-# Writes to scratch/hangs/<time>/ (gitignored) and prints the folder.
+# Writes to .tmp/hangs/<time>/ (gitignored) and prints the folder.
 set -uo pipefail
 
 if [ "$(uname -s)" != "Darwin" ]; then
-  echo "capture-hang.sh runs on the Mac, where Paddock runs." >&2
+  echo "mise run hang runs on the Mac, where Paddock runs." >&2
   exit 1
 fi
 
@@ -24,7 +25,7 @@ for arg in "$@"; do
   esac
 done
 
-# The Debug build is "Paddock Dev" (build/DerivedData/.../Debug/Paddock Dev.app), the installed one "Paddock".
+# The Debug build is "Paddock Dev" (.tmp/build/DerivedData/.../Debug/Paddock Dev.app), the installed one "Paddock".
 PROC="Paddock"
 [ "$DEV" = 1 ] && PROC="Paddock Dev"
 PID="$(pgrep -x "$PROC" | head -n 1)"
@@ -33,8 +34,8 @@ if [ -z "$PID" ]; then
   exit 1
 fi
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/scratch/hangs/$(date +%Y%m%d-%H%M%S)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+OUT="$ROOT/.tmp/hangs/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$OUT"
 echo "Capturing Paddock (pid $PID) into $OUT"
 

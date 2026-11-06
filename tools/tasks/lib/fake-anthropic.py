@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""A stand-in for Paddock's model gateway in `mise run m0 kits` (PAD-73.2): answers Anthropic's
+"""A stand-in for Paddock's model gateway in `mise run capture:cli kits` (PAD-73.2): answers Anthropic's
 Messages API with one fixed reply, streamed or not, and logs each request's method, path, and
 which auth header came (never its value) to the file given, one JSON line each.
 
-Usage: python3 -I scripts/m0-fake-anthropic.py PORT LOGFILE
+Usage: python3 -I tools/tasks/lib/fake-anthropic.py PORT LOGFILE
 """
 
 import json

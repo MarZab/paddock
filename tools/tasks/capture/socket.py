@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -I
+#MISE description="Capture sandboxd's socket traffic on the Mac: capture:socket probe, then capture:socket proxy [--swap]"
 """sandboxd socket capture spike. Run on the operator's Mac, from the repo root.
 
 Finds out what sbx (the CLI and `sbx tui`) asks sandboxd over its Unix socket, so a
@@ -6,9 +7,9 @@ socket client for events and stats is written against real traffic, not the unof
 spec (https://github.com/itbm/sbx-sdk, which describes sbx 0.34 and has neither).
 
 Usage:
-  python3 -I scripts/socket-capture.py probe [--sandbox NAME]
-  python3 -I scripts/socket-capture.py proxy [--swap] [--sandbox NAME] [--no-tui] [--wait]
-                                             [--env NAME ...] [--raw-bytes N]
+  mise run capture:socket probe [--sandbox NAME]
+  mise run capture:socket proxy [--swap] [--sandbox NAME] [--no-tui] [--wait]
+                             [--env NAME ...] [--raw-bytes N]
 
 probe (safe, read-only, no proxy):
   - scans the sbx and sandboxd binaries for route and socket environment variable strings
@@ -29,13 +30,13 @@ proxy: puts a logging proxy in front of sandboxd.sock and drives sbx through it.
   in another terminal meanwhile), and `sbx tui` (open every panel, then quit it).
   --wait keeps the proxy up until Ctrl-C instead, for driving sbx or Paddock by hand.
 
-Output (gitignored, may contain private paths and names): m0/raw/socket/<phase>-<time>/
+Output (gitignored, may contain private paths and names): .tmp/captures/socket/<phase>-<time>/
   traffic.ndjson  one {"t", "conn", "dir", ...} per line: request, response, response_head,
                   stream (one per NDJSON/SSE line), response_end, raw, note
   routes.tsv      every method and path seen, with statuses, content types, and whether
                   an Authorization header was sent (the auth question)
   probe/, debug/, daemon-log.txt
-Run scripts/sanitize-fixtures.py on anything that becomes a fixture.
+Run mise run capture:fixtures on anything that becomes a fixture.
 
 Never records a secret: Authorization, cookie, and token-like headers keep only their
 scheme and length; token-, secret-, password-, and key-like JSON string values are
@@ -63,8 +64,8 @@ import threading
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-OUT_BASE = ROOT / "m0/raw/socket"
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
+OUT_BASE = ROOT / ".tmp/captures/socket"
 BODY_CAP = 256 * 1024
 HEAD_CAP = 64 * 1024
 SUN_PATH_MAX = 103  # macOS sockaddr_un.sun_path is 104 bytes including the NUL
@@ -855,7 +856,7 @@ def cmd_probe(args):
     finally:
         short.cleanup()
     log("done: %s" % out.relative_to(ROOT))
-    print("   next: python3 -I scripts/socket-capture.py proxy (add --swap if sbx ignores the env variables)")
+    print("   next: mise run capture:socket proxy (add --swap if sbx ignores the env variables)")
 
 
 # ---------------------------------------------------------------- proxy
@@ -878,7 +879,7 @@ class Swap:
                      % (self.moved, sh_quote(self.moved), sh_quote(self.orig)))
 
     def move_aside(self):
-        self.recovery.write_text("#!/bin/sh\n# undo socket-capture.py --swap\nrm -f %s && mv %s %s\n"
+        self.recovery.write_text("#!/bin/sh\n# undo mise run capture:socket proxy --swap\nrm -f %s && mv %s %s\n"
                                  % (sh_quote(self.orig), sh_quote(self.moved), sh_quote(self.orig)))
         os.rename(self.orig, self.moved)
         self.active = True

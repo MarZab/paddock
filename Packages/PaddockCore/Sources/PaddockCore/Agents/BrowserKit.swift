@@ -225,7 +225,7 @@ public enum BrowserKit {
         """#
     }
 
-    /// The OpenUI Lang reference the kit installs for agents (`scripts/openui-vendor.sh`).
+    /// The OpenUI Lang reference the kit installs for agents (`tools/tasks/vendor/openui.sh`).
     public static let openUIReferencePath = "/usr/local/share/paddock/openui.md"
 
     public static var openUIReference: String {

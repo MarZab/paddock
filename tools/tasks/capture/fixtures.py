@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -I
+#MISE description="Turn raw captures in .tmp/captures into sanitized test fixtures (--only NAME for some)"
 """Turn raw M0 captures into fixtures that are safe to commit.
 
-Reads m0/raw/ (gitignored) and writes
+Reads .tmp/captures/ (gitignored) and writes
 sanitized copies to Fixtures/sbx/ and Fixtures/llmman/. Shapes and field names stay
 exactly as captured; only private values change:
 
@@ -12,7 +13,7 @@ exactly as captured; only private values change:
 - custom template repositories become docker.io/library/custom-N
 - long catalogs (llmman providers, events) are trimmed
 
-Usage: python3 -I scripts/sanitize-fixtures.py [--only NAME]
+Usage: mise run capture:fixtures [--only NAME]
 
 --only NAME writes only the fixtures whose path contains NAME (say policy-log), so a new capture
 does not rewrite fixtures other tests rely on.
@@ -25,9 +26,9 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
 FIX = ROOT / "Packages/PaddockCore/Tests/PaddockCoreTests/Fixtures"
-RAW = ROOT / "m0/raw"
+RAW = ROOT / ".tmp/captures"
 HOME_RE = re.compile(r"/Users/[^/\"]+")
 ONLY = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv[:-1] else None
 
@@ -108,7 +109,7 @@ def write(rel, data, ndjson=False):
 
 def main():
     if not RAW.is_dir():
-        sys.exit("no raw captures in %s; run mise run m0 readonly first" % RAW)
+        sys.exit("no raw captures in %s; run mise run capture:cli readonly first" % RAW)
 
     sandboxes = load_json("sbx-ls.json")
     policy = load_json("sbx-policy-ls.json")
@@ -267,7 +268,7 @@ def main():
 
 
 def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
-    """sandboxd's answers to the requests `sbx` sent in the newest `socket-capture.py proxy --swap`
+    """sandboxd's answers to the requests `sbx` sent in the newest `mise run capture:socket proxy --swap`
     run, next to what that sbx command printed, so tests can check the mapping against sbx itself.
     API 0.42 (the first capture) writes to sandboxd/, any later API to sandboxd/<major.minor>/
     (without the event streams)."""
@@ -293,7 +294,7 @@ def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
         if not request or "sbx-cli" not in dict(request["headers"]).get("User-Agent", ""):
             continue
         key = (request["method"], request["path"], request["query"])
-        # the first request of each kind is the one the first sbx command sent (scripts/socket-capture.py order)
+        # the first request of each kind is the one the first sbx command sent (capture:socket order)
         if e["dir"] == "response":
             answers.setdefault(key, e)
         elif e["dir"] == "stream" and (key not in streams or streams[key][0] == e["conn"]):

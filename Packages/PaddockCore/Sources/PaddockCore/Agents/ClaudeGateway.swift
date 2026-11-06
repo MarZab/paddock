@@ -4,7 +4,7 @@ import Foundation
 /// the gateway): environment variables only, passed at create. sbx 0.51's own claude kit already
 /// marks onboarding complete, and a token in `ANTHROPIC_AUTH_TOKEN` is sent as `Authorization`
 /// without the approval Claude Code asks for an `ANTHROPIC_API_KEY`, so Paddock's gateway kit is
-/// gone (checked with `mise run m0 kits`, 2026-11-04; PAD-73.2). It holds no model and no secret:
+/// gone (checked with `mise run capture:cli kits`, 2026-11-04; PAD-73.2). It holds no model and no secret:
 /// the model comes per sandbox, and the token is a fixed dummy the gateway drops, since it
 /// identifies a project by its port.
 public enum ClaudeGateway {

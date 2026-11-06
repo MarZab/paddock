@@ -3,7 +3,7 @@ import Foundation
 /// Node.js for Paddock's kits (backlog doc Kits, Node). sbx 0.51's agents are v3 kits on images
 /// without Node (Claude Code is a native binary there), yet Paddock's status, voice, and browser
 /// helpers and sbx's own Playwright kit run on it: without Node they fail at install ("npm: not
-/// found", "env: 'node'"; `mise run m0 kits`, 2026-11-04; PAD-73.2). No kit of sbx's or Docker's
+/// found", "env: 'node'"; `mise run capture:cli kits`, 2026-11-04; PAD-73.2). No kit of sbx's or Docker's
 /// provides Node, so this one copies it from Node's official image: `node`, `npm`, and `npx` in
 /// `/usr/local`, and `libatomic.so.1`, which Node 26 needs and the agents' images lack ("error
 /// while loading shared libraries: libatomic.so.1"), into the system's own library folder.

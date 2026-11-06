@@ -6,9 +6,6 @@ let package = Package(
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "PaddockCore", targets: ["PaddockCore"]),
-        // Developer tool: the gateway plus one wired sandbox, without the app
-        // (backlog doc ModelGateway, Trial without the app).
-        .executable(name: "paddock-gateway", targets: ["paddock-gateway"]),
     ],
     dependencies: [
         // SHA-256 for config approval hashes; re-exports CryptoKit on Apple platforms.
@@ -33,12 +30,8 @@ let package = Package(
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "Yams", package: "Yams"),
             ],
-            // The OpenUI Lang reference agents get (scripts/openui-vendor.sh).
+            // The OpenUI Lang reference agents get (tools/tasks/vendor/openui.sh).
             resources: [.copy("Resources/openui-reference.md")]
-        ),
-        .executableTarget(
-            name: "paddock-gateway",
-            dependencies: ["PaddockCore"]
         ),
         .testTarget(
             name: "PaddockCoreTests",

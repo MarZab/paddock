@@ -14,14 +14,14 @@ App/Info.plist
 .build/
 .swiftpm/
 
-# M0 raw captures (may contain private paths and hostnames); sanitized copies are committed
-m0/raw/
-
 # local mise overrides
 mise.local.toml
 
 # JetBrains
 .idea/
 
-# test workspaces mounted into sandboxes (gateway trial, M0 capture)
+# local output (mise run clean): builds, test runs, capture projects; with --all, captures (may hold
+# private paths and hostnames; sanitized copies are the committed fixtures) and hang captures
+.tmp/
+# the old place for them; ignored until it is moved or deleted (its folders may be Paddock projects)
 scratch/

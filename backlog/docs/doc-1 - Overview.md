@@ -3,7 +3,7 @@ id: doc-1
 title: Overview
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-04 15:05'
+updated_date: '2026-11-06 08:33'
 ---
 ## Goal
 
@@ -73,22 +73,19 @@ paddock/
       Security/               FolderPolicy, ExtraFolders
       Support/                JSON and YAML coding, SemanticVersion, LogEntry
       Resources/              openui-reference.md (installed in sandboxes)
-    Sources/paddock-gateway/  Gateway trial without the app (`mise run gateway`)
     Tests/PaddockCoreTests/
       Fixtures/               Real sbx, sandboxd, and llmman output from the operator's Mac (sanitized)
   Packages/PaddockShell/      Reusable sandbox shell SDK: PaddockShellCore, PaddockShellUI, CPaddockPTY
-  scripts/                    m0-capture.sh, socket-capture.py, sanitize-fixtures.py, gateway-trial.sh,
-                              openui-vendor.sh, render-icon.js
-  tools/sandbox/paddock-dev/  This repo's own sbx kit (with sbxenv.yaml at the root)
-  design/                     App icon source
-  scratch/                    Test workspaces mounted into sandboxes (gitignored)
+  tools/tasks/                mise file tasks (build, test, lint, version, capture:cli, capture:socket, ...); lib/ holds their helpers
+  tools/sandbox/paddock/      This repo's own sbx kit (with sbxenv.yaml at the root)
+  .tmp/                       Local output (test runs, hang and M0 captures) and test workspaces mounted into sandboxes (gitignored)
 ```
 
 ## Docs
 
 One doc per part of the app, each describing what the app does today. Work that is missing or unverified is a ticket (`backlog task list --plain`), and the docs name the ticket where it matters.
 
-- **Overview** (this doc), **ProcessRunner**, **Models** (llmman and its hardening), **ModelGateway** (with agent wiring and the gateway trial), **SbxService** (commands, socket reads, events), **Network policy**, **Kits**, **Browser** (Playwright, show, and interactive tabs), **App config** (paddock.yaml, where state lives, Sync), **Project config file** (sbxenv.yaml), **PaddockShell**, **ProjectStore**, **Security rules**, **UI**, **Voice**, **OpenHands (deferred)**, **M0 findings** (what the CLI contract spike verified, and references).
+- **Overview** (this doc), **ProcessRunner**, **Models** (llmman and its hardening), **ModelGateway** (with agent wiring), **SbxService** (commands, socket reads, events), **Network policy**, **Kits**, **Browser** (Playwright, show, and interactive tabs), **App config** (paddock.yaml, where state lives, Sync), **Project config file** (sbxenv.yaml), **PaddockShell**, **ProjectStore**, **Security rules**, **UI**, **Voice**, **OpenHands (deferred)**, **M0 findings** (what the CLI contract spike verified, and references).
 
 ## Status
 

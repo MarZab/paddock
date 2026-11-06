@@ -22,6 +22,8 @@ targets:
       - path: App
         excludes:
           - "OpenUI/**"
+          # the icon's source, rendered into Assets.xcassets by `mise run icon`; not shipped
+          - "AppIcon.svg"
       # OpenUI's renderer and Paddock's host page, copied as a folder (OpenUIPolicy.files)
       - path: App/OpenUI
         type: folder
@@ -62,7 +64,7 @@ targets:
         MARKETING_VERSION: "0.0"
         CURRENT_PROJECT_VERSION: "0"
         PADDOCK_COMMIT: ""
-        # App/Assets.xcassets, rendered from design/app-icon.svg by `mise run icon`
+        # App/Assets.xcassets, rendered from App/AppIcon.svg by `mise run icon`
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # CLAUDE.md: App Sandbox stays off (Paddock runs sbx and reads ~/.config); Hardened Runtime stays on
         ENABLE_APP_SANDBOX: NO

@@ -138,7 +138,7 @@ struct StatusChecksPopover: View {
                         row(.green, "Reads", "sandboxd socket (API \(apiVersion))")
                     case .unsupportedAPI(let found):
                         row(.yellow, "Reads", "sbx CLI: sbx was updated (API \(found)) and Paddock does not know its socket yet. "
-                            + "Capture it with: mise run socket proxy --swap")
+                            + "Capture it with: mise run capture:socket proxy --swap")
                     case .cli(let reason):
                         // Still correct, only slower: every read starts sbx.
                         row(.yellow, "Reads", "sbx CLI; the socket failed: \(reason)")

@@ -1,7 +1,7 @@
 import Foundation
 
 /// How an interactive tab (`paddock ui`) renders: OpenUI's renderer, vendored in the app
-/// (`App/OpenUI`, `scripts/openui-vendor.sh`), in a web view of its own (backlog doc Browser, OpenUI
+/// (`App/OpenUI`, `tools/tasks/vendor/openui.sh`), in a web view of its own (backlog doc Browser, OpenUI
 /// tabs). Everything the page loads comes from the app through `paddock-ui://renderer/`, from a
 /// fixed list of files; WebKit content rules block every other load. The agent's document is
 /// data: Paddock hands it to the page as a JSON string (`renderScript`), and OpenUI runs no code

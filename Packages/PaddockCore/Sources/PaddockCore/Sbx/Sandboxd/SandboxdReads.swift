@@ -2,7 +2,7 @@ import Foundation
 
 /// `SbxReads` straight from sandboxd's socket: the requests `sbx` itself sends, mapped to the shapes
 /// of its `--json` output. A private API, captured on sbx 0.49.2 (API 0.42.0) and sbx 0.51.0 (API 0.49.0) with
-/// `scripts/socket-capture.py`; `FallbackSbxReads` uses it only after `checkHealth()` passed.
+/// `tools/tasks/capture/socket.py`; `FallbackSbxReads` uses it only after `checkHealth()` passed.
 /// Fixtures: Tests/PaddockCoreTests/Fixtures/sandboxd (0.42) and sandboxd/0.49.
 public struct SandboxdReads: SbxReads {
     /// sandboxd API versions (major.minor) whose answers were captured.

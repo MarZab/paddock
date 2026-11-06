@@ -5,5 +5,4 @@ included:
 excluded:
   - Packages/PaddockCore/.build
   - Packages/PaddockShell/.build
-  - build
-  - scratch
+  - .tmp

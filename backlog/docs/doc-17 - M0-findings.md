@@ -3,7 +3,7 @@ id: doc-17
 title: M0 findings
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-04 14:17'
+updated_date: '2026-11-06 08:21'
 ---
 ## Open risks
 
@@ -73,7 +73,7 @@ Resolved: token exposure in `sbx secret set` (stdin), custom images (`-t` plus `
     - its own hooks (`sbx-claude-hook` on Stop, StopFailure, UserPromptSubmit, Notification) and a status line
   - **Default size:** 18 CPUs and 32 GiB of memory on this Mac.
   - **The plan for the project file alone,** against the sandbox the overlay made, marks the sandbox, kits, and ports "present, not recorded as applied, needs your approval". It does not mention the overlay's env.
-- **Paddock's kits on sbx 0.51** (`mise run m0 kits`, first try): two refusals.
+- **Paddock's kits on sbx 0.51** (`mise run capture:cli kits`, first try): two refusals.
   - `agent-context@2 is not selected: this kit set uses com.docker.sandbox/agent-context@1, and the two cannot compose`. sbx's claude and playwright kits use @1.
   - `duplicate kit name "opencode"`: a local kit is named after its folder, and the built-in `opencode` is a kit (`docker.io/sbx/opencode:latest`).
   - Both are fixed (`paddock-<kit>` folders, @1).
@@ -85,7 +85,7 @@ Resolved: token exposure in `sbx secret set` (stdin), custom images (`-t` plus `
     - `env: 'node': No such file or directory` (sbx's own Playwright kit, `docker.io/sbx/playwright:1.61.1`, on `claude`).
     - The status and voice hooks report success only because their Node step falls back to a warning.
     - Neither sbx nor Docker publishes a Node kit, so Paddock ships `node` (backlog doc Kits).
-  - **Gateway without a kit:** `claude` with environment only (`ANTHROPIC_AUTH_TOKEN=paddock` and the base URL) answered through a stand-in gateway (`scripts/m0-fake-anthropic.py`). It sent `Authorization`, not `x-api-key`, with no prompt in `-p` mode. sbx's claude kit had set `hasCompletedOnboarding`.
+  - **Gateway without a kit:** `claude` with environment only (`ANTHROPIC_AUTH_TOKEN=paddock` and the base URL) answered through a stand-in gateway (`tools/tasks/lib/fake-anthropic.py`). It sent `Authorization`, not `x-api-key`, with no prompt in `-p` mode. sbx's claude kit had set `hasCompletedOnboarding`.
   - **sbx's own Claude hook** (`/usr/local/bin/sbx-claude-hook`, 14 KB, on Stop, StopFailure, UserPromptSubmit, Notification) shows nothing in `sbx events`: a run produced only lifecycle, port, and network events. Its content is not read yet.
   - **OpenCode with `paddock-status`:** created. sbx's opencode kit runs OpenCode 2.0.29. `OPENCODE_DISABLE_AUTOUPDATE` came from Paddock's old opencode kit, so without it OpenCode may offer its own upgrades (not checked).
 - **Paddock's kits on sbx 0.51, fourth try** (with the node kit):
@@ -94,7 +94,7 @@ Resolved: token exposure in `sbx secret set` (stdin), custom images (`-t` plus `
   - It then failed on `playwright-cli install --skills claude`: `EROFS: read-only file system, mkdir '/home/agent/.claude/skills/playwright-cli'`. sbx mounts its shared agent-skills folder there read-only, so that step is best-effort now.
   - **sbx's own Claude hook** (`sbx-claude-hook`) forwards Stop, Notification, and prompt events, and the status line, as MCP `tools/call`s to the sbx Desktop app through the sandbox's MCP gateway (`MCP_GATEWAY_URL`). Paddock cannot read that, so it keeps its status kit. On the operator's Mac the Homebrew cask's `Sbx.app` only wraps the CLI (opening it shows nothing), and no sbx Desktop app is installed. The hook finds no server and does nothing (2026-11-04).
   - OpenCode (sbx's kit, 2.0.29) leaves `OPENCODE_DISABLE_AUTOUPDATE` unset. Paddock sets it at create.
-- **Paddock's kits on sbx 0.51, all working** (`mise run m0 kits browser,claude`, 2026-11-04), on `claude` with node, playwright, browser, status, and voice, plus the gateway as environment:
+- **Paddock's kits on sbx 0.51, all working** (`mise run capture:cli kits browser,claude`, 2026-11-04), on `claude` with node, playwright, browser, status, and voice, plus the gateway as environment:
   - Node v26.13.0 and npm 11.20.0, once the node kit also copied libatomic.so.1.
   - All seven Paddock commands are on PATH: paddock, the browser and voice watchers, paddock-agent-state, paddock-agent-watch, paddock-voice, and playwright-cli.
   - Paddock's 12 Claude hooks are merged into settings.json beside sbx's own.

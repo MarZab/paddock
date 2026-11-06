@@ -1,2 +1,2 @@
-# OpenUI's prebuilt renderer, vendored by scripts/openui-vendor.sh: no diffs of minified files.
+# OpenUI's prebuilt renderer, vendored by tools/tasks/vendor/openui.sh: no diffs of minified files.
 App/OpenUI/vendor/** -diff linguist-vendored

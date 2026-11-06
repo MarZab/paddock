@@ -1,12 +1,17 @@
 #!/bin/bash
+#MISE description="Capture sbx and llmman CLI output on the operator's Mac, for fixtures (the M0 capture)"
+#USAGE arg "<phase>" help="readonly first, then lifecycle, models; v3 for sbx >= 0.51 kits and sbx env (PAD-73.1), kits for Paddock's own kits (PAD-73.2)" {
+#USAGE   choices "readonly" "lifecycle" "models" "v3" "kits"
+#USAGE }
+#USAGE arg "[parts]" help="kits only: a comma-separated choice of status, voice, browser, gateway, claude, opencode (all when left out)"
 # M0 CLI contract spike. Run on the operator's Mac, from the repo root.
 #
-#   scripts/m0-capture.sh readonly    # safe: versions, status, lists, --help texts, llmman GETs
-#   scripts/m0-capture.sh lifecycle   # creates throwaway sbx sandboxes (claude, builder), then removes them
-#   scripts/m0-capture.sh models      # enables sbx --model (asks), runs a tiny local model, probes llmman from inside
+#   mise run capture:cli readonly    # safe: versions, status, lists, --help texts, llmman GETs
+#   mise run capture:cli lifecycle   # creates throwaway sbx sandboxes (claude, builder), then removes them
+#   mise run capture:cli models      # enables sbx --model (asks), runs a tiny local model, probes llmman from inside
 #
-# Output goes to m0/raw/ (gitignored, outside the Swift package).
-# Run scripts/sanitize-fixtures.py afterwards to refresh the committed, sanitized fixtures.
+# Output goes to .tmp/captures/ (gitignored, outside the Swift package); throwaway projects to .tmp/capture-projects/.
+# Run mise run capture:fixtures afterwards to refresh the committed, sanitized fixtures.
 # Each capture writes <name>.json or <name>.txt (stdout), <name>.stderr (if any),
 # and a line in _index.tsv with the exit code and command.
 # Never captures secret values: only names, status codes, and public metadata.
@@ -15,12 +20,12 @@
 
 set -u
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# raw captures stay local (gitignored); scripts/sanitize-fixtures.py writes the committed copies
-FIX="$ROOT/m0/raw"
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+# raw captures stay local (gitignored); mise run capture:fixtures writes the committed copies
+FIX="$ROOT/.tmp/captures"
 LLMMAN_BASE="${M0_LLMMAN_BASE:-http://127.0.0.1:17434}"
 RUN_ID="m0$(date +%s)"
-TESTDIR="$ROOT/scratch/m0/$RUN_ID"
+TESTDIR="$ROOT/.tmp/capture-projects/$RUN_ID"
 
 mkdir -p "$FIX"
 INDEX="$FIX/_index.tsv"
@@ -241,12 +246,12 @@ phase_lifecycle() {
   cap sbx-cp-context-in txt sbx cp "$TESTDIR/build" "$RUN_ID-build:/tmp/ctx"
   cap sbx-exec-builder-build txt sbx exec "$RUN_ID-build" /bin/sh -c \
     "cd /tmp/ctx && ls -la && docker build -t paddock/m0:test -f Dockerfile.sandbox . && docker save -o /tmp/image.tar paddock/m0:test && ls -la /tmp/image.tar"
-  cap sbx-cp-builder txt sbx cp "$RUN_ID-build:/tmp/image.tar" "$ROOT/scratch/m0/image.tar"
-  cap sbx-template-load txt sbx template load "$ROOT/scratch/m0/image.tar"
+  cap sbx-cp-builder txt sbx cp "$RUN_ID-build:/tmp/image.tar" "$ROOT/.tmp/capture-projects/image.tar"
+  cap sbx-template-load txt sbx template load "$ROOT/.tmp/capture-projects/image.tar"
   cap sbx-template-ls-after-load json sbx template ls --json
   cap sbx-rm-builder json sbx rm --force --json "$RUN_ID-build"
   cap sbx-template-rm txt sbx template rm --force paddock/m0:test
-  rm -f "$ROOT/scratch/m0/image.tar"
+  rm -f "$ROOT/.tmp/capture-projects/image.tar"
 
   log "remove"
   cap sbx-rm-claude json sbx rm --force --json "$RUN_ID-claude"
@@ -525,7 +530,7 @@ phase_kits() {
   # A build folder of its own: the package's .build may come from another checkout's path
   # (its module cache then refuses to load), and this run should not touch it.
   PADDOCK_DUMP_KITS="$dir/config" cap kits-dump txt swift test --package-path "$ROOT/Packages/PaddockCore" \
-    --scratch-path "$ROOT/scratch/m0/swift-build" --filter dumpTheKitsWhenAsked
+    --scratch-path "$ROOT/.tmp/capture-projects/swift-build" --filter dumpTheKitsWhenAsked
   local kits="$dir/config/kits"
   if [ ! -f "$kits/paddock-status/paddock-status.yaml" ]; then
     warn "the kits were not written (see $FIX/kits-dump.stderr); stopping"
@@ -556,7 +561,7 @@ phase_kits() {
   if wanted gateway; then
   log "the gateway without a kit: environment only, against a fake gateway on this Mac"
   local fake=17478 gwenv="$RUN_ID-k-gwenv"
-  /usr/bin/python3 -I "$ROOT/scripts/m0-fake-anthropic.py" "$fake" "$FIX/kits-fake-gateway.ndjson" > /dev/null 2>&1 &
+  /usr/bin/python3 -I "$ROOT/tools/tasks/lib/fake-anthropic.py" "$fake" "$FIX/kits-fake-gateway.ndjson" > /dev/null 2>&1 &
   local fakepid=$!
   "$(command -v sbx)" events --json > "$FIX/kits-gwenv-events.ndjson" 2> /dev/null &
   local evpid=$!

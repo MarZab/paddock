@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#MISE description="Install Swift for Linux in a Paddock sandbox (once per sandbox; not in the image)"
 # Installs Swift for Linux into a Paddock sandbox (once per sandbox), through mise. It is not in
 # the project image: the builder's disk is too small for the toolchain (tools/sandbox/Dockerfile).
 # The Mac keeps using Xcode's toolchain, so this refuses to run there.
@@ -8,7 +9,7 @@ set -euo pipefail
 SWIFT_VERSION="${SWIFT_VERSION:-6.3.3}"
 
 if [ "$(uname -s)" != "Linux" ]; then
-  echo "install-swift.sh is for the Linux sandbox; the Mac uses Xcode's Swift." >&2
+  echo "swift-linux.sh is for the Linux sandbox; the Mac uses Xcode's Swift." >&2
   exit 1
 fi
 
