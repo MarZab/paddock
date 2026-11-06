@@ -1,12 +1,116 @@
 # syntax=docker/sandbox-kit:3
-# This project's own sbx kit, a v3 mixin over the agent's workload (https://github.com/docker/sandbox-kit-spec).
-# Files and environment it adds go in a paddock.dockerfile beside this file (its last stage
-# FROM scratch; only what it copies in is added). System packages go in an install hook.
-# sbx reads a kit only when it creates the sandbox: a change needs a recreate.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/docker/sandbox-kit-spec/main/schema/kit.schema.json
+#
+# Paddock's repo as a mixin over the agent's workload (sbxenv.yaml at the repo root lists it):
+# everything an agent needs to work on Paddock in a Linux sandbox. Its files (mise, Node) come
+# from paddock.dockerfile next to this one. sbx builds a local kit when it creates the sandbox and
+# reads it only then: after a change, `tools/sandbox/run.sh create --replace` (or confirm it in
+# Paddock and recreate).
 schemaVersion: "3"
 kind: mixin
-displayName: "paddock"
-version: "0.1.0"  # sbx requires a version for provides; bump it with each change
+displayName: Paddock dev
+description: mise, Node, Swift for Linux and its system packages, and the hosts Paddock's Linux tests and tools need.
+version: "0.2.0"  # sbx requires one for provides; bump it with each change
 provides: ["paddock"]
 
-capabilities: []  # tools, hosts, and notes for the agent go here (https://docs.docker.com/ai/sandboxes/customize/kits-v2/)
+capabilities:
+  # Install is open only while the install hooks run; runtime is what the agent gets, on top of
+  # the workload's own rules (api.anthropic.com) and sbx's global rules.
+  - type: com.docker.sandbox/network-policy@2
+    config:
+      install:
+        allow:
+          # Debian's packages, and Docker Hardened Images' (the image's own sources)
+          - deb.debian.org
+          - dhi.io
+          # Swift's toolchain and the keys that sign it
+          - download.swift.org
+          - www.swift.org
+      runtime:
+        allow:
+          # mise and the tools in mise.toml (swiftlint, swiftformat, shellcheck); Swift packages
+          - mise.jdx.dev
+          - github.com
+          - api.github.com
+          - codeload.github.com
+          - "*.githubusercontent.com"
+          # npm (backlog.md)
+          - registry.npmjs.org
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        # Swift for Linux in /opt/swift, checked against swift.org's signing keys, on PATH through
+        # /usr/local/bin. CI installs the same version with `mise run swift-linux`.
+        - description: Swift for Linux and the system packages it needs
+          user: "0"
+          command: |
+              set -eu
+              # Swift for Linux, matching the operator's Xcode toolchain; the Debian 12 build runs on the
+              # sandbox's Debian 13. Keep in step with tools/tasks/swift-linux.sh (CI's install).
+              version=6.3.3
+              case "$(uname -m)" in
+                aarch64) platform=debian12-aarch64 ;;
+                x86_64) platform=debian12 ;;
+                *) echo "no Swift build for $(uname -m)" >&2; exit 1 ;;
+              esac
+              # What Swift's own Debian 12 image installs, plus gnupg to check the download.
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                binutils binutils-gold gcc g++ libc6-dev libcurl4-openssl-dev libedit-dev libncurses-dev \
+                libsqlite3-dev libxml2-dev pkg-config tzdata unzip uuid-dev zlib1g-dev gnupg ca-certificates curl
+              rm -rf /var/lib/apt/lists/*
+              if /opt/swift/usr/bin/swift --version 2>/dev/null | grep -q "Swift version $version "; then
+                echo "Swift $version already in /opt/swift"
+              else
+                tmp="$(mktemp -d)"
+                base="https://download.swift.org/swift-$version-release/$platform/swift-$version-RELEASE/swift-$version-RELEASE-$platform.tar.gz"
+                curl -fsSL "$base" -o "$tmp/swift.tar.gz"
+                curl -fsSL "$base.sig" -o "$tmp/swift.tar.gz.sig"
+                curl -fsSL --compressed https://www.swift.org/keys/all-keys.asc -o "$tmp/keys.asc"
+                GNUPGHOME="$tmp/gnupg"
+                export GNUPGHOME
+                mkdir -m 700 "$GNUPGHOME"
+                gpg --batch --quiet --import "$tmp/keys.asc"
+                gpg --batch --verify "$tmp/swift.tar.gz.sig" "$tmp/swift.tar.gz"
+                rm -rf /opt/swift
+                mkdir -p /opt/swift
+                tar -xzf "$tmp/swift.tar.gz" -C /opt/swift --strip-components=1
+                rm -rf "$tmp"
+              fi
+              # On PATH for every process, and SourceKit for swiftlint (it loads libsourcekitdInProc.so).
+              for tool in /opt/swift/usr/bin/*; do ln -sf "$tool" /usr/local/bin/; done
+              echo /opt/swift/usr/lib > /etc/ld.so.conf.d/swift.conf
+              ldconfig
+              swift --version
+      startup:
+        # mise's global config, so every process (the agent, its Bash tool, a shell tab) trusts
+        # the workspace at its real mount path, written from $WORKSPACE_DIR at start (sbx 0.51
+        # refuses ${{ kit.env.WORKSPACE_DIR }}). Then the tools in mise.toml, on every start, so they
+        # follow the repo without a recreate.
+        - description: Trust the workspace's mise config and install its tools
+          command:
+            - sh
+            - -c
+            - >-
+              mkdir -p "$HOME/.config/mise" &&
+              printf '[settings]\ntrusted_config_paths = ["%s"]\nyes = true\nquiet = true\n'
+              "$WORKSPACE_DIR" > "$HOME/.config/mise/config.toml" &&
+              cd "$WORKSPACE_DIR" && mise install || true
+
+  # @1, as sbx's own kits use: the two versions do not compose.
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      content: |
+        ## This sandbox (Paddock's repo)
+
+        - Swift for Linux, mise, and the Linux tools in `mise.toml` are installed: run
+          `mise run test` and `mise run lint` here (`mise tasks` lists the rest). The app (Xcode,
+          xcodegen) and anything that needs sbx build and run only on the Mac: ask the operator,
+          and read their test runs in `.tmp/test-runs/` (`latest.log`).
+        - This folder is the Mac's own checkout. `mise run test` builds on the sandbox's disk
+          (`~/.cache/paddock-build`); never run plain `swift build` or `swift test` in
+          `Packages/*` without `--scratch-path`: a Linux `.build` there breaks the Mac's.
+        - The network is default-deny. A host not allowed by `tools/sandbox/paddock/paddock.yaml`
+          fails with HTTP 403 and a body naming it: a policy block, not a broken build. Say so
+          rather than working around it.

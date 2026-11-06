@@ -25,6 +25,10 @@ paths=(
   Packages/PaddockShell/.build
   build  # where build output went before .tmp/build
 )
+# In a Linux sandbox, mise run test builds on the sandbox's own disk.
+if [ "$(uname -s)" = Linux ]; then
+  paths+=("$HOME/.cache/paddock-build")
+fi
 if [ "$ALL" = 1 ]; then
   paths+=(.tmp/captures .tmp/hangs)
 fi

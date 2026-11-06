@@ -5,9 +5,9 @@ mise file tasks (`[task_config]` in `mise.toml`): run them with `mise run <task>
 | Task | Runs on | Writes |
 | --- | --- | --- |
 | `generate`, `build`, `app`, `install` | the Mac (Xcode) | `Paddock.xcodeproj`, `.tmp/build/`; `install` also `/Applications/Paddock.app` |
-| `test` | the Mac, or a Linux sandbox after `swift-linux` | each run's output in `.tmp/test-runs/` (`latest.log`; the newest 20) |
-| `lint`, `fmt` | the Mac, or a Linux sandbox after `swift-linux` | nothing; `fmt` the Swift sources |
-| `swift-linux` | a Linux sandbox or CI | the Swift toolchain, through mise |
+| `test` | the Mac, or a sandbox from `tools/sandbox/paddock` (it builds in `~/.cache/paddock-build` there) | each run's output in `.tmp/test-runs/` (`latest.log`; the newest 20) |
+| `lint`, `fmt` | the Mac, or a sandbox from `tools/sandbox/paddock` | nothing; `fmt` the Swift sources |
+| `swift-linux` | CI (a sandbox from the kit has Swift already) | the Swift toolchain, through mise |
 | `hang` | the Mac, while Paddock is stuck | `.tmp/hangs/` |
 | `capture:cli` | the operator's Mac | raw sbx and llmman captures in `.tmp/captures/`, throwaway projects in `.tmp/capture-projects/` |
 | `capture:socket` | the Mac | sandboxd socket captures in `.tmp/captures/socket/` |

@@ -161,13 +161,14 @@ struct ProjectEnvironmentTests {
         defer { home.cleanup() }
         let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().path
-        for file in ["sbxenv.yaml", "tools/sandbox/paddock-dev/paddock-dev.yaml", "tools/sandbox/paddock-dev/paddock-dev.dockerfile"] {
+        for file in ["sbxenv.yaml", "tools/sandbox/paddock/paddock.yaml", "tools/sandbox/paddock/paddock.dockerfile"] {
             try home.write(file, String(decoding: try Data(contentsOf: URL(fileURLWithPath: repo + "/" + file)), as: UTF8.self))
         }
         let env = try #require(ProjectEnvironment.read(folder: home.project, context: home.context))
         #expect(env.problems.isEmpty, "\(env.problems)")
-        #expect(env.file?.agent == "claude" && env.kits.map(\.source) == ["./tools/sandbox/paddock-dev"])
-        #expect(env.runtimeHosts.contains { $0.host == "download.swift.org" })
+        #expect(env.file?.agent == "claude" && env.kits.map(\.source) == ["./tools/sandbox/paddock"])
+        #expect(env.installHosts.contains { $0.host == "download.swift.org" })
+        #expect(env.runtimeHosts.contains { $0.host == "registry.npmjs.org" && !$0.deny })
     }
 
     @Test func refusesKeysThatReachTheMacOrItsSecrets() throws {

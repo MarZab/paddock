@@ -3,7 +3,7 @@ id: doc-11
 title: Project config file
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-06 07:46'
+updated_date: '2026-11-06 08:49'
 ---
 A project's own setup is sbx's environment file, `sbxenv.yaml` at the project root, plus the project's own v3 kits (PAD-73). A project set up this way runs with plain `sbx env run`, without Paddock. Paddock reads the same files, checks them, has the operator confirm them, and adds its own part from a file of its own (the overlay). A project without `sbxenv.yaml` is created with `sbx create` and Paddock's kits only, as before.
 
@@ -73,7 +73,7 @@ The kit field (New Project, the Info tab's Kits) adds one of sbx's catalog kits 
 
 `SandboxFiles` writes a project's files when the operator asks (Config, New Project). It writes `sbxenv.yaml` with the sandbox's name, the agent, `workspace: "."`, and the project kit; sbx's own agents name their workload kit themselves (`claude` is `docker.io/sbx/claude`), so none is listed for them. It also writes the kit at `tools/sandbox/<kit>/<kit>.yaml`: a v3 mixin with `agent-context@1` (the version sbx's own kits use; @1 and @2 do not compose) and a `version`, since sbx refuses an unversioned `provides`. Both files carry Paddock's rules as comments, built from the same lists the checks use, and link sbx's docs. The kit's agent context says how the sandbox is defined and holds the build-output guidance (PAD-71), so agents need no setup kit. Existing files are never overwritten. Generated files pass the checks above.
 
-This repository's own `sbxenv.yaml` and `tools/sandbox/paddock-dev` are a fuller example (a test checks Paddock accepts them).
+This repository's own `sbxenv.yaml` and `tools/sandbox/paddock` (Swift for Linux, mise, Node, PAD-22) are a fuller example (a test checks Paddock accepts them).
 
 
 

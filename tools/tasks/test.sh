@@ -10,6 +10,10 @@ mkdir -p "$RUNS"
 LOG="$RUNS/$(date +%Y-%m-%d_%H-%M-%S).log"
 ln -sf "$(basename "$LOG")" "$RUNS/latest.log"
 
+# On Linux (a sandbox sharing this folder with the Mac), SwiftPM builds on the sandbox's own disk:
+# a Linux build in Packages/*/.build replaces the Mac's build database and links.
+scratch=()
+
 # Both packages run even when the first fails, so one log shows every failure.
 run() {
   echo "# $(date '+%Y-%m-%d %H:%M:%S') commit $(tools/tasks/version.sh commit) ($(tools/tasks/version.sh))"
@@ -19,7 +23,8 @@ run() {
   for package in PaddockCore PaddockShell; do
     echo
     echo "## $package"
-    (cd "Packages/$package" && swift test "$@")
+    if [ "$(uname -s)" = Linux ]; then scratch=(--scratch-path "$HOME/.cache/paddock-build/$package"); fi
+    (cd "Packages/$package" && swift test ${scratch[@]+"${scratch[@]}"} "$@")
     code=$?
     echo "## $package exit $code"
     [ "$code" = 0 ] || status=1

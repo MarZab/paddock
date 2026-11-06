@@ -20,7 +20,7 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 - Hang capture (on the Mac, while Paddock is stuck): `mise run hang [--dev] [--spindump]` (`--dev` for Paddock Dev), into `.tmp/hangs/`
 - Local output and test workspaces mounted into sandboxes always live in `.tmp/` (gitignored): builds, test runs, captures, hang captures, trial projects. `mise run clean` removes builds, caches, and test runs (`--all` also captures; `-n` lists first); it fixes a SwiftPM cache from a moved checkout.
 - Backlog: `backlog` (pinned in `mise.toml`); `backlog board` or `backlog browser` to look around
-- In a sandbox on this repo (Linux, `sbxenv.yaml` and `tools/sandbox/paddock`; on the Mac, `mise run sandbox:plan`, `sandbox:create --replace`, `sandbox:run`, `sandbox:rm` work without Paddock): Swift's libraries are installed by the kit but not the toolchain; run `mise install` once for the Linux tools in `mise.toml` and `mise run swift-linux` once for Swift, then `mise run test` and `mise run lint`. Building the app (Xcode, xcodegen) and anything that needs sbx happen on the Mac.
+- In a sandbox on this repo (Linux, `sbxenv.yaml` and its kit `tools/sandbox/paddock`; on the Mac, `mise run sandbox:plan`, `sandbox:create --replace`, `sandbox:run`, `sandbox:rm` work without Paddock): the kit installs Swift for Linux, mise, and Node, and each start installs the tools in `mise.toml`; `mise run test` and `mise run lint` work as they are. `mise run test` builds in `~/.cache/paddock-build`, since a Linux `.build` in `Packages/*` breaks the Mac's: never run plain `swift build`/`swift test` there. Building the app (Xcode, xcodegen) and anything that needs sbx happen on the Mac.
 
 ## Backlog and commits
 
