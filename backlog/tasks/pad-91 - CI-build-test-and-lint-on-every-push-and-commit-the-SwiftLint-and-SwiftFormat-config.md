@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-11-04 18:43'
-updated_date: '2026-11-04 18:54'
+updated_date: '2026-11-06 11:54'
 labels:
   - tooling
   - ci
@@ -34,4 +34,6 @@ Review 2026-11-04. There is no .github, so nothing runs mise run test or mise ru
 
 <!-- SECTION:NOTES:BEGIN -->
 Added .github/workflows/ci.yml (macOS lint+test, Linux test), .swiftlint.yml (paths only), shellcheck now also covers tools/sandbox/*.sh. Not done: app build in CI (needs SwiftTerm plugin trust), SHA-pinning of actions (SHAs not looked up), .swiftformat. Workflow never run.
+
+2026-11-06 first CI run (c3dec2c) failed on both jobs. macOS: the macos-15 image defaults to Xcode 16.4 (Swift 6.1), which cannot resolve swift-crypto 5 (tools 6.2); the job now sets DEVELOPER_DIR to Xcode_26.3. Linux (4-core runner, every test in flight at once): tight time bounds and fixed sleeps failed under load. UnixSocketTransport and LlmmanAPI tests now check the error is a refused/missing connect rather than a timeout, with a loose bound; SandboxWatchers tests poll instead of sleeping and their fake watchers live 60 s and take their sleep along on SIGTERM; NodeScript tests retry a run that hits ETXTBSY (another test's fork holding the script's write descriptor). Verified with 5 full runs pinned to 2 cores next to a CPU hog.
 <!-- SECTION:NOTES:END -->

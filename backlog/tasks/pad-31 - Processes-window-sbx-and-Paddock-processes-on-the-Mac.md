@@ -1,11 +1,11 @@
 ---
 id: PAD-31
 title: 'Processes window: sbx and Paddock processes on the Mac'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-28 20:59'
-updated_date: '2026-11-06 10:40'
+updated_date: '2026-11-06 11:49'
 labels:
   - app
   - core
@@ -24,9 +24,9 @@ Leftover sbx tools cost a lot without anyone noticing: on 2026-10-28 four bare `
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Lists sbx-related processes of the current user on the Mac in groups: left behind by Paddock, orphaned sbx tools (parent gone, not the daemon), sbx tools in use, and sbx itself (daemon, llmman, each sandbox VM) with CPU, memory, and age
-- [ ] #2 Each sandbox VM row names its sandbox (mapping captured from real sbx output first)
-- [ ] #3 Orphaned sbx tools can be stopped from the window after a confirmation that lists them; nothing is stopped automatically except Paddock's own watchers
-- [ ] #4 The status bar shows when orphaned sbx tools exist
+- [x] #2 Each sandbox VM row names its sandbox (mapping captured from real sbx output first)
+- [x] #3 Orphaned sbx tools can be stopped from the window after a confirmation that lists them; nothing is stopped automatically except Paddock's own watchers
+- [x] #4 The status bar shows when orphaned sbx tools exist
 - [x] #5 Never stops the sbx daemon, llmman, a VM, or a process outside sbx and Paddock
 - [x] #6 Parsers have fixture tests from real captures; doc UI describes the window
 <!-- AC:END -->
@@ -48,4 +48,16 @@ sbx ls has sandbox UUIDs, the shims a 64-hex container ID: no link in either out
 Operator: the window needed a better UI. Now a sortable Table (kind, process, PID, CPU, memory, running, command) with multiple selection; Stop from a header button for every process without a terminal or the context menu for the selected ones, always confirmed. ps is read every 30 s (for the status button mark) and when the window opens.
 
 Operator checked on the Mac 2026-11-06: the Processes window works. Stopping orphans (AC3), VM names (AC2) and the status bar hint (AC4) not reported.
+
+Operator checked on the Mac 2026-11-06: each sandbox VM row names its sandbox.
+
+Operator checked on the Mac 2026-11-06: stopping orphaned sbx tools works, with a confirmation.
+
+Operator checked on the Mac 2026-11-06: the hint shows while orphans exist and clears after.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The Processes window lists sbx and Paddock processes of the current user in groups (left behind by Paddock, orphaned sbx tools, in use, sbx itself) with CPU, memory and age; VM rows name their sandbox; orphans can be stopped after a confirmation that lists them; the status bar shows when orphans exist. It never stops the daemon, llmman, a VM or anything outside sbx and Paddock. Parsers have fixture tests from real captures; doc UI describes the window. All checked on the Mac by the operator 2026-11-06.
+<!-- SECTION:FINAL_SUMMARY:END -->
