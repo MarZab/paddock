@@ -101,7 +101,7 @@ struct GatewayPolicyTests {
     @Test func forwardsOnlyAllowedHeaders() {
         let decision = decide("POST", "/v1/messages", headers: [
             ("x-api-key", "paddock"), ("Authorization", "Bearer paddock"), ("Cookie", "a=b"),
-            ("Anthropic-Version", "2023-06-01"), ("Host", "evil"), ("X-Forwarded-For", "1.2.3.4"), ("Connection", "upgrade"),
+            ("Anthropic-Version", "2023-06-01"), ("Host", "localhost:17500"), ("X-Forwarded-For", "1.2.3.4"), ("Connection", "upgrade"),
         ])
         guard case .forward(_, let headers, _) = decision else {
             Issue.record("not forwarded")

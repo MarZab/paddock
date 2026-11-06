@@ -336,8 +336,9 @@ struct AgentStatusKitTests {
         #expect(spec.contains(Data(AgentStatusKit.stateScript.utf8).base64EncodedString()))
         #expect(spec.contains(Data(AgentStatusKit.opencodePlugin.utf8).base64EncodedString()))
         // the project guide (PAD-71): an agent-context whose every line sits under `content: |`
-        let guide = try #require(spec.components(separatedBy: "              content: |\n").last)
+        let guide = try #require(spec.components(separatedBy: "      content: |\n").last)
         #expect(spec.contains("com.docker.sandbox/agent-context@1") && guide.contains("### What Paddock refuses"))
+        // blank lines stay empty on purpose (YAML allows it); every other line is indented
         #expect(guide.split(separator: "\n").allSatisfy { $0.hasPrefix("                ") })
         #expect(AgentStatusKit.watchArguments(sandbox: "paddock-app")
                 == ["exec", "-i", "paddock-app", "sh", "-c", SandboxWatchers.replaceScript, "paddock-watch", "paddock-agent-watch", SandboxWatchers.owner])
