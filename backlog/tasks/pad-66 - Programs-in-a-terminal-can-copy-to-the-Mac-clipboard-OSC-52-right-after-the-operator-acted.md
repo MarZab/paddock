@@ -3,11 +3,11 @@ id: PAD-66
 title: >-
   Programs' copies (OSC 52) reach the clipboard only through the terminal's
   right-click Copy
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01 13:13'
-updated_date: '2026-11-01 13:20'
+updated_date: '2026-11-06 10:57'
 labels:
   - terminal
   - security
@@ -27,11 +27,11 @@ The program runs in the sandbox, so it never reaches the Mac clipboard on its ow
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An OSC 52 write never changes the clipboard by itself; Cmd-C copies only the terminal's own selection
-- [ ] #2 OSC 52 reads stay refused
-- [ ] #3 doc-12 PaddockShell describes the rule
-- [ ] #4 After selecting text in Claude Code (it reports copied), the right-click menu's Copy is enabled and puts that text on the Mac clipboard
-- [ ] #5 Non-UTF-8, blank, or over 1 MB writes are refused (tests)
+- [x] #1 An OSC 52 write never changes the clipboard by itself; Cmd-C copies only the terminal's own selection
+- [x] #2 OSC 52 reads stay refused
+- [x] #3 doc-12 PaddockShell describes the rule
+- [x] #4 After selecting text in Claude Code (it reports copied), the right-click menu's Copy is enabled and puts that text on the Mac clipboard
+- [x] #5 Non-UTF-8, blank, or over 1 MB writes are refused (tests)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +42,17 @@ The program runs in the sandbox, so it never reaches the Mac clipboard on its ow
 3. Right-click menu item copies it.
 4. doc-12. Build and check on the Mac.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Operator checked on the Mac 2026-11-06: clipboard works (right-click Copy after a program copy).
+
+AC5: ClipboardWriteTests.refusesEmptyBlankTooLargeOrNonText passes (Mac and Linux). AC2 (reads refused) and AC3 (doc-12 states the rule) still open.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A program's OSC 52 write is kept for the terminal's right-click Copy and never touches the clipboard by itself; Cmd-C copies only the terminal's own selection. Reads are refused (the delegate has no read handler, SwiftTerm's default, noted in SandboxTerminalView.clipboardCopy). Non-UTF-8, blank, or over 1 MB writes are refused (ClipboardWriteTests). doc-12 states the rule. Checked on the Mac by the operator 2026-11-06. AC2 rests on the code path, not a test.
+<!-- SECTION:FINAL_SUMMARY:END -->

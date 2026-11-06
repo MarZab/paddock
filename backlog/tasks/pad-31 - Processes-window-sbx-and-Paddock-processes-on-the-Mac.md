@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28 20:59'
-updated_date: '2026-10-28 22:23'
+updated_date: '2026-11-06 10:40'
 labels:
   - app
   - core
@@ -23,7 +23,7 @@ Leftover sbx tools cost a lot without anyone noticing: on 2026-10-28 four bare `
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Lists sbx-related processes of the current user on the Mac in groups: left behind by Paddock, orphaned sbx tools (parent gone, not the daemon), sbx tools in use, and sbx itself (daemon, llmman, each sandbox VM) with CPU, memory, and age
+- [x] #1 Lists sbx-related processes of the current user on the Mac in groups: left behind by Paddock, orphaned sbx tools (parent gone, not the daemon), sbx tools in use, and sbx itself (daemon, llmman, each sandbox VM) with CPU, memory, and age
 - [ ] #2 Each sandbox VM row names its sandbox (mapping captured from real sbx output first)
 - [ ] #3 Orphaned sbx tools can be stopped from the window after a confirmation that lists them; nothing is stopped automatically except Paddock's own watchers
 - [ ] #4 The status bar shows when orphaned sbx tools exist
@@ -46,4 +46,6 @@ Leftover sbx tools cost a lot without anyone noticing: on 2026-10-28 four bare `
 sbx ls has sandbox UUIDs, the shims a 64-hex container ID: no link in either output (captured 2026-10-28). The container ID stays the same across a VM restart (be318788... kept it while its pid changed). Asked the operator for lsof of the shims. Until then VM rows show the ID's first 12 characters.
 
 Operator: the window needed a better UI. Now a sortable Table (kind, process, PID, CPU, memory, running, command) with multiple selection; Stop from a header button for every process without a terminal or the context menu for the selected ones, always confirmed. ps is read every 30 s (for the status button mark) and when the window opens.
+
+Operator checked on the Mac 2026-11-06: the Processes window works. Stopping orphans (AC3), VM names (AC2) and the status bar hint (AC4) not reported.
 <!-- SECTION:NOTES:END -->
