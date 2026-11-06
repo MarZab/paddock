@@ -25,6 +25,13 @@ jobs:
         run: mise run lint
       - name: Test
         run: mise run test
+      # The whole test log and, after a timeout, the hang report's stack samples.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: macos-test-runs
+          path: .tmp/test-runs/
+          if-no-files-found: ignore
 
   linux:
     # PaddockCore without Apple frameworks, the way a Paddock sandbox runs it.

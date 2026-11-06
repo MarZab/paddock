@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-11-04 18:43'
-updated_date: '2026-11-06 13:15'
+updated_date: '2026-11-06 13:47'
 labels:
   - tooling
   - ci
@@ -40,4 +40,6 @@ Added .github/workflows/ci.yml (macOS lint+test, Linux test), .swiftlint.yml (pa
 2026-11-06 second macOS run (d42de21, Xcode 26.3, macos-15) hung: PaddockCore killed by the 600 s watchdog. The log cannot show where (swift test's stdout is block-buffered into the pipe), but the runner's orphan cleanup found three sh and one cat started by the test process: the VoiceKit and AgentStatusKit watcher tests started their endless /bin/sh loop with plain Process.run() from a worker thread, the loop inherited a mask with SIGTERM blocked (PAD-30), ignored the 2 s terminate, and readDataToEndOfFile never got EOF. Tests now stop watchers with Process.stop(after:) (Support/StopAfter.swift): SIGTERM, then SIGKILL 2 s later; a test covers a program that ignores SIGTERM. Not yet confirmed on CI. Also seen: test.sh stop_tests pattern does not match macOS's swiftpm-testing-helper, so a killed run leaves it behind.
 
 The macOS job now runs on macos-26 with Xcode 26.5, the operator's Xcode (MacOSX26.5 SDK, Swift 6.3.3); macos-15 has no Xcode past 26.3.
+
+2026-11-06 third macOS run (b99efb5, macos-26, Xcode 26.5) still hung; left behind three bash and swiftpm-testing, no cat. So the watcher tests were not (or not the only) cause. The watchdog now runs tools/tasks/lib/hang-report.sh before killing: every process below the run with its age and command line, and on macOS a 3 s sample of the test process with the test-target frames printed (full samples next to the log). stop_tests now also matches swiftpm-testing-helper. CI uploads .tmp/test-runs as an artifact when the job fails.
 <!-- SECTION:NOTES:END -->

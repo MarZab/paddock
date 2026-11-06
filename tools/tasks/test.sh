@@ -23,7 +23,8 @@ LIMIT="${PADDOCK_TEST_TIMEOUT:-600}"
 stop_tests() {
   local pids
   # Anchored at the start of the command line, so a shell that merely mentions the name is not matched.
-  pids="$(pgrep -f '^([^ ]*/xctest +)?[^ ]*/(Packages/Paddock[A-Za-z]*/[.]build|[.]cache/paddock-build)/[^ ]*PackageTests[.]xctest' || true)"
+  # On macOS SwiftPM runs them through swiftpm-testing-helper, in a process group of its own.
+  pids="$(pgrep -f '^([^ ]*/xctest +|[^ ]*/swiftpm-testing-helper .*)?[^ ]*/(Packages/Paddock[A-Za-z]*/[.]build|[.]cache/paddock-build)/[^ ]*PackageTests[.]xctest' || true)"
   [ -z "$pids" ] && return 0
   echo "## stopping leftover test processes: $(echo "$pids" | tr '\n' ' ')"
   # shellcheck disable=SC2086
@@ -41,7 +42,11 @@ limited() {
   # A line every 30 s while the run is silent, so a hang shows how long it has been quiet.
   (while sleep 30; do echo "## still running, $(date +%T)"; done) &
   heartbeat=$!
-  (sleep "$LIMIT"; echo "## timed out after ${LIMIT}s (PADDOCK_TEST_TIMEOUT), killing the run"; kill -TERM -- "-$pid" 2>/dev/null; sleep 5; kill -KILL -- "-$pid" 2>/dev/null) &
+  # Before it kills, it reports what the run is stuck in (PAD-91).
+  (sleep "$LIMIT"; echo "## timed out after ${LIMIT}s (PADDOCK_TEST_TIMEOUT)"
+    bash tools/tasks/lib/hang-report.sh "$pid" "${LOG%.log}-hang"
+    echo "## killing the run"; kill -TERM -- "-$pid" 2>/dev/null; sleep 5; kill -KILL -- "-$pid" 2>/dev/null
+    stop_tests) &
   watchdog=$!
   wait "$pid"
   code=$?
