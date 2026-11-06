@@ -25,8 +25,9 @@ pids="$(printf '%s\n' "$table" | awk -v root="$root" '
   }')"
 for p in $pids; do printf '%s\n' "$table" | awk -v p="$p" '$1 == p { print "##   " $0 }'; done
 
-# The test processes: SwiftPM's helper on macOS, the xctest binary on Linux.
-tests="$(for p in $pids; do printf '%s\n' "$table" | awk -v p="$p" '$1 == p && /PackageTests/ && !/swift-test|swift-build/ { print $1 }'; done)"
+# The test processes: SwiftPM's helper on macOS, the xctest binary on Linux (not swift-test
+# itself, whose name swiftpm-testing-helper's would otherwise match).
+tests="$(for p in $pids; do printf '%s\n' "$table" | awk -v p="$p" '$1 == p && /PackageTests/ && $4 !~ /\/swift-(test|build)$/ { print $1 }'; done)"
 [ -n "$tests" ] || { echo "## hang report: no test process found"; exit 0; }
 if ! command -v sample >/dev/null 2>&1; then
   echo "## hang report: no sample(1) here, no stacks"

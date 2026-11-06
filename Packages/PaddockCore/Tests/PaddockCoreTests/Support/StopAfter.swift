@@ -8,18 +8,20 @@ import Glibc
 
 extension Process {
     /// Ends a program that never ends on its own (a kit's watcher) `seconds` after it started:
-    /// SIGTERM first, SIGKILL 2 s later if it is still there. A child started from a Swift worker
-    /// thread can inherit a mask that blocks SIGTERM (PAD-30), and its loop then ignored the
-    /// terminate: on the macOS CI runner the watcher tests waited for its output forever (PAD-91).
+    /// SIGTERM first, SIGKILL 2 s later if it is still there. The timer is a thread of its own:
+    /// on the 3-core macOS CI runner a `DispatchQueue.global().asyncAfter` never ran while the
+    /// tests were blocked, so the watchers lived on and their tests waited forever (PAD-91). The
+    /// signals go to the pid directly, not through `terminate()` or `isRunning`.
     func stop(after seconds: TimeInterval) {
         let pid = processIdentifier
-        DispatchQueue.global().asyncAfter(deadline: .now() + seconds) { [self] in
-            guard isRunning else { return }
-            terminate()
-            DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [self] in
-                if isRunning { kill(pid, SIGKILL) }
-            }
+        let timer = Thread {
+            Thread.sleep(forTimeInterval: seconds)
+            guard kill(pid, SIGTERM) == 0 else { return }
+            Thread.sleep(forTimeInterval: 2)
+            kill(pid, SIGKILL)
         }
+        timer.name = "paddock-test-stop"
+        timer.start()
     }
 }
 
