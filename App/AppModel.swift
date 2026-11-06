@@ -44,7 +44,10 @@ final class AppModel {
         case snapshot(String)
     }
 
+    /// A failed background read. The same message again for the same kind is not logged again
+    /// until that read worked (PAD-97: two projects failing in turn each logged every time).
     private func readFailed(_ kind: ReadKind, _ message: String) {
+        guard readErrors[kind] != message else { return }
         readErrors[kind] = message
         lastError = message
     }
@@ -92,7 +95,8 @@ final class AppModel {
     /// `sbx policy ls --json`, for the per-sandbox denies Paddock proposes.
     private(set) var globalRules: [SbxPolicyRule] = []
 
-    private let probe = StatusProbe()
+    /// Its runner also serves every sbx read (`probe.reads(for:)`): those end after `readTimeout`.
+    private let probe = StatusProbe(runner: FoundationProcessRunner(timeout: AppModel.readTimeout))
     private var refreshLoop: Task<Void, Never>?
     private var eventsLoop: Task<Void, Never>?
     private var approvalsLoop: Task<Void, Never>?
@@ -103,7 +107,13 @@ final class AppModel {
     /// Dependencies already reported missing, so the status checks open once per problem.
     private var reportedMissing: Set<String> = []
 
+    /// Between the system's willSleep and its full wake. Dark wakes (Power Nap) run the app while
+    /// sbx answers 503 or "not signed in"; the timed reads wait for the full wake (PAD-97).
+    private var systemAsleep = false
+
     static let refreshInterval: Duration = .seconds(10)
+    /// Background reads (snapshots) give up after this, not the 15 min a create may take (PAD-97).
+    static let readTimeout: Duration = .seconds(90)
     static let eventsRetry: Duration = .seconds(3)
 
     private var projectDirectory: ProjectDirectory { ProjectDirectory(path: paths.projects) }
@@ -151,15 +161,26 @@ final class AppModel {
         NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.showOnScreen() }
         }
+        let workspace = NSWorkspace.shared.notificationCenter
+        workspace.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.systemAsleep = true }
+        }
+        workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.systemAsleep = false
+                Task { await self.refresh() }
+            }
+        }
         refreshLoop = Task { [weak self] in
             while !Task.isCancelled {
-                await self?.refresh()
+                if self?.systemAsleep == false { await self?.refresh() }
                 try? await Task.sleep(for: Self.refreshInterval)
             }
         }
         hostProcessesLoop = Task { [weak self] in
             while !Task.isCancelled {
-                await self?.readHostProcesses()
+                if self?.systemAsleep == false { await self?.readHostProcesses() }
                 try? await Task.sleep(for: Self.hostProcessesInterval)
             }
         }
@@ -206,7 +227,10 @@ final class AppModel {
             next = try await Deadline.result(within: Self.checkTimeout) { await probe.refresh() }
         } catch {
             // Stuck (an sbx call that does not return): give up on it, keep the last status.
-            if generation == checkGeneration {
+            // Asleep, or cancelled: not worth a log line.
+            if generation == checkGeneration, systemAsleep || error is CancellationError {
+                isRefreshing = false
+            } else if generation == checkGeneration {
                 isRefreshing = false
                 readFailed(.checks, "The checks did not finish: \(String(describing: error)); try Refresh in the status popover")
             }
@@ -550,6 +574,14 @@ final class AppModel {
                              log: activityLog(for: nil))
     }
 
+    /// For background reads: the same, with `readTimeout` instead of a create's 15 minutes.
+    private func readRunner() async throws -> ProjectRunner {
+        guard let sbx = await probe.sbxPath() else { throw AppError("sbx is not installed") }
+        return ProjectRunner(sbx: SbxService(runner: FoundationProcessRunner(timeout: Self.readTimeout), sbx: sbx,
+                                             reads: await probe.reads(for: sbx)),
+                             paths: paths, log: activityLog(for: nil))
+    }
+
     // MARK: - Sync
 
     /// Every sbx sandbox; Paddock's projects and the others.
@@ -592,8 +624,9 @@ final class AppModel {
     }
 
     func refreshSnapshot(_ name: String) async {
+        guard !systemAsleep else { return }
         do {
-            let runner = try await runner()
+            let runner = try await readRunner()
             if let snapshot = try await runner.snapshot(named: name) {
                 snapshots[name] = snapshot
             } else {
@@ -602,6 +635,8 @@ final class AppModel {
             globalRules = try await runner.globalRules()
             await refreshActivity(runner)
             readWorked(.snapshot(name))
+        } catch is CancellationError {
+            // The view that asked went away.
         } catch {
             readFailed(.snapshot(name), "Could not read \(name) from sbx: \(String(describing: error))")
         }
@@ -609,8 +644,9 @@ final class AppModel {
 
     /// Reads every sandbox (or only the ones not read yet), with one `sbx ls` for all of them.
     func refreshAllSnapshots(onlyMissing: Bool = false) async {
+        guard !systemAsleep else { return }
         do {
-            let runner = try await runner()
+            let runner = try await readRunner()
             for sandbox in sandboxes where !onlyMissing || snapshots[sandbox.name] == nil {
                 if let snapshot = try? await runner.snapshot(of: sandbox) {
                     snapshots[sandbox.name] = snapshot
@@ -620,6 +656,7 @@ final class AppModel {
             globalRules = try await runner.globalRules()
             await refreshActivity(runner)
             readWorked(.snapshots)
+        } catch is CancellationError {
         } catch {
             readFailed(.snapshots, "Could not read the sandboxes from sbx: \(String(describing: error))")
         }
@@ -1736,9 +1773,7 @@ final class AppModel {
     }
 
     nonisolated static func logEntries(_ text: String, category: LogCategory, source: String?, isError: Bool) -> [LogEntry] {
-        text.split(separator: "\n", omittingEmptySubsequences: false).map {
-            LogEntry(category: category, source: source, message: String($0), isError: isError)
-        }
+        LogEntry.lines(of: text, category: category, source: source, isError: isError)
     }
 
     /// For `ProjectRunner(log:)`: lines from a create, of `source` (the project) when

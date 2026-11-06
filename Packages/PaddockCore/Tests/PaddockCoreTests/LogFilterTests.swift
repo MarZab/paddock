@@ -129,4 +129,16 @@ struct LogFilesTests {
         #expect(LogFiles.toRemove(files, current: current, now: now)
             == ["paddock-2026-10-20_10-00-00-1.log", "paddock.log"])
     }
+
+    @Test func trailingNewlinesOfACommandAddNoEmptyLines() {
+        let text = "sbx ls --json failed (exit 1): error: not signed in to Docker\n  try: sbx login\n\n"
+        let lines = LogEntry.lines(of: text, category: .paddock, source: "app", isError: true)
+        #expect(lines.map(\.message) == ["sbx ls --json failed (exit 1): error: not signed in to Docker", "  try: sbx login"])
+        #expect(lines.allSatisfy { $0.isError && $0.source == "app" })
+    }
+
+    @Test func emptyLinesInsideAMessageStay() {
+        #expect(LogEntry.lines(of: "one\n\ntwo", category: .build).map(\.message) == ["one", "", "two"])
+        #expect(LogEntry.lines(of: "", category: .build).map(\.message) == [""])
+    }
 }

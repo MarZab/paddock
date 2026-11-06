@@ -46,6 +46,14 @@ public struct LogEntry: Sendable, Identifiable, Equatable {
         self.isError = isError
     }
 
+    /// One entry per line of `text`. Empty lines inside stay (a message's own layout); the trailing
+    /// newline of a command's output adds none (PAD-97).
+    public static func lines(of text: String, category: LogCategory, source: String? = nil, isError: Bool = false) -> [LogEntry] {
+        var lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        while lines.count > 1, lines.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { lines.removeLast() }
+        return lines.map { LogEntry(category: category, source: source, message: String($0), isError: isError) }
+    }
+
     /// The line in the log file: the time, ERROR for an error, the category, then the source and a
     /// colon, or `-` without one, then the message. A source never holds ": " (it is written as
     /// ":"), so `init(fileLine:)` reads the line back unambiguously.
