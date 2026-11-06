@@ -601,12 +601,25 @@ final class VoiceModel {
 
     func isPanelShown(_ terminal: UUID) -> Bool { shownPanels.contains(terminal) }
 
-    func showPanel(_ terminal: UUID) { shownPanels.insert(terminal) }
+    /// Opens the popup; its agent is told voice reply is on again, if it is (`tell`).
+    func showPanel(_ terminal: UUID) {
+        guard shownPanels.insert(terminal).inserted else { return }
+        if let project = told[terminal] { tell(project: project, tab: terminal) }
+    }
 
-    /// Closes the popup, dropping what its dictation heard without sending it.
+    /// Closes the popup, dropping what its dictation heard without sending it. Its agent stops
+    /// talking: what it is saying is cut off and what waits is dropped, and it is told voice reply
+    /// is off, so it replies in the terminal.
     func closePanel(_ terminal: UUID, targets: [Target]) {
-        shownPanels.remove(terminal)
+        if shownPanels.remove(terminal) != nil, let project = told[terminal] { tell(project: project, tab: terminal) }
         if let recording, targets.contains(recording) { cancelRecording() }
+        Task { await queue.interrupt(tab: terminal) }
+    }
+
+    /// An agent is read aloud, and hands-free listens after it, only while its tab's voice popup is
+    /// open: closed, what it says only goes to the conversation. An agent outside a tab is never read aloud.
+    private func panelOpen(for tab: UUID?) -> Bool {
+        tab.map { shownPanels.contains($0) } ?? false
     }
 
     /// The agent tab in front, for Option-Space.
@@ -876,10 +889,13 @@ final class VoiceModel {
     private func receive(_ line: String, from project: String) {
         guard let message = VoiceMessage(line: line) else { return }
         guard !message.isStale(now: Date()) else { return }
-        // Everything an agent says or asks shows in the popup; it is read aloud only with voice reply on.
+        // Everything an agent says or asks goes to the conversation. It is read aloud only with voice
+        // reply on and its popup open; a say never opens the popup, a question does (silently).
+        let shown = panelOpen(for: message.tab)
         switch message.kind {
         case .say(let text):
             record(.init(speaker: .agent, text: text, tab: message.tab), in: project)
+            guard shown else { return }
             Task {
                 // Read out first, so the microphone does not hear it.
                 if aloud, await !speakWithoutListening(utterance(text, project: project, tab: message.tab)) { return }
@@ -890,6 +906,7 @@ final class VoiceModel {
             asks.removeAll { $0.id == ask.id }
             asks.append(ask)
             record(.init(speaker: .agent, text: question, isQuestion: true, tab: message.tab), in: project)
+            guard shown else { return }
             Task {
                 if aloud, await !speakWithoutListening(utterance(question, project: project, tab: message.tab)) { return }
                 listenHandsFree(.ask(ask))
@@ -1129,8 +1146,9 @@ final class VoiceModel {
         }
     }
 
+    /// Voice reply as the tab's agent sees it: on only while its popup is open (PAD-101).
     private func tell(project: String, tab: UUID) {
-        let settings = VoiceSettings(voice: !muted, voiceReply: voiceReply)
+        let settings = VoiceSettings(voice: !muted, voiceReply: voiceReply && shownPanels.contains(tab))
         Task { await run(VoiceKit.settingsArguments(sandbox: project, tab: tab), stdin: settings.json,
                          what: "tell the agent in \(project) whether voice is on", project: project, tab: tab) }
     }
@@ -1463,8 +1481,8 @@ final class VoiceModel {
 /// All of voice for a terminal, in one popup over it: the microphone, and above it the panel: the
 /// conversation (what the agent said and asked, what the operator sent), the open question's
 /// choices, what is heard (clicking into it pauses the microphone to edit) or a field to type an
-/// answer, the Listen, Voice reply, and Hands-free pills, and Dismiss and Send. Anything the agent
-/// says or asks opens it; only its close button closes it.
+/// answer, the Listen, Voice reply, and Hands-free pills, and Dismiss and Send. A question opens it;
+/// only its close button closes it. Closed, its agent is not read aloud.
 struct VoiceControls: View {
     @Environment(AppModel.self) private var model
     let project: Project
@@ -1519,10 +1537,6 @@ struct VoiceControls: View {
         .onChange(of: ask?.id, initial: true) { _, id in
             typed = ""
             if id != nil { voice.showPanel(terminal) }
-        }
-        // So does anything else the agent says.
-        .onChange(of: entries.last?.id) { _, _ in
-            if entries.last?.speaker == .agent { voice.showPanel(terminal) }
         }
         .alert("Download the speech model?", isPresented: Bindable(voice).asksForDownload) {
             Button("Download") { voice.downloadSpeechModel() }
