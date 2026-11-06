@@ -162,7 +162,7 @@ struct ProjectsOverview: View {
                         ForEach(model.allProjects) { project in
                             Button { open(project.name) } label: {
                                 ProjectCard(project: project, state: model.state(of: project),
-                                            badge: model.badge(of: project),
+                                            badge: model.badge(of: project), help: model.badgeHelp(of: project),
                                             provider: model.appConfig.provider(named: project.provider))
                             }
                             .buttonStyle(.plain)
@@ -182,6 +182,8 @@ struct ProjectCard: View {
     let project: Project
     let state: SandboxStates.State?
     let badge: ProjectBadge
+    /// The mark in words (state and approval requests), as the sidebar row's tooltip says it.
+    let help: String
     let provider: AppConfig.Provider?
 
     var body: some View {
@@ -191,8 +193,12 @@ struct ProjectCard: View {
                     .font(.title3.weight(.semibold))
                     .lineLimit(1)
                 Spacer()
-                ProjectBadgeView(badge: badge, help: SandboxStateText.describe(state))
-                Text(SandboxStateText.describe(state)).font(.callout).foregroundStyle(.secondary)
+                // The state stays short beside the name; the tooltip adds the approval requests.
+                HStack(spacing: 6) {
+                    ProjectBadgeView(badge: badge, help: help)
+                    Text(SandboxStateText.describe(state)).font(.callout).foregroundStyle(.secondary)
+                }
+                .help(help)
             }
             Label(project.agent, systemImage: "terminal")
             Label(provider?.summary ?? "\(project.provider) (not defined)", systemImage: "cpu")
@@ -297,7 +303,7 @@ struct ProjectDetailView: View {
             }
             // Clear of the toolbar group's rounded edge.
             .padding(.horizontal, 8)
-            .help(model.activity(of: project) ?? SandboxStateText.describe(state))
+            .help(model.activity(of: project) ?? model.badgeHelp(of: project))
             Group {
                 switch state {
                 case nil:
