@@ -46,6 +46,10 @@ targets:
         # voice (backlog doc Voice): push-to-talk to agents, transcribed on this Mac only
         NSMicrophoneUsageDescription: Paddock listens while you hold the talk button, so you can speak to an agent. Speech is turned into text on this Mac and never recorded.
         NSSpeechRecognitionUsageDescription: Paddock turns what you say to an agent into text, on this Mac only.
+        # version (backlog doc UI, Version): set by mise run build and install from tools/tasks/version.sh
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        PaddockCommit: $(PADDOCK_COMMIT)
     # Hardened Runtime blocks the microphone without this entitlement
     entitlements:
       path: App/Paddock.entitlements
@@ -54,8 +58,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.zabreznik.paddock
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        # placeholders for a build outside mise, which then shows as unversioned (AppVersion)
+        MARKETING_VERSION: "0.0"
+        CURRENT_PROJECT_VERSION: "0"
+        PADDOCK_COMMIT: ""
         # App/Assets.xcassets, rendered from design/app-icon.svg by `mise run icon`
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # CLAUDE.md: App Sandbox stays off (Paddock runs sbx and reads ~/.config); Hardened Runtime stays on

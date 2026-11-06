@@ -73,6 +73,21 @@ struct StatusButton: View {
     }
 }
 
+/// The running build's version next to the status button (backlog doc UI, Version): `yymmdd.N`,
+/// with the commit in the tooltip. Selectable, so it can be pasted into a ticket.
+struct VersionLabel: View {
+    private static let current = AppVersion(info: Bundle.main.infoDictionary ?? [:])
+
+    var body: some View {
+        Text(Self.current.label)
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .textSelection(.enabled)
+            .help(Self.current.help)
+            .accessibilityLabel("Version \(Self.current.label)")
+    }
+}
+
 enum StatusChecks {
     static func allGreen(_ status: PaddockStatus) -> Bool {
         guard case .running = status.sbx else { return false }

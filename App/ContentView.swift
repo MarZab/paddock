@@ -74,6 +74,7 @@ struct ContentView: View {
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     HStack(spacing: 8) {
                         StatusButton()
+                        VersionLabel()
                         if let source = model.status?.sbxReadSource, !source.isSocket {
                             Image(systemName: "tortoise")
                                 .foregroundStyle(.secondary)
