@@ -3,7 +3,7 @@ id: doc-13
 title: ProjectStore
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-04 15:05'
+updated_date: '2026-11-06 07:46'
 ---
 One hand-editable file per project, `~/.config/paddock/projects/<sandbox-name>.json`, next to `paddock.yaml`. It holds only the operator's decisions sbx cannot store; ports and rules live in sbx (see Where state lives):
 
@@ -24,7 +24,7 @@ One hand-editable file per project, `~/.config/paddock/projects/<sandbox-name>.j
 ```
 
 - `agent` and `provider` name sections of `paddock.yaml`, chosen in the New Project sheet. A project's `sbxenv.yaml` only pre-fills the name and agent there, so the agent cannot switch its own provider.
-- `approvedEnvironment` (optional): the fingerprint of the `sbxenv.yaml` (and its own kits) the operator confirmed; `declinedHosts` the runtime hosts they declined then; `sandboxEnvironment` the fingerprint the sandbox was created from. A differing pair is a recreate item in Sync (backlog doc Project config file). Keys from before (`approvedConfigHash`, `imageTag`, `ports`, `network`, `policy`) are ignored.
+- `approvedEnvironment` (optional): the fingerprint of the `sbxenv.yaml` (and its own kits) the operator confirmed; `declinedHosts` the runtime hosts they declined then; `sandboxEnvironment` the fingerprint the sandbox was created from, and `sandboxEnvironmentRecord` the same piece by piece (each `sbxenv.yaml` key and project-kit file by hash), so Sync can say what changed (PAD-103). A differing pair is a recreate item in Sync (backlog doc Project config file). Keys from before (`approvedConfigHash`, `imageTag`, `ports`, `network`, `policy`) are ignored.
 - `gatewayPort` is assigned once, from `models.gatewayPorts`, when the project uses a local model.
 - `extraFolders` (optional, PAD-73.5): `[{"path", "readOnly"}]`, folders mounted besides the project folder in the order added. `readOnly` defaults to true, and the paths are canonical as checked when added. Only the operator adds them, in Paddock.
 - `terminalTheme` (optional) is the `TerminalTheme` id the operator picked in Info for the project's terminals; left out, they keep the terminal's own colors. It is never read from the project folder.

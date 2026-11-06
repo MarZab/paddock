@@ -181,6 +181,7 @@ public struct ProjectRunner: Sendable {
         var created = project
         created.sandboxKits = kits.map(\.recorded)
         created.sandboxEnvironment = environment?.fingerprint
+        created.sandboxEnvironmentRecord = environment?.record
         return created
     }
 

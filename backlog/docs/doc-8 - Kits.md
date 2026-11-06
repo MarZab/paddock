@@ -3,7 +3,7 @@ id: doc-8
 title: Kits
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-04 15:06'
+updated_date: '2026-11-06 07:46'
 ---
 sbx kits add tools and settings to a sandbox at create (`sbx create --kit REF`, repeatable). **Paddock's own kits are v3 kits (PAD-73.2):** a folder in `<config>/kits/` named `paddock-<kit>` with `<folder>.yaml`. sbx names a local kit after its folder, and names in one sandbox must differ: sbx 0.51 ships an `opencode` kit of its own. (`KitFile`; the `spec.yaml` of the earlier v1/v2 kits is removed when Paddock writes the kit). Each one is a `kind: mixin` with `version` and `provides` (sbx refuses a `provides` without a version) and capabilities, not top-level sections:
   - Environment is set through `args` with `env` (v3 has no environment section).
@@ -18,7 +18,7 @@ sbx kits add tools and settings to a sandbox at create (`sbx create --kit REF`, 
 - **Adding from the interface:** the kit picker has a field that takes a contrib kit's name or anything `--kit` takes (`Kit.parseInput`; the name comes from the reference's last path part without `-kit`, a tag, or a digest) and adds `NAME:` under `kits:` in `paddock.yaml` (`AppConfigFile.addKit`, checked like a hand edit before it is written), then selects it. A defined kit's name only selects it. A new `paddock.yaml` (Edit Config or the first added kit) starts as `AppConfigFile.template`: every section with its defaults and what each key does, commented out.
 - **Choosing:** the New Project sheet lists the kits offered for the agent, preselected from `recommended`; selecting a kit selects what it needs, unselecting one unselects what builds on it. There is no gateway kit (PAD-73.2): a local model is environment at create (backlog doc ModelGateway). A project's chosen kits get what they need added (`Project.chosenKits`), so a kit that gained a need still works for a project that chose it before. The Info tab's Kits row edits the choice later (`AppModel.setKits`).
 - **Order:** each kit after the kits it needs, otherwise by name. v3 composition: the workload's install steps run first, then each mixin's in order, network allows add up per phase (deny wins), and sbx lists every kit's hosts as one `kit:<sandbox>` rule (backlog doc M0 findings).
-- **Project file:** `kits` (the operator's choice; files from before kits get what Paddock always added, `KitSelection.legacy`) and `sandboxKits` (the `--kit` values the sandbox was created with; sbx does not report them). A difference is a "recreate" item under Needs attention; kits that no longer resolve show as a problem and stop a create or recreate before anything is removed.
+- **Project file:** `kits` (the operator's choice; files from before kits get what Paddock always added, `KitSelection.legacy`) and `sandboxKits` (the `--kit` values the sandbox was created with; sbx does not report them). A difference is a "recreate" item under Needs attention that names the kits added and removed and Paddock's kits that are newer (PAD-103); the same kits in another order are no difference; kits that no longer resolve show as a problem and stop a create or recreate before anything is removed.
 - **Not yet:** the confirmation sheet does not show a kit's hosts before create (PAD-7); they show after create as "agent kit" rules on the Network page. Kit arguments (`--kit-arg`) are not supported (PAD-8).
 
 ## Agent status (PAD-23)

@@ -61,6 +61,9 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
     /// The fingerprint the sandbox was created from; a different confirmed one is a recreate item.
     /// sbx does not report it. Nil for a sandbox created without an `sbxenv.yaml`.
     public var sandboxEnvironment: String?
+    /// The same version piece by piece (`EnvironmentRecord`), so the recreate item can say what
+    /// changed; nil for a sandbox created before Paddock kept it (PAD-103).
+    public var sandboxEnvironmentRecord: EnvironmentRecord?
     /// The `[kits]` sections the operator chose (backlog doc Kits); nil in files from before kits,
     /// which get what Paddock always added (`KitSelection.legacy`).
     public var kits: [String]?
@@ -100,6 +103,7 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, folder, agent, provider, cloneMode, gatewayPort, approvedEnvironment, declinedHosts, sandboxEnvironment
+        case sandboxEnvironmentRecord
         case kits, sandboxKits, ignoredSuggestions
         case terminalTheme, extraFolders
     }
@@ -119,6 +123,7 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
         approvedEnvironment = try c.decodeIfPresent(String.self, forKey: .approvedEnvironment)
         declinedHosts = try c.decodeIfPresent([String].self, forKey: .declinedHosts) ?? []
         sandboxEnvironment = try c.decodeIfPresent(String.self, forKey: .sandboxEnvironment)
+        sandboxEnvironmentRecord = try c.decodeIfPresent(EnvironmentRecord.self, forKey: .sandboxEnvironmentRecord)
         kits = try c.decodeIfPresent([String].self, forKey: .kits)
         sandboxKits = try c.decodeIfPresent([String].self, forKey: .sandboxKits)
         ignoredSuggestions = try c.decodeIfPresent([String].self, forKey: .ignoredSuggestions) ?? []

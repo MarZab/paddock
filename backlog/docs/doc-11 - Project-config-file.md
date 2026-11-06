@@ -3,7 +3,7 @@ id: doc-11
 title: Project config file
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-04 18:53'
+updated_date: '2026-11-06 07:46'
 ---
 A project's own setup is sbx's environment file, `sbxenv.yaml` at the project root, plus the project's own v3 kits (PAD-73). A project set up this way runs with plain `sbx env run`, without Paddock. Paddock reads the same files, checks them, has the operator confirm them, and adds its own part from a file of its own (the overlay). A project without `sbxenv.yaml` is created with `sbx create` and Paddock's kits only, as before.
 
@@ -58,7 +58,7 @@ sandboxOptions:
   - extra folders (read-only or writable, another project's folder marked), published ports, and the environment variables it sets
 - Confirm records the fingerprint (`Project.approvedEnvironment`) and the declined hosts (`Project.declinedHosts`, only hosts the sheet offered). Create, and a new session on a project without a sandbox, wait for it; Start does not (a sandbox runs as it was created). A file never confirmed, or changed, shows "sbxenv.yaml is new or changed" under Needs attention with Review.
 - **Declining a host** is a sandbox deny applied right after the create: a sandbox deny beats a kit's allow (PAD-73.1), so a declined host stays blocked whatever the kit says. Review (the Info tab's Project kits row) opens the sheet again; with the file the sandbox was created from, a change of the declined hosts applies at once, a deny added or lifted (`ProjectRunner.setHostRule`), with no recreate.
-- **Changes need a recreate.** sbx reads the file and kits only at create. When the confirmed fingerprint differs from the one the sandbox was created from (`Project.sandboxEnvironment`), Sync lists a recreate item (backlog doc App config, Sync). A recreate checks the file before it removes anything.
+- **Changes need a recreate.** sbx reads the file and kits only at create. When the confirmed fingerprint differs from the one the sandbox was created from (`Project.sandboxEnvironment`), Sync lists a recreate item (backlog doc App config, Sync) naming what changed: the `sbxenv.yaml` keys and the project-kit files added, removed, or changed (`EnvironmentRecord`, kept with the project at create as `sandboxEnvironmentRecord`; PAD-103). Comments, formatting, and `.DS_Store` files are no change, so then there is no item. A sandbox created before the record gets a plain item saying Paddock has no details. A recreate checks the file before it removes anything.
 
 ## Creating
 

@@ -678,9 +678,12 @@ final class AppModel {
         }
         // A confirmation of an sbxenv.yaml that is gone no longer counts: nothing to recreate for it.
         var current = project
-        if environment(of: project) == nil { current.approvedEnvironment = nil }
+        let environment = environment(of: project)
+        if environment == nil { current.approvedEnvironment = nil }
+        // What changed is known only for the confirmed version as it is on disk.
+        let record = environment.flatMap { $0.fingerprint == project.approvedEnvironment ? $0.record : nil }
         return SandboxSync.diff(project: current, snapshot: exists ? snapshots[project.name] : nil, globalRules: globalRules, app: appConfig,
-                                expectedKits: expectedKits)
+                                expectedKits: expectedKits, environment: record)
     }
 
     /// What the kit field did: added a kit to Paddock's config (its name, for the picker to

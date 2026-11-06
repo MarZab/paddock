@@ -71,9 +71,10 @@ public enum SandboxSync {
     /// The differences between `project` and `snapshot` (nil when the sandbox does not exist).
     /// `globalRules` are `sbx policy ls --json`'s rules, for the per-sandbox denies Paddock adds.
     /// `expectedKits` are the kits the project asks for (`ResolvedKit.recorded`), nil to leave
-    /// kits out.
+    /// kits out. `environment` is the record of the project's `sbxenv.yaml` as it is now, when that
+    /// is the confirmed version; it says what changed since the create.
     public static func diff(project: Project, snapshot: SandboxSnapshot?, globalRules: [SbxPolicyRule], app: AppConfig,
-                            expectedKits: Result<[String], KitError>? = nil) -> [SyncItem] {
+                            expectedKits: Result<[String], KitError>? = nil, environment: EnvironmentRecord? = nil) -> [SyncItem] {
         guard let snapshot else {
             return [SyncItem(id: "sandbox", kind: .sandbox, summary: "No sandbox yet", apply: .create)]
         }
@@ -98,19 +99,21 @@ public enum SandboxSync {
                                   apply: app.agents[project.agent] == nil ? nil : .recreate))
         }
         // Only a confirmed version counts: one the operator has not confirmed waits for that first.
-        if let approved = project.approvedEnvironment, approved != project.sandboxEnvironment {
-            items.append(SyncItem(id: "environment", kind: .setting,
-                                  summary: project.sandboxEnvironment == nil
-                                      ? "The sandbox was created without the project's sbxenv.yaml; recreate it to use it"
-                                      : "The project's sbxenv.yaml or its kit changed since the sandbox was created; recreate it to use them",
+        if let approved = project.approvedEnvironment, approved != project.sandboxEnvironment,
+           let summary = environmentSummary(project: project, now: environment) {
+            items.append(SyncItem(id: "environment", kind: .setting, summary: summary,
                                   apply: app.agents[project.agent] == nil ? nil : .recreate))
         }
         switch expectedKits {
         case .success(let kits)?:
             // Only when Paddock created the sandbox and recorded its kits: sbx does not report them.
-            if let created = project.sandboxKits, created != kits {
-                items.append(SyncItem(id: "kits", kind: .setting, summary: "The sandbox was created with other kits, or older versions of Paddock's; recreate it to get the kits chosen now",
-                                      apply: app.agents[project.agent] == nil ? nil : .recreate))
+            if let created = project.sandboxKits {
+                let changes = kitChanges(created: created, now: kits)
+                if !changes.isEmpty {
+                    items.append(SyncItem(id: "kits", kind: .setting,
+                                          summary: "The sandbox's kits differ: \(changes.joined(separator: "; ")); recreate it to get the kits chosen now",
+                                          apply: app.agents[project.agent] == nil ? nil : .recreate))
+                }
             }
         case .failure(let error)?:
             items.append(SyncItem(id: "kits", kind: .setting, summary: "The project's kits cannot be used: \(error.description)", apply: nil))
@@ -119,6 +122,46 @@ public enum SandboxSync {
         }
         items += networkItems(project: project, snapshot: snapshot, globalRules: globalRules, app: app)
         return items
+    }
+
+    /// What changed in the confirmed `sbxenv.yaml` since the create; nil when nothing that counts
+    /// did (formatting, comments, Finder files). Without a record from the create, Paddock cannot tell.
+    static func environmentSummary(project: Project, now: EnvironmentRecord?) -> String? {
+        guard project.sandboxEnvironment != nil else {
+            return "The sandbox was created without the project's sbxenv.yaml; recreate it to use it"
+        }
+        guard let before = project.sandboxEnvironmentRecord else {
+            return "The project's sbxenv.yaml or its kit changed since the sandbox was created "
+                + "(Paddock kept no details for this sandbox); recreate it to use them"
+        }
+        guard let now else {
+            return "The project's sbxenv.yaml or its kit changed since the sandbox was created, and again since it was "
+                + "confirmed; review it, then recreate the sandbox"
+        }
+        let changes = now.changes(since: before)
+        guard !changes.isEmpty else { return nil }
+        return "Changed since the sandbox was created: \(changes.joined(separator: "; ")); recreate it to use them"
+    }
+
+    /// The kits a sandbox was created with against the ones chosen now (`ResolvedKit.recorded`):
+    /// added, removed, and Paddock's kits whose spec is newer. Order alone is no change.
+    static func kitChanges(created: [String], now: [String]) -> [String] {
+        func base(_ recorded: String) -> String { String(recorded.split(separator: "#", maxSplits: 1).first ?? "") }
+        func label(_ recorded: String) -> String {
+            let argument = base(recorded)
+            // Paddock's kits and local ones are folders: their name says enough.
+            return argument.hasPrefix("/") ? (argument as NSString).lastPathComponent : argument
+        }
+        let before = Dictionary(created.map { (base($0), $0) }, uniquingKeysWith: { first, _ in first })
+        let after = Dictionary(now.map { (base($0), $0) }, uniquingKeysWith: { first, _ in first })
+        var changes: [String] = []
+        let added = after.keys.filter { before[$0] == nil }.map { label(after[$0] ?? $0) }.sorted()
+        let removed = before.keys.filter { after[$0] == nil }.map { label(before[$0] ?? $0) }.sorted()
+        let newer = after.keys.filter { before[$0] != nil && before[$0] != after[$0] }.map { label(after[$0] ?? $0) }.sorted()
+        if !added.isEmpty { changes.append("added \(added.joined(separator: ", "))") }
+        if !removed.isEmpty { changes.append("removed \(removed.joined(separator: ", "))") }
+        if !newer.isEmpty { changes.append("newer \(newer.joined(separator: ", "))") }
+        return changes
     }
 
     /// The plan for the sandbox as it is now: the allows it has in sbx, with Paddock's denies for

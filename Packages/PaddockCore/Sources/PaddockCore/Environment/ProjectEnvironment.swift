@@ -108,6 +108,8 @@ public struct ProjectEnvironment: Sendable, Equatable {
     public var problems: [Problem] = []
     /// SHA-256 over the file and every file of each local kit; the operator's approval covers it.
     public var fingerprint: String
+    /// The same, piece by piece, so a later version can say what changed (PAD-103).
+    public var record = EnvironmentRecord()
 
     public var isAcceptable: Bool { file != nil && problems.isEmpty }
 }
@@ -152,6 +154,7 @@ extension ProjectEnvironment {
         } catch {
             result.problems = [.file(error)]
             result.fingerprint = Fingerprint.of([("", data)])
+            result.record = EnvironmentRecord.of(data: data, kits: [])
             return result
         }
         result.file = file
@@ -161,10 +164,16 @@ extension ProjectEnvironment {
         result.checkPorts(file, app: context.app)
         result.checkKits(file, app: context.app)
         var parts: [(String, Data)] = [("", data)]
+        var kitFiles: [(source: String, files: [(String, Data)])] = []
         for kit in result.kits {
-            if case .local(let path) = kit.origin { parts += Fingerprint.files(in: path, named: kit.source) }
+            if case .local(let path) = kit.origin {
+                let files = Fingerprint.files(in: path, named: kit.source)
+                parts += files
+                kitFiles.append((kit.source, files.map { (String($0.0.dropFirst(kit.source.count + 1)), $0.1) }))
+            }
         }
         result.fingerprint = Fingerprint.of(parts)
+        result.record = EnvironmentRecord.of(data: data, kits: kitFiles)
         return result
     }
 
