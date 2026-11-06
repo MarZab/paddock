@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03 16:57'
-updated_date: '2026-11-06 10:40'
+updated_date: '2026-11-06 11:45'
 labels:
   - app
   - images
@@ -22,10 +22,10 @@ sbx keeps every template image (agent templates of about 1 GB each, every paddoc
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A System page "Templates" in the sidebar lists `sbx template ls --json`: name, kind (agent template, project image, other), agent flavor, size, created, and what uses it; with a total size
-- [ ] #2 What uses it: the projects whose recorded image tag is this image (with or without a sandbox), "Paddock's image builder" for shell-docker, sbx's agent sandboxes for agent templates, and "not known" for other images; the page says sbx does not report a sandbox's image
-- [ ] #3 One or several images can be removed after a confirmation that names them, their size, and what each removal means (an agent template is downloaded again for the next sandbox of that agent; a project image is built again on the next create)
+- [x] #2 What uses it: the projects whose recorded image tag is this image (with or without a sandbox), "Paddock's image builder" for shell-docker, sbx's agent sandboxes for agent templates, and "not known" for other images; the page says sbx does not report a sandbox's image
+- [x] #3 One or several images can be removed after a confirmation that names them, their size, and what each removal means (an agent template is downloaded again for the next sandbox of that agent; a project image is built again on the next create)
 - [x] #4 An image a project's existing sandbox was created from cannot be removed (remove the sandbox first), and neither can shell-docker while an image build runs; the check runs again against fresh sbx lists right before removing
-- [ ] #5 Removals and failures go to the Log; a failure shows in the status button
+- [x] #5 Removals and failures go to the Log; a failure shows in the status button
 - [x] #6 Core logic (rows, users, what may be removed, the sbx commands) is in PaddockCore with fixture-based tests; backlog doc UI describes the page
 <!-- AC:END -->
 
@@ -44,4 +44,10 @@ sbx keeps every template image (agent templates of about 1 GB each, every paddoc
 Core done and tested (6 TemplateUsage tests, suite 522 pass). App code (TemplatesView.swift, AppModel Templates section, ContentView sidebar case) written but not compiled: SwiftUI builds only on the Mac. Still to check there: the page builds and works (AC 1, 3, 5), that sbx re-downloads a removed agent template by itself (the confirmation says so), and what a stopped sandbox does when its image is gone. Log entries use category Paddock.
 
 Operator checked on the Mac 2026-11-06: the Templates page works. Removal (AC3) and usage text (AC2) not reported.
+
+Operator checked on the Mac 2026-11-06: removing one and several images works, the confirmation lists them. Log line and status-button failure (AC5) and the usage text (AC2) not reported.
+
+Operator checked on the Mac 2026-11-06: the used-by column works.
+
+Operator checked on the Mac 2026-11-06: the removal is in the Log. The failure case (status button) was not tried.
 <!-- SECTION:NOTES:END -->
