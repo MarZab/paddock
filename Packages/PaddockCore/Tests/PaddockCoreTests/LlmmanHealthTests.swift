@@ -68,9 +68,12 @@ struct LlmmanAPITests {
     @Test func unreachableLlmmanFailsFast() async throws {
         let transport = HTTPLlmmanTransport(base: "http://127.0.0.1:9")
         let started = ContinuousClock.now
-        await #expect(throws: (any Error).self) { _ = try await transport.get("/api/version") }
+        let error = await #expect(throws: (any Error).self) { _ = try await transport.get("/api/version") }
         try await transport.shutdown()
-        #expect(ContinuousClock.now - started < .seconds(3))
+        // Refused, not the connect timeout: a time limit alone fails on a loaded CI runner, where
+        // this took 6 s with nothing waiting.
+        #expect(error.map { "\($0)".contains("Connection refused") } ?? false)
+        #expect(ContinuousClock.now - started < .seconds(15))
     }
 }
 

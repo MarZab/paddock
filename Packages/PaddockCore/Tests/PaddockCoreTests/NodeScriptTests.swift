@@ -86,7 +86,7 @@ struct NodeScriptTests {
         process.standardInput = input
         process.standardOutput = output
         process.standardError = error
-        try process.run()
+        try Self.runRetryingBusyText(process)
         input.fileHandleForWriting.write(Data(stdin.utf8))
         try input.fileHandleForWriting.close()
         let out = output.fileHandleForReading.readDataToEndOfFile()
@@ -94,6 +94,20 @@ struct NodeScriptTests {
         process.waitUntilExit()
         return Result(out: String(bytes: out, encoding: .utf8) ?? "", err: String(bytes: err, encoding: .utf8) ?? "",
                       status: process.terminationStatus)
+    }
+
+    /// Linux refuses to run a file another process still has open for writing (ETXTBSY): a test
+    /// that forks while this one writes its script lends the child that descriptor until the
+    /// child's exec. That ends in moments, so the run is tried again.
+    static func runRetryingBusyText(_ process: Process) throws {
+        for attempt in 1... {
+            do {
+                return try process.run()
+            } catch let error as NSError where attempt < 50
+                && (error.userInfo[NSUnderlyingErrorKey] as? NSError)?.code == Int(ETXTBSY) {
+                Thread.sleep(forTimeInterval: 0.02)
+            }
+        }
     }
 
     @Test func theHeaderIsShellThenJavaScript() {

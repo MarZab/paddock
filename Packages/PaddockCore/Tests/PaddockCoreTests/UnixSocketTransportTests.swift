@@ -139,19 +139,24 @@ struct UnixSocketTransportTests {
             _ = try await reads.checkHealth()
             Issue.record("a missing socket answered")
         } catch let error as SandboxdError {
-            guard case .unreachable = error else { Issue.record("expected unreachable, got \(error)"); return }
+            guard case .unreachable(_, let message) = error else { Issue.record("expected unreachable, got \(error)"); return }
+            // The connect failed, not the request's deadline: a time limit alone fails on a loaded CI
+            // runner, where this took 5 s with nothing waiting.
+            #expect(message.contains("No such file or directory"))
         }
-        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(ContinuousClock.now - started < .seconds(15))
     }
 
     /// A stream has no deadline, so a socket that is gone must fail it rather than hang.
     @Test func aStreamOnAMissingSocketFails() async throws {
         let reads = SandboxdReads(transport: UnixSocketTransport(socketPath: NSTemporaryDirectory() + "no-such-\(UUID()).sock"))
         let started = ContinuousClock.now
-        await #expect(throws: SandboxdError.self) {
+        let error = await #expect(throws: SandboxdError.self) {
             for try await _ in reads.events() {}
         }
-        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(error.map { "\($0)".contains("No such file or directory") } ?? false)
+        // Hanging would be for ever; the limit only has to be well short of that (PAD-112).
+        #expect(ContinuousClock.now - started < .seconds(15))
     }
 
     /// sandboxd went away (stopped, restarted) while a stream was open: the stream ends.
@@ -165,6 +170,6 @@ struct UnixSocketTransportTests {
         await server.stop()
         let started = ContinuousClock.now
         await #expect(throws: (any Error).self) { _ = try await reads.checkHealth() }
-        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(ContinuousClock.now - started < .seconds(UnixSocketTransport.timeout.nanoseconds / 1_000_000_000))
     }
 }

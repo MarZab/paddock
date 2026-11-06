@@ -105,12 +105,15 @@ struct SandboxWatchersTests {
         var environment: [String: String] { ["PATH": "\(url.path):/usr/bin:/bin", "PADDOCK_WATCH_BIN": url.path] }
         func path(_ name: String) -> String { url.appendingPathComponent(name).path }
 
-        /// Short sleeps: a killed watcher's sleep lives on, and with it any pipe it inherited from a
-        /// test running at the same time.
-        init(agentBody: String = "sleep 3") throws {
+        /// Lives as long as any test needs, also on a loaded CI runner, and takes its sleep along
+        /// when killed: a sleep left behind keeps any pipe it inherited from a test running at the
+        /// same time.
+        static let longLived = "trap 'kill $! 2>/dev/null; exit 143' TERM; sleep 60 & wait"
+
+        init(agentBody: String = FakeBin.longLived) throws {
             url = FileManager.default.temporaryDirectory.appendingPathComponent("paddock-watch-\(UUID())")
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-            for (name, body) in [("paddock-agent-watch", agentBody), ("paddock-browser-watch", "sleep 3")] {
+            for (name, body) in [("paddock-agent-watch", agentBody), ("paddock-browser-watch", Self.longLived)] {
                 try "#!/bin/sh\n\(body)\n".write(toFile: path(name), atomically: true, encoding: .utf8)
                 try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path(name))
             }
@@ -141,6 +144,29 @@ struct SandboxWatchersTests {
         return status.map { !$0.contains("State:\tZ") } ?? false
     }
 
+    /// The command line of `pid`, arguments joined by NUL.
+    static func cmdline(_ pid: Int32) -> String? {
+        try? String(contentsOfFile: "/proc/\(pid)/cmdline", encoding: .utf8)
+    }
+
+    /// Waits until `condition` holds, for at most 15 s: fixed waits fail on a loaded CI runner.
+    @discardableResult
+    static func eventually(_ condition: () -> Bool) async throws -> Bool {
+        let deadline = ContinuousClock.now + .seconds(15)
+        while !condition() {
+            guard ContinuousClock.now < deadline else { return false }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        return true
+    }
+
+    /// Waits until each process runs its command (python has exec'd into it), so the script sees
+    /// the command line it matches.
+    static func waitUntilRunning(_ processes: [(Process, String)]) async throws {
+        let ready = try await eventually { processes.allSatisfy { cmdline($0.0.processIdentifier)?.hasPrefix($0.1) ?? false } }
+        #expect(ready, "the processes did not start")
+    }
+
     /// The children of `parent` whose command line is `cmdline` (arguments joined by NUL).
     static func children(of parent: Int32, cmdline: String) -> [Int32] {
         let pids = (try? FileManager.default.contentsOfDirectory(atPath: "/proc"))?.compactMap { Int32($0) } ?? []
@@ -168,20 +194,26 @@ struct SandboxWatchersTests {
         let ownEarlier = try Self.start([agent, "--for=app.one"])
         let otherApp = try Self.start([agent, "--for=app.two"])
         defer { for process in [olderOne, olderTwo, oneOff, otherKind, ownEarlier, otherApp] where process.isRunning { process.terminate() } }
-        try await Task.sleep(for: .milliseconds(200))
+        try await Self.waitUntilRunning([(olderOne, "/bin/sh\0\(agent)\0"), (olderTwo, "/bin/sh\0\(agent)\0"),
+                                         (oneOff, "/bin/sh\0\(agent)\0"), (otherKind, "/bin/sh\0\(bin.path("paddock-browser-watch"))\0"),
+                                         (ownEarlier, "/bin/sh\0\(agent)\0"), (otherApp, "/bin/sh\0\(agent)\0")])
 
         let input = Pipe()
         let wrapper = try Self.start(["-c", SandboxWatchers.replaceScript, SandboxWatchers.label, "paddock-agent-watch", "app.one"],
                                      environment: bin.environment, input: input)
         defer { try? input.fileHandleForWriting.close() }
-        try await Task.sleep(for: .milliseconds(500))
+        let newWatcher = "/bin/sh\0\(agent)\0--for=app.one\0"
+        try await Self.eventually {
+            [olderOne, olderTwo, ownEarlier].allSatisfy { !Self.alive($0.processIdentifier) }
+                && Self.children(of: wrapper.processIdentifier, cmdline: newWatcher).count == 1
+        }
 
         #expect(!Self.alive(olderOne.processIdentifier) && !Self.alive(olderTwo.processIdentifier))
         #expect(Self.alive(oneOff.processIdentifier) && Self.alive(otherKind.processIdentifier))
         #expect(!Self.alive(ownEarlier.processIdentifier) && Self.alive(otherApp.processIdentifier))
         #expect(Self.alive(wrapper.processIdentifier))
         // The new watcher's command line is a watcher's, so the next start replaces it too.
-        #expect(Self.children(of: wrapper.processIdentifier, cmdline: "/bin/sh\0\(agent)\0--for=app.one\0").count == 1)
+        #expect(Self.children(of: wrapper.processIdentifier, cmdline: newWatcher).count == 1)
     }
 
     /// A watcher that `NodeScript`'s header started runs as an absolute node and its path; it is
@@ -199,13 +231,16 @@ struct SandboxWatchersTests {
         let older = try Self.start(["-c", "exec \"$0\" \"$@\"", node, agent])
         let oneOff = try Self.start(["-c", "exec \"$0\" \"$@\"", node, agent, "--captured", "s"])
         defer { for process in [older, oneOff] where process.isRunning { process.terminate() } }
-        try await Task.sleep(for: .milliseconds(200))
+        try await Self.waitUntilRunning([(older, "\(node)\0\(agent)\0"), (oneOff, "\(node)\0\(agent)\0")])
 
         let input = Pipe()
-        _ = try Self.start(["-c", SandboxWatchers.replaceScript, SandboxWatchers.label, "paddock-agent-watch", "app.one"],
-                           environment: bin.environment, input: input)
+        let wrapper = try Self.start(["-c", SandboxWatchers.replaceScript, SandboxWatchers.label, "paddock-agent-watch", "app.one"],
+                                     environment: bin.environment, input: input)
         defer { try? input.fileHandleForWriting.close() }
-        try await Task.sleep(for: .milliseconds(500))
+        try await Self.eventually {
+            !Self.alive(older.processIdentifier)
+                && !Self.children(of: wrapper.processIdentifier, cmdline: "/bin/sh\0\(agent)\0--for=app.one\0").isEmpty
+        }
         #expect(!Self.alive(older.processIdentifier))
         #expect(Self.alive(oneOff.processIdentifier))
     }
@@ -213,18 +248,19 @@ struct SandboxWatchersTests {
     /// Paddock gone: its end of the input closes (`sbx exec -i` passes that on), and the watcher stops.
     @Test(.enabled(if: FileManager.default.fileExists(atPath: "/proc/self/cmdline") && FileManager.default.fileExists(atPath: "/usr/bin/python3")))
     func theWatcherStopsWhenItsInputEnds() async throws {
-        let bin = try FakeBin(agentBody: "sleep 5")
+        let bin = try FakeBin()
         defer { try? FileManager.default.removeItem(at: bin.url) }
         let input = Pipe()
         let wrapper = try Self.start(["-c", SandboxWatchers.replaceScript, SandboxWatchers.label, "paddock-agent-watch", "app.one"],
                                      environment: bin.environment, input: input)
-        try await Task.sleep(for: .milliseconds(300))
-        let watchers = Self.children(of: wrapper.processIdentifier, cmdline: "/bin/sh\0\(bin.path("paddock-agent-watch"))\0--for=app.one\0")
-        let watcher = try #require(watchers.first)
+        defer { if wrapper.isRunning { wrapper.terminate() } }
+        let cmdline = "/bin/sh\0\(bin.path("paddock-agent-watch"))\0--for=app.one\0"
+        try await Self.eventually { !Self.children(of: wrapper.processIdentifier, cmdline: cmdline).isEmpty }
+        let watcher = try #require(Self.children(of: wrapper.processIdentifier, cmdline: cmdline).first)
         #expect(Self.alive(watcher))
 
         try input.fileHandleForWriting.close()
-        try await Task.sleep(for: .milliseconds(500))
+        try await Self.eventually { !Self.alive(watcher) && !Self.alive(wrapper.processIdentifier) }
         #expect(!Self.alive(watcher))
         #expect(!Self.alive(wrapper.processIdentifier))
     }

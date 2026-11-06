@@ -1,5 +1,5 @@
 # Development tools for Paddock. Run `mise install` once, then `mise run <task>` (`mr <task>`).
-# Xcode 16+ (and its Swift toolchain) is installed separately from the App Store or developer.apple.com.
+# Xcode 26+ (Swift 6.2, which swift-crypto 5 needs; and its toolchain) is installed separately from the App Store or developer.apple.com.
 
 [tools]
 # Xcode's tools: macOS only, so mise install works in a Linux sandbox (tools/sandbox/paddock).
