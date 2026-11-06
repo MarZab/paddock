@@ -18,6 +18,22 @@ scratch=()
 # children, and counts as a failure. macOS has no timeout(1), so a watchdog does it.
 LIMIT="${PADDOCK_TEST_TIMEOUT:-600}"
 
+# Test processes of this checkout (PAD-117): a timeout or an interrupt can leave a PackageTests.xctest
+# behind with its parent gone, and it holds SwiftPM's build lock.
+stop_tests() {
+  local pids
+  # Anchored at the start of the command line, so a shell that merely mentions the name is not matched.
+  pids="$(pgrep -f '^([^ ]*/xctest +)?[^ ]*/(Packages/Paddock[A-Za-z]*/[.]build|[.]cache/paddock-build)/[^ ]*PackageTests[.]xctest' || true)"
+  [ -z "$pids" ] && return 0
+  echo "## stopping leftover test processes: $(echo "$pids" | tr '\n' ' ')"
+  # shellcheck disable=SC2086
+  kill -TERM $pids 2>/dev/null
+  sleep 1
+  # shellcheck disable=SC2086
+  kill -KILL $pids 2>/dev/null || true
+}
+trap 'stop_tests; exit 130' INT TERM
+
 limited() {
   set -m # the command gets its own process group, so the watchdog can kill all of it
   "$@" &
@@ -31,10 +47,13 @@ limited() {
   code=$?
   # Their groups, not just the subshells: a sleep left behind would hold the output open until it ends.
   kill -TERM -- "-$watchdog" "-$heartbeat" 2>/dev/null
+  stop_tests
   wait "$watchdog" "$heartbeat" 2>/dev/null
   set +m
   return "$code"
 }
+
+stop_tests # one left by an earlier run
 
 # Both packages run even when the first fails, so one log shows every failure.
 run() {
