@@ -247,7 +247,9 @@ struct SandboxWatchersTests {
             for try await line in stream { lines.append(line) }
         }
         #expect(lines == ["hello"])
-        #expect(clock.now - start < .seconds(2))
+        // A stream that did not end would wait for ever; the limit only has to be well short of that, and
+        // a loaded machine takes 3 s or more (PAD-112).
+        #expect(clock.now - start < .seconds(15))
     }
 }
 

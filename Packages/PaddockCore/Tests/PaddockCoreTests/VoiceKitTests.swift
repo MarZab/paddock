@@ -12,17 +12,27 @@ struct VoiceKitTests {
     }
 
     @discardableResult
-    private func run(_ arguments: [String], environment: [String: String], stdin: String = "") throws -> (out: String, status: Int32) {
+    /// `limit` stops a program that never ends (a watcher) after that many seconds; macOS has no `timeout`.
+    /// The node found first on PATH may be a version manager's shim, so the real binary's folder comes first (PAD-112).
+    private func run(_ arguments: [String], environment: [String: String], stdin: String = "",
+                     limit: TimeInterval? = nil) throws -> (out: String, status: Int32) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = arguments
-        process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        var merged = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        if let node = NodeScriptTests.realNode {
+            merged["PATH"] = URL(fileURLWithPath: node).deletingLastPathComponent().path + ":" + (merged["PATH"] ?? "")
+        }
+        process.environment = merged
         let input = Pipe()
         let output = Pipe()
         process.standardInput = input
         process.standardOutput = output
         process.standardError = Pipe()
         try process.run()
+        if let limit {
+            DispatchQueue.global().asyncAfter(deadline: .now() + limit) { if process.isRunning { process.terminate() } }
+        }
         input.fileHandleForWriting.write(Data(stdin.utf8))
         try input.fileHandleForWriting.close()
         let data = output.fileHandleForReading.readDataToEndOfFile()
@@ -40,7 +50,7 @@ struct VoiceKitTests {
     }
 
     private func watched(_ watch: String, env: [String: String]) throws -> [VoiceMessage] {
-        try run(["timeout", "2", "sh", watch], environment: env).out.split(separator: "\n").compactMap { VoiceMessage(line: String($0)) }
+        try run(["sh", watch], environment: env, limit: 2).out.split(separator: "\n").compactMap { VoiceMessage(line: String($0)) }
     }
 
     @Test(.enabled(if: AgentStatusKitTests.hasNode)) func whatTheAgentSaysReachesTheWatcherOnce() throws {

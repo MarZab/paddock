@@ -14,6 +14,28 @@ ln -sf "$(basename "$LOG")" "$RUNS/latest.log"
 # a Linux build in Packages/*/.build replaces the Mac's build database and links.
 scratch=()
 
+# Each package gets PADDOCK_TEST_TIMEOUT seconds (default 600); a stuck test run is killed, with its
+# children, and counts as a failure. macOS has no timeout(1), so a watchdog does it.
+LIMIT="${PADDOCK_TEST_TIMEOUT:-600}"
+
+limited() {
+  set -m # the command gets its own process group, so the watchdog can kill all of it
+  "$@" &
+  local pid=$! watchdog heartbeat code
+  # A line every 30 s while the run is silent, so a hang shows how long it has been quiet.
+  (while sleep 30; do echo "## still running, $(date +%T)"; done) &
+  heartbeat=$!
+  (sleep "$LIMIT"; echo "## timed out after ${LIMIT}s (PADDOCK_TEST_TIMEOUT), killing the run"; kill -TERM -- "-$pid" 2>/dev/null; sleep 5; kill -KILL -- "-$pid" 2>/dev/null) &
+  watchdog=$!
+  wait "$pid"
+  code=$?
+  # Their groups, not just the subshells: a sleep left behind would hold the output open until it ends.
+  kill -TERM -- "-$watchdog" "-$heartbeat" 2>/dev/null
+  wait "$watchdog" "$heartbeat" 2>/dev/null
+  set +m
+  return "$code"
+}
+
 # Both packages run even when the first fails, so one log shows every failure.
 run() {
   echo "# $(date '+%Y-%m-%d %H:%M:%S') commit $(tools/tasks/version.sh commit) ($(tools/tasks/version.sh))"
@@ -24,7 +46,8 @@ run() {
     echo
     echo "## $package"
     if [ "$(uname -s)" = Linux ]; then scratch=(--scratch-path "$HOME/.cache/paddock-build/$package"); fi
-    (cd "Packages/$package" && swift test ${scratch[@]+"${scratch[@]}"} "$@")
+    # shellcheck disable=SC2016 # $0 and $@ are for the inner bash
+    limited bash -c 'cd "Packages/$0" && exec swift test "$@"' "$package" ${scratch[@]+"${scratch[@]}"} "$@"
     code=$?
     echo "## $package exit $code"
     [ "$code" = 0 ] || status=1
@@ -32,7 +55,16 @@ run() {
   return "$status"
 }
 
-run "$@" 2>&1 | tee "$LOG"
+# Every line gets the time of day it arrived: [14:03:07].
+stamp() {
+  if command -v perl >/dev/null 2>&1; then
+    perl -MPOSIX -ne 'BEGIN { $| = 1 } print strftime("[%H:%M:%S] ", localtime), $_'
+  else
+    while IFS= read -r line; do printf '[%s] %s\n' "$(date +%T)" "$line"; done
+  fi
+}
+
+run "$@" 2>&1 | stamp | tee "$LOG"
 status="${PIPESTATUS[0]}"
 
 # Keep the newest 20 runs.

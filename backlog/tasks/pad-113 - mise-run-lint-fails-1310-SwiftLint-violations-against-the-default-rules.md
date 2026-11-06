@@ -1,10 +1,10 @@
 ---
 id: PAD-113
 title: 'mise run lint fails: 1310 SwiftLint violations against the default rules'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-06 08:47'
-updated_date: '2026-11-06 09:26'
+updated_date: '2026-11-06 10:08'
 labels:
   - tooling
   - lint
@@ -23,7 +23,7 @@ ordinal: 118000
 <!-- AC:BEGIN -->
 - [x] #1 The rules match the code's chosen style (for example a longer line_length, trailing commas allowed), decided with the operator, in .swiftlint.yml
 - [x] #2 Violations left after that are fixed or disabled where they are, each with a reason
-- [ ] #3 mise run lint passes on the Mac and in a sandbox (CI's lint step belongs to PAD-91)
+- [x] #3 mise run lint passes on the Mac and in a sandbox (CI's lint step belongs to PAD-91)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -33,3 +33,9 @@ Decided with the operator: loosen rules (line_length 210, trailing_comma off, hi
 
 2026-11-06: CI does not exist yet, so its green lint step moved to PAD-91. Mac lint at 10:11 (1281f47) found 6 line_length violations in test files; 85d5464 drops line_length for tests and lint passes in Linux (.tmp/lint-runs 10:13:45). Needs one more mise run lint on the Mac.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+SwiftLint keeps its defaults with --strict, loosened to the code's style (line_length 230, trailing_comma and four more rules off with reasons, higher length and complexity limits); tests have no line_length via Packages/PaddockCore/Tests/.swiftlint.yml, since the Mac and Linux measure single-line literals differently. Verified: mise run lint exits 0 on the Mac (e0f9c1a) and in the sandbox. CI's lint step belongs to PAD-91.
+<!-- SECTION:FINAL_SUMMARY:END -->

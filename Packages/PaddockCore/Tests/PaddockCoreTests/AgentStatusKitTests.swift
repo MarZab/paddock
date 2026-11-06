@@ -4,10 +4,8 @@ import Testing
 
 struct AgentStatusKitTests {
     /// The merge and the plugin are JavaScript; they run in the sandbox's Node, so a machine without one skips them.
-    static let hasNode: Bool = {
-        (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":")
-            .contains { FileManager.default.isExecutableFile(atPath: "\($0)/node") }
-    }()
+    /// A node that runs (not a shim that fails), so the tests that need one say they are skipped (PAD-112).
+    static let hasNode: Bool = NodeScriptTests.realNode != nil
 
     // MARK: AgentState
 
@@ -145,17 +143,28 @@ struct AgentStatusKitTests {
     }
 
     @discardableResult
-    private func run(_ tool: String, _ arguments: [String], environment: [String: String], stdin: String = "") throws -> String {
+    /// `limit` stops a program that never ends (a watcher) after that many seconds; macOS has no `timeout`.
+    /// The node found first on PATH may be a version manager's shim, so the real binary's folder comes first (PAD-112).
+    private func run(_ tool: String, _ arguments: [String], environment: [String: String], stdin: String = "",
+                     limit: TimeInterval? = nil) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: tool)
         process.arguments = arguments
-        process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        var merged = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+        // not when the test sets its own PATH (a stand-in helper must stay first)
+        if environment["PATH"] == nil, let node = NodeScriptTests.realNode {
+            merged["PATH"] = URL(fileURLWithPath: node).deletingLastPathComponent().path + ":" + (merged["PATH"] ?? "")
+        }
+        process.environment = merged
         let input = Pipe()
         let output = Pipe()
         process.standardInput = input
         process.standardOutput = output
         process.standardError = Pipe()
         try process.run()
+        if let limit {
+            DispatchQueue.global().asyncAfter(deadline: .now() + limit) { if process.isRunning { process.terminate() } }
+        }
         input.fileHandleForWriting.write(Data(stdin.utf8))
         try input.fileHandleForWriting.close()
         let data = output.fileHandleForReading.readDataToEndOfFile()
@@ -211,12 +220,12 @@ struct AgentStatusKitTests {
         try run("/bin/sh", [state.path, "working", "claude", "a"], environment: env)
         try run("/bin/sh", [state.path, "idle", "claude", "b"], environment: env)
         try run("/bin/sh", [state.path, "ended", "claude", "b"], environment: env)
-        let output = try run("/usr/bin/env", ["timeout", "2", "sh", watch.path], environment: env)
+        let output = try run("/bin/sh", [watch.path], environment: env, limit: 2)
         let states = output.split(separator: "\n").compactMap { AgentState(line: String($0)) }
         #expect(states.map(\.session).sorted() == ["a", "b"])
         #expect(states.first { $0.session == "b" }?.kind == .ended)
         // the ended session's file is gone, so a second watcher starts with the live one only
-        let again = try run("/usr/bin/env", ["timeout", "2", "sh", watch.path], environment: env)
+        let again = try run("/bin/sh", [watch.path], environment: env, limit: 2)
         #expect(again.split(separator: "\n").compactMap { AgentState(line: String($0)) }.map(\.session) == ["a"])
     }
 
@@ -244,7 +253,7 @@ struct AgentStatusKitTests {
         let parsed = AgentState(line: written.trimmingCharacters(in: .whitespacesAndNewlines))
         #expect(parsed?.kind == .working && (parsed?.pid ?? 0) > 1)
 
-        let output = try run("/usr/bin/env", ["timeout", "2", "sh", watch.path], environment: env)
+        let output = try run("/bin/sh", [watch.path], environment: env, limit: 2)
         let states = output.split(separator: "\n").compactMap { AgentState(line: String($0)) }
         #expect(states.first { $0.session == "gone" }?.kind == .ended)
         #expect(states.first { $0.session == "alive" }?.kind == .waiting)
@@ -303,20 +312,29 @@ struct AgentStatusKitTests {
         try """
         import { PaddockStatus } from "./plugin.mjs"
         const hooks = await PaddockStatus()
-        const send = (type, properties) => hooks.event({ event: { type, properties } })
-        await send("session.status", { sessionID: "a", status: { type: "busy" } })
-        await send("session.status", { sessionID: "child", status: { type: "busy" } })
-        await send("session.status", { sessionID: "child", status: { type: "idle" } })
-        await send("permission.asked", { sessionID: "a", id: "p1" })
-        await send("permission.replied", { sessionID: "a", requestID: "p1", reply: "once" })
-        await send("session.idle", { sessionID: "a" })
-        await send("question.asked", { sessionID: "a", id: "q1" })
-        await send("question.rejected", { sessionID: "a", requestID: "q1" })
-        await send("message.updated", { sessionID: "a" })
+        // The plugin starts its helper without waiting, and the first run of a new script can take seconds
+        // (macOS scans it), so each step that makes a call waits until the helper has recorded it (PAD-112).
+        import { existsSync, readFileSync } from "node:fs"
+        const recorded = () => existsSync(process.env.CALLS) ? readFileSync(process.env.CALLS, "utf8").split("\\n").filter(Boolean).length : 0
+        const until = async (count) => {
+          for (let i = 0; i < 1000 && recorded() < count; i++) await new Promise((done) => setTimeout(done, 10))
+        }
+        // `count` is how many calls the helper has made once this event is handled
+        const send = async (count, type, properties) => { await hooks.event({ event: { type, properties } }); await until(count) }
+        await until(1)
+        await send(2, "session.status", { sessionID: "a", status: { type: "busy" } })
+        await send(2, "session.status", { sessionID: "child", status: { type: "busy" } })
+        await send(2, "session.status", { sessionID: "child", status: { type: "idle" } })
+        await send(3, "permission.asked", { sessionID: "a", id: "p1" })
+        await send(4, "permission.replied", { sessionID: "a", requestID: "p1", reply: "once" })
+        await send(5, "session.idle", { sessionID: "a" })
+        await send(6, "question.asked", { sessionID: "a", id: "q1" })
+        await send(7, "question.rejected", { sessionID: "a", requestID: "q1" })
+        await send(7, "message.updated", { sessionID: "a" })
         await new Promise((done) => setTimeout(done, 300))
         """.write(to: driver, atomically: true, encoding: .utf8)
         let calls = dir.appendingPathComponent("calls.txt")
-        try run("/usr/bin/env", ["node", driver.path], environment: ["PATH": bin.path + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? ""),
+        try run("/usr/bin/env", ["node", driver.path], environment: ["PATH": bin.path + ":" + NodeScriptTests.realNodeFolder + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? ""),
                                                              "CALLS": calls.path])
         // idle at load; the child going idle does not hide the parent; a reply does not end the turn; idle at the end
         let lines = try String(contentsOf: calls, encoding: .utf8).split(separator: "\n").map(String.init)
@@ -340,6 +358,19 @@ struct AgentStatusKitTests {
         #expect(spec.contains("com.docker.sandbox/agent-context@1") && guide.contains("### What Paddock refuses"))
         // blank lines stay empty on purpose (YAML allows it); every other line is indented
         #expect(guide.split(separator: "\n").allSatisfy { $0.hasPrefix("                ") })
+        // the written kit is valid YAML and its agent-context content is the guide (PAD-111)
+        guard case .object(let root) = try YAMLCoding.value(fromYAML: Data(spec.utf8)),
+              case .array(let capabilities)? = root["capabilities"] else {
+            Issue.record("the kit is not a YAML object with capabilities")
+            return
+        }
+        let contents: [String] = capabilities.compactMap {
+            guard case .object(let capability) = $0, capability["type"] == .string("com.docker.sandbox/agent-context@1"),
+                  case .object(let config)? = capability["config"], case .string(let text)? = config["content"] else { return nil }
+            return text
+        }
+        #expect(contents.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                == [SandboxGuide.context.trimmingCharacters(in: .whitespacesAndNewlines)])
         #expect(AgentStatusKit.watchArguments(sandbox: "paddock-app")
                 == ["exec", "-i", "paddock-app", "sh", "-c", SandboxWatchers.replaceScript, "paddock-watch", "paddock-agent-watch", SandboxWatchers.owner])
     }
