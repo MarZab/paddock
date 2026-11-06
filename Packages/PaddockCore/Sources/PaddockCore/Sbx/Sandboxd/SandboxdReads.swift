@@ -1,12 +1,12 @@
 import Foundation
 
 /// `SbxReads` straight from sandboxd's socket: the requests `sbx` itself sends, mapped to the shapes
-/// of its `--json` output. A private API, captured on sbx 0.49.2 (API 0.42.0) with
+/// of its `--json` output. A private API, captured on sbx 0.49.2 (API 0.42.0) and sbx 0.51.0 (API 0.49.0) with
 /// `scripts/socket-capture.py`; `FallbackSbxReads` uses it only after `checkHealth()` passed.
-/// Fixtures: Tests/PaddockCoreTests/Fixtures/sandboxd.
+/// Fixtures: Tests/PaddockCoreTests/Fixtures/sandboxd (0.42) and sandboxd/0.49.
 public struct SandboxdReads: SbxReads {
     /// sandboxd API versions (major.minor) whose answers were captured.
-    public static let supportedAPIVersions: Set<String> = ["0.42"]
+    public static let supportedAPIVersions: Set<String> = ["0.42", "0.49"]
     /// How long `/user-prompts` may take to replay the pending requests.
     static let replayTimeout: Duration = .seconds(10)
     /// How often `approvalUpdates` reads the list again without a line saying it changed.
@@ -188,15 +188,24 @@ private struct Sandbox: Decodable {
     /// Missing while sbx is still creating the sandbox, as in `sbx ls`.
     let createdAt: Date?
     let workspace: String
-    /// Always empty in the capture; how sbx lists them in `workspaces` is not known.
+    /// API 0.49: extra folders and the `sbxenv.yaml` of `sbx env create`; sbx lists each after
+    /// the workspace in `workspaces`, with `:ro` when read-only.
+    let additionalWorkspaces: [AdditionalWorkspace]?
+    /// Always empty in the captures; how sbx lists them in `workspaces` is not known.
     let runtimeMounts: [JSONValue]?
+
+    struct AdditionalWorkspace: Decodable {
+        let dir: String
+        let readOnly: Bool?
+    }
 
     func sbxSandbox() throws -> SbxSandbox {
         guard runtimeMounts?.isEmpty ?? true else {
             throw SandboxdError.unmapped(path: "/sandbox", message: "\(name) has runtime mounts")
         }
+        let extra = (additionalWorkspaces ?? []).map { $0.readOnly == true ? $0.dir + ":ro" : $0.dir }
         return SbxSandbox(name: name, id: id, agent: agent, status: status, lastUsedAt: lastUsedAt,
-                          workspaces: workspace.isEmpty ? [] : [workspace], createdAt: createdAt)
+                          workspaces: (workspace.isEmpty ? [] : [workspace]) + extra, createdAt: createdAt)
     }
 }
 

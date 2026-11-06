@@ -60,29 +60,37 @@ final class FakeSandboxdTransport: SandboxdTransport, @unchecked Sendable {
 }
 
 enum SandboxdFixture {
-    static func lines(_ name: String) throws -> [String] {
-        String(decoding: try Fixture.data("sandboxd", name), as: UTF8.self).split(separator: "\n").map(String.init)
+    /// The captured API versions: 0.42 in `sandboxd`, later ones in `sandboxd/<version>`.
+    static let apiVersions = ["0.42", "0.49"]
+
+    static func folder(_ api: String) -> String { api == "0.42" ? "sandboxd" : "sandboxd/\(api)" }
+
+    static func lines(_ name: String, api: String = "0.42") throws -> [String] {
+        String(decoding: try Fixture.data(folder(api), name), as: UTF8.self).split(separator: "\n").map(String.init)
     }
 
     /// sandboxd answering the way it did in the capture.
-    static func transport() throws -> FakeSandboxdTransport {
+    static func transport(api: String = "0.42") throws -> FakeSandboxdTransport {
         let transport = FakeSandboxdTransport()
-        transport.respond(to: "/daemon/health", with: try Fixture.data("sandboxd", "daemon-health.json"))
-        transport.respond(to: "/sandbox", with: try Fixture.data("sandboxd", "sandbox.json"))
-        transport.respond(to: "/policy/network/rules?type=all", with: try Fixture.data("sandboxd", "policy-network-rules.json"))
-        transport.respond(to: "/policy/network/log", with: try Fixture.data("sandboxd", "policy-network-log.json"))
-        transport.stream("/user-prompts", lines: try lines("user-prompts.ndjson"))
+        let dir = folder(api)
+        transport.respond(to: "/daemon/health", with: try Fixture.data(dir, "daemon-health.json"))
+        transport.respond(to: "/sandbox", with: try Fixture.data(dir, "sandbox.json"))
+        transport.respond(to: "/policy/network/rules?type=all", with: try Fixture.data(dir, "policy-network-rules.json"))
+        transport.respond(to: "/policy/network/log", with: try Fixture.data(dir, "policy-network-log.json"))
+        transport.stream("/user-prompts", lines: try lines("user-prompts.ndjson", api: api))
+        // The events' shape did not change in 0.49; only 0.42's stream is kept.
         transport.stream("/events", lines: try SandboxStatesTests().fixtureLines())
         return transport
     }
 
     /// sbx's CLI printing what it printed for the same answers.
-    static func runner() throws -> FakeRunner {
+    static func runner(api: String = "0.42") throws -> FakeRunner {
         let runner = FakeRunner()
-        runner.respond(to: ["ls", "--json"], with: try Fixture.data("sandboxd", "cli-ls.json"))
-        runner.respond(to: ["policy", "ls", "--json"], with: try Fixture.data("sandboxd", "cli-policy-ls.json"))
-        runner.respond(to: ["policy", "log", "--json"], with: try Fixture.data("sandboxd", "cli-policy-log.json"))
-        runner.respond(to: ["policy", "approval", "ls", "--json"], with: try Fixture.data("sandboxd", "cli-policy-approval-ls.json"))
+        let dir = folder(api)
+        runner.respond(to: ["ls", "--json"], with: try Fixture.data(dir, "cli-ls.json"))
+        runner.respond(to: ["policy", "ls", "--json"], with: try Fixture.data(dir, "cli-policy-ls.json"))
+        runner.respond(to: ["policy", "log", "--json"], with: try Fixture.data(dir, "cli-policy-log.json"))
+        runner.respond(to: ["policy", "approval", "ls", "--json"], with: try Fixture.data(dir, "cli-policy-approval-ls.json"))
         return runner
     }
 }
@@ -92,23 +100,36 @@ enum SandboxdFixture {
 struct SandboxdReadsTests {
     let sbx = URL(fileURLWithPath: "/sbx")
 
-    @Test func sandboxesMatchSbxLs() async throws {
-        let reads = SandboxdReads(transport: try SandboxdFixture.transport())
-        let expected = try Fixture.decode([SbxSandbox].self, "sandboxd", "cli-ls.json")
+    @Test(arguments: SandboxdFixture.apiVersions)
+    func sandboxesMatchSbxLs(api: String) async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        let expected = try Fixture.decode([SbxSandbox].self, SandboxdFixture.folder(api), "cli-ls.json")
         #expect(try await reads.sandboxes() == expected)
         #expect(!expected.isEmpty)
     }
 
-    @Test func rulesMatchSbxPolicyLs() async throws {
-        let reads = SandboxdReads(transport: try SandboxdFixture.transport())
-        let expected = try Fixture.decode(SbxPolicyList.self, "sandboxd", "cli-policy-ls.json")
+    /// API 0.49 lists extra folders and the env file apart; sbx puts them in `workspaces`, read-only ones with `:ro`.
+    @Test func extraWorkspacesFollowTheWorkspace() async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: "0.49"))
+        let sandboxes = try await reads.sandboxes()
+        let withExtras = try #require(sandboxes.first { $0.workspaces.count > 2 })
+        #expect(withExtras.workspaces.dropFirst().allSatisfy { $0.hasSuffix(":ro") })
+        #expect(sandboxes.allSatisfy { $0.workspaces.contains { $0.hasSuffix("/sbxenv.yaml:ro") } })
+        #expect(try await reads.checkHealth().apiVersion == "0.49.0")
+    }
+
+    @Test(arguments: SandboxdFixture.apiVersions)
+    func rulesMatchSbxPolicyLs(api: String) async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        let expected = try Fixture.decode(SbxPolicyList.self, SandboxdFixture.folder(api), "cli-policy-ls.json")
         #expect(try await reads.policies(sandbox: nil) == expected)
     }
 
     /// `sbx policy ls N` keeps the global rules and N's own (checked against the capture).
-    @Test func rulesForOneSandbox() async throws {
-        let reads = SandboxdReads(transport: try SandboxdFixture.transport())
-        let all = try Fixture.decode(SbxPolicyList.self, "sandboxd", "cli-policy-ls.json").rules
+    @Test(arguments: SandboxdFixture.apiVersions)
+    func rulesForOneSandbox(api: String) async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        let all = try Fixture.decode(SbxPolicyList.self, SandboxdFixture.folder(api), "cli-policy-ls.json").rules
         let name = try #require(all.compactMap(\.sandboxScope).first)
         let rules = try await reads.policies(sandbox: name).rules
         #expect(rules == all.filter { $0.isGlobal || $0.sandboxScope == name })
@@ -116,18 +137,20 @@ struct SandboxdReadsTests {
         #expect(rules.allSatisfy { $0.isGlobal || $0.sandboxScope == name })
     }
 
-    @Test func logMatchesSbxPolicyLog() async throws {
-        let reads = SandboxdReads(transport: try SandboxdFixture.transport())
-        let expected = try Fixture.decode(SbxPolicyLog.self, "sandboxd", "cli-policy-log.json")
+    @Test(arguments: SandboxdFixture.apiVersions)
+    func logMatchesSbxPolicyLog(api: String) async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        let expected = try Fixture.decode(SbxPolicyLog.self, SandboxdFixture.folder(api), "cli-policy-log.json")
         let log = try await reads.policyLog(sandbox: nil)
         #expect(log == expected)
         // sbx drops the empty rule of an allowed host that no rule named
         #expect(log.allowed.contains { $0.rule == nil })
     }
 
-    @Test func logForOneSandbox() async throws {
-        let reads = SandboxdReads(transport: try SandboxdFixture.transport())
-        let all = try Fixture.decode(SbxPolicyLog.self, "sandboxd", "cli-policy-log.json")
+    @Test(arguments: SandboxdFixture.apiVersions)
+    func logForOneSandbox(api: String) async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        let all = try Fixture.decode(SbxPolicyLog.self, SandboxdFixture.folder(api), "cli-policy-log.json")
         let name = try #require(all.blocked.first?.sandboxId)
         let log = try await reads.policyLog(sandbox: name)
         #expect(log == SbxPolicyLog(allowed: all.allowed.filter { $0.sandboxId == name },
@@ -135,9 +158,10 @@ struct SandboxdReadsTests {
         #expect(!log.blocked.isEmpty)
     }
 
-    @Test func approvalsMatchSbxPolicyApprovalLs() async throws {
-        let reads = SandboxdReads(transport: try SandboxdFixture.transport())
-        let expected = try Fixture.decode([SbxApproval].self, "sandboxd", "cli-policy-approval-ls.json")
+    @Test(arguments: SandboxdFixture.apiVersions)
+    func approvalsMatchSbxPolicyApprovalLs(api: String) async throws {
+        let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        let expected = try Fixture.decode([SbxApproval].self, SandboxdFixture.folder(api), "cli-policy-approval-ls.json")
         #expect(try await reads.approvals() == expected)
         #expect(!expected.isEmpty)
     }

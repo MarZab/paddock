@@ -19,6 +19,7 @@ does not rewrite fixtures other tests rely on.
 """
 
 import fnmatch
+import ipaddress
 import json
 import re
 import sys
@@ -54,8 +55,16 @@ class Sanitizer:
 
     def is_public(self, host):
         bare = host.split(":")[0]
-        if bare in ("localhost", "host.docker.internal") or re.fullmatch(r"[\d.]+", bare):
+        if bare in ("localhost", "host.docker.internal"):
             return True
+        # Loopback and private addresses say nothing about the operator; a public one (a server
+        # the agent tried to reach) does, and becomes a documentation address (host()).
+        if re.fullmatch(r"[\d.]+", bare):
+            try:
+                address = ipaddress.ip_address(bare)
+            except ValueError:
+                return True
+            return address.is_private or address.is_loopback
         for pattern in self.default_resources:
             p = pattern.split(":")[0].replace("**.", "*.")
             if fnmatch.fnmatch(bare, p) or bare == p.lstrip("*."):
@@ -72,7 +81,10 @@ class Sanitizer:
             value = value[len(prefix):]
         hostpart, _, port = value.partition(":")
         if hostpart not in self.hosts:
-            self.hosts[hostpart] = "host%d.example.test" % (len(self.hosts) + 1)
+            if re.fullmatch(r"[\d.]+", hostpart):
+                self.hosts[hostpart] = "203.0.113.%d" % (len(self.hosts) + 1)
+            else:
+                self.hosts[hostpart] = "host%d.example.test" % (len(self.hosts) + 1)
         return prefix + self.hosts[hostpart] + (":" + port if port else "")
 
     def text(self, value):
@@ -162,7 +174,7 @@ def main():
                 entry["sandbox_id"] = s.name(entry["sandbox_id"])
                 entry["host"] = s.host(entry["host"])
                 if isinstance(entry.get("rule"), str):
-                    entry["rule"] = s.text(entry["rule"]).replace(bare, entry["host"].split(":")[0])
+                    entry["rule"] = s.text(entry["rule"].replace(bare, entry["host"].split(":")[0]))
                 entries.append(entry)
             out[kind] = entries
         return out
@@ -256,7 +268,9 @@ def main():
 
 def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
     """sandboxd's answers to the requests `sbx` sent in the newest `socket-capture.py proxy --swap`
-    run, next to what that sbx command printed, so tests can check the mapping against sbx itself."""
+    run, next to what that sbx command printed, so tests can check the mapping against sbx itself.
+    API 0.42 (the first capture) writes to sandboxd/, any later API to sandboxd/<major.minor>/
+    (without the event streams)."""
     runs = sorted((RAW / "socket").glob("proxy-swap-*/traffic.ndjson"))
     if not runs:
         return
@@ -288,17 +302,60 @@ def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
     def cli(name):
         return json.loads((run / name).read_text())
 
+    health = answers[("GET", "/daemon/health", "")]["body"]
+    api = ".".join(health["api_version"].split(".")[:2])
+    folder = "sandboxd/" if api == "0.42" else "sandboxd/%s/" % api
+
+    def check_leftovers():
+        leftover = [str(p.relative_to(FIX)) for p in (FIX / folder).rglob("*")
+                    if p.is_file() and any(h != "/Users/operator" for h in HOME_RE.findall(p.read_text()))]
+        if leftover:
+            sys.exit("home paths left in: " + ", ".join(leftover))
+
+    def write_api(rel, data, ndjson=False):
+        write(folder + rel.removeprefix("sandboxd/"), data, ndjson=ndjson)
+
+    # Every path a sandbox names (its workspace, extra folders, sbxenv.yaml, mounts), the same way in
+    # sandboxd's answer and sbx's output: a sandbox's workspace becomes /Users/operator/Projects/<its name>.
+    sandboxes = answers[("GET", "/sandbox", "")]["body"]
+    roots = sorted(((sb["workspace"], s.name(sb["name"])) for sb in sandboxes if sb.get("workspace")),
+                   key=lambda r: -len(r[0]))
+
+    def clean_path(path):
+        for raw, name in roots:
+            if path == raw or path.startswith(raw + "/"):
+                return "/Users/operator/Projects/" + name + path[len(raw):]
+        return s.text(path)
+
+    def clean_spec(spec):
+        """`path`, `path:ro`, or `host:target[:ro]` (sbx ls mounts)."""
+        parts = spec.split(":")
+        flag = [parts.pop()] if parts[-1] == "ro" else []
+        return ":".join([clean_path(p) for p in parts] + flag)
+
     def clean_sandbox(sb):
         sb = dict(sb)
         sb["name"] = s.name(sb["name"])
         sb["agent"] = sb["agent"] if sb["agent"] in ("claude", "codex", "shell", "opencode") else "claude"
         sb["workspace"] = "/Users/operator/Projects/" + sb["name"]
+        for key in ("working_dir", "effective_working_dir"):
+            if sb.get(key):
+                sb[key] = clean_path(sb[key])
+        if "additional_workspaces" in sb:
+            sb["additional_workspaces"] = [dict(w, dir=clean_path(w["dir"])) for w in sb["additional_workspaces"]]
+        if "host_mounts" in sb:
+            sb["host_mounts"] = [dict(m, host_path=clean_path(m["host_path"]), container_target=clean_path(m["container_target"]))
+                                 for m in sb["host_mounts"]]
         labels = {k: s.text(v) for k, v in sb.get("labels", {}).items()}
         for k in ("com.docker.sandbox.name", "com.docker.sandbox.agent"):
             if k in labels:
                 labels[k] = sb["name"] if k.endswith("name") else sb["agent"]
         if "com.docker.sandbox.workingDirectory" in labels:
             labels["com.docker.sandbox.workingDirectory"] = sb["workspace"]
+        if "com.docker.sandbox.kit-workspace-dir" in labels:
+            labels["com.docker.sandbox.kit-workspace-dir"] = sb["workspace"]
+        if "com.docker.sandbox.kit-lock" in labels:
+            labels["com.docker.sandbox.kit-lock"] = "{}"
         if "com.docker.sandbox.kits" in labels:
             labels["com.docker.sandbox.kits"] = "[]"
         sb["labels"] = labels
@@ -308,7 +365,9 @@ def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
         sb = dict(sb)
         sb["name"] = s.name(sb["name"])
         sb["agent"] = sb["agent"] if sb["agent"] in ("claude", "codex", "shell", "opencode") else "claude"
-        sb["workspaces"] = ["/Users/operator/Projects/" + sb["name"] for _ in sb["workspaces"]]
+        sb["workspaces"] = [clean_spec(w) for w in sb["workspaces"]]
+        if "mounts" in sb:
+            sb["mounts"] = [clean_spec(m) for m in sb["mounts"]]
         return sb
 
     def clean_hosts(log):
@@ -319,20 +378,24 @@ def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
             out[kind] = [{**{k: v for k, v in h.items() if k != "sandbox_id"}, "vm_name": h["sandbox_id"]} for h in cleaned]
         return out
 
-    health = answers[("GET", "/daemon/health", "")]["body"]
-    write("sandboxd/daemon-health.json", health)
-    write("sandboxd/sandbox.json", [clean_sandbox(sb) for sb in answers[("GET", "/sandbox", "")]["body"]])
-    write("sandboxd/cli-ls.json", [clean_cli_sandbox(sb) for sb in cli("ls.out")])
+    write_api("sandboxd/daemon-health.json", health)
+    write_api("sandboxd/sandbox.json", [clean_sandbox(sb) for sb in answers[("GET", "/sandbox", "")]["body"]])
+    write_api("sandboxd/cli-ls.json", [clean_cli_sandbox(sb) for sb in cli("ls.out")])
     rules = answers[("GET", "/policy/network/rules", "type=all")]["body"]
-    write("sandboxd/policy-network-rules.json", {**rules, "rules": [clean_rule(r) for r in rules["rules"]]})
-    write("sandboxd/cli-policy-ls.json", {"rules": [clean_rule(r) for r in cli("policy-ls.out")["rules"]]})
-    write("sandboxd/policy-network-log.json", clean_hosts(answers[("GET", "/policy/network/log", "")]["body"]))
-    write("sandboxd/cli-policy-log.json", clean_log(cli("policy-log.out")))
+    write_api("sandboxd/policy-network-rules.json", {**rules, "rules": [clean_rule(r) for r in rules["rules"]]})
+    write_api("sandboxd/cli-policy-ls.json", {"rules": [clean_rule(r) for r in cli("policy-ls.out")["rules"]]})
+    write_api("sandboxd/policy-network-log.json", clean_hosts(answers[("GET", "/policy/network/log", "")]["body"]))
+    write_api("sandboxd/cli-policy-log.json", clean_log(cli("policy-log.out")))
     prompts = []
     for event in streams[("GET", "/user-prompts", "")][1]:
         prompts.append({**event, "prompt": clean_approval(event["prompt"])} if "prompt" in event else event)
-    write("sandboxd/user-prompts.ndjson", prompts, ndjson=True)
-    write("sandboxd/cli-policy-approval-ls.json", [clean_approval(a) for a in cli("policy-approval-ls.out")])
+    write_api("sandboxd/user-prompts.ndjson", prompts, ndjson=True)
+    write_api("sandboxd/cli-policy-approval-ls.json", [clean_approval(a) for a in cli("policy-approval-ls.out")])
+
+    # Later APIs keep only the answers paired with sbx output above; the events' shape is 0.42's.
+    if api != "0.42":
+        check_leftovers()
+        return
 
     # The first `sbx events` stream: its replay is the log above; with its live events up to the last
     # log sbx read, it is that log too. The rest (a sandbox created and started) goes in events-more.
@@ -351,19 +414,16 @@ def sandboxd_fixtures(s, clean_rule, clean_log, clean_approval):
             bare = data["host"].split(":")[0]
             data["host"] = s.host(data["host"])
             if isinstance(data.get("rule"), str):
-                data["rule"] = s.text(data["rule"]).replace(bare, data["host"].split(":")[0])
+                data["rule"] = s.text(data["rule"].replace(bare, data["host"].split(":")[0]))
             ev["data"] = data
         return ev
 
     stream = [e for e in entries if e["dir"] == "stream" and e.get("conn") == events_conn]
-    write("sandboxd/events.ndjson", [clean_event(e["event"]) for e in stream if e["t"] <= cut], ndjson=True)
-    write("sandboxd/events-more.ndjson", [clean_event(e["event"]) for e in stream if e["t"] > cut], ndjson=True)
-    write("sandboxd/policy-network-log-later.json", clean_hosts(logs[-1]["body"]))
+    write_api("sandboxd/events.ndjson", [clean_event(e["event"]) for e in stream if e["t"] <= cut], ndjson=True)
+    write_api("sandboxd/events-more.ndjson", [clean_event(e["event"]) for e in stream if e["t"] > cut], ndjson=True)
+    write_api("sandboxd/policy-network-log-later.json", clean_hosts(logs[-1]["body"]))
 
-    leftover = [str(p.relative_to(FIX)) for p in (FIX / "sandboxd").rglob("*")
-                if p.is_file() and any(h != "/Users/operator" for h in HOME_RE.findall(p.read_text()))]
-    if leftover:
-        sys.exit("home paths left in: " + ", ".join(leftover))
+    check_leftovers()
 
 
 if __name__ == "__main__":

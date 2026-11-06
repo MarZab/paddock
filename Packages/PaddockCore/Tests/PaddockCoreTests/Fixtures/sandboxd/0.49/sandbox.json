@@ -1,0 +1,311 @@
+[
+  {
+    "additional_workspaces": [
+      {
+        "dir": "/Users/operator/Projects/project-f/sbxenv.yaml",
+        "read_only": true
+      }
+    ],
+    "agent": "claude",
+    "created_at": "2026-11-04T20:46:36+01:00",
+    "effective_working_dir": "/Users/operator/Projects/project-f",
+    "host_mounts": [
+      {
+        "container_target": "/Users/operator/Projects/project-f",
+        "host_path": "/Users/operator/Projects/project-f",
+        "read_only": false
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-f/sbxenv.yaml",
+        "host_path": "/Users/operator/Projects/project-f/sbxenv.yaml",
+        "read_only": true
+      },
+      {
+        "container_target": "/home/agent/.claude/skills",
+        "host_path": "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills",
+        "read_only": true
+      }
+    ],
+    "id": "82880447-a3ef-4b22-b369-ca69b9a0e223",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.container.fuse": "true",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.agent-start-script": "sha256:2fe707327ff7b6e1ee2d9c75ef9112aa6e2ff6fb25ae5e6590950c6a8fe03f25",
+      "com.docker.sandbox.createdVersion": "v0.51.0",
+      "com.docker.sandbox.kit-base-image": "sandbox-kit-assembled:43ac77d7a099580c",
+      "com.docker.sandbox.kit-base-template": "docker.io/sbx/claude@sha256:08f84b5bc4e903c88e15a12e596f8d9167d8eb09df8eedec3f1623989170c38d",
+      "com.docker.sandbox.kit-lock": "{}",
+      "com.docker.sandbox.kit-workspace-dir": "/Users/operator/Projects/project-f",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-f",
+      "com.docker.sandbox.skillsReserved": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha014",
+      "com.docker.sdk.container": "0.1.0-alpha017",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-11-05T10:05:34.313623Z",
+    "name": "project-f",
+    "runtime_mounts": [],
+    "status": "stopped",
+    "working_dir": "",
+    "workspace": "/Users/operator/Projects/project-f"
+  },
+  {
+    "additional_workspaces": [
+      {
+        "dir": "/Users/operator/Projects/project-f",
+        "read_only": true
+      },
+      {
+        "dir": "/Users/operator/Projects/project-h",
+        "read_only": true
+      },
+      {
+        "dir": "/Users/operator/Projects/project-g/sbxenv.yaml",
+        "read_only": true
+      }
+    ],
+    "agent": "claude",
+    "created_at": "2026-11-04T18:36:12+01:00",
+    "detached": true,
+    "effective_working_dir": "/Users/operator/Projects/project-g",
+    "host_mounts": [
+      {
+        "container_target": "/Users/operator/Projects/project-g",
+        "host_path": "/Users/operator/Projects/project-g",
+        "read_only": false
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-f",
+        "host_path": "/Users/operator/Projects/project-f",
+        "read_only": true
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-h",
+        "host_path": "/Users/operator/Projects/project-h",
+        "read_only": true
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-g/sbxenv.yaml",
+        "host_path": "/Users/operator/Projects/project-g/sbxenv.yaml",
+        "read_only": true
+      },
+      {
+        "container_target": "/home/agent/.claude/skills",
+        "host_path": "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills",
+        "read_only": true
+      }
+    ],
+    "id": "022eaff8-16fb-4011-abca-ab384a9bfbcb",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.container.fuse": "true",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.agent-start-script": "sha256:2fe707327ff7b6e1ee2d9c75ef9112aa6e2ff6fb25ae5e6590950c6a8fe03f25",
+      "com.docker.sandbox.createdVersion": "v0.51.0",
+      "com.docker.sandbox.kit-base-image": "sandbox-kit-assembled:a867c43ab774bf68",
+      "com.docker.sandbox.kit-base-template": "docker.io/sbx/claude@sha256:08f84b5bc4e903c88e15a12e596f8d9167d8eb09df8eedec3f1623989170c38d",
+      "com.docker.sandbox.kit-lock": "{}",
+      "com.docker.sandbox.kit-workspace-dir": "/Users/operator/Projects/project-g",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-g",
+      "com.docker.sandbox.skillsReserved": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha014",
+      "com.docker.sdk.container": "0.1.0-alpha017",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-11-06T07:29:58.001357Z",
+    "name": "project-g",
+    "ports": [
+      {
+        "host_ip": "127.0.0.1",
+        "host_port": 49164,
+        "protocol": "tcp",
+        "sandbox_port": 38323
+      },
+      {
+        "host_ip": "::1",
+        "host_port": 49164,
+        "protocol": "tcp",
+        "sandbox_port": 38323
+      }
+    ],
+    "runtime_mounts": [],
+    "status": "running",
+    "working_dir": "",
+    "workspace": "/Users/operator/Projects/project-g"
+  },
+  {
+    "additional_workspaces": [
+      {
+        "dir": "/Users/operator/Projects/project-h/sbxenv.yaml",
+        "read_only": true
+      }
+    ],
+    "agent": "claude",
+    "created_at": "2026-11-04T18:47:13+01:00",
+    "effective_working_dir": "/Users/operator/Projects/project-h",
+    "host_mounts": [
+      {
+        "container_target": "/Users/operator/Projects/project-h",
+        "host_path": "/Users/operator/Projects/project-h",
+        "read_only": false
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-h/sbxenv.yaml",
+        "host_path": "/Users/operator/Projects/project-h/sbxenv.yaml",
+        "read_only": true
+      },
+      {
+        "container_target": "/home/agent/.claude/skills",
+        "host_path": "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills",
+        "read_only": true
+      }
+    ],
+    "id": "8c6e43cf-62a0-453e-ae47-c9dfbe53f8dd",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.container.fuse": "true",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.agent-start-script": "sha256:2fe707327ff7b6e1ee2d9c75ef9112aa6e2ff6fb25ae5e6590950c6a8fe03f25",
+      "com.docker.sandbox.createdVersion": "v0.51.0",
+      "com.docker.sandbox.kit-base-image": "sandbox-kit-assembled:2d4117b904236d77",
+      "com.docker.sandbox.kit-base-template": "docker.io/sbx/claude@sha256:08f84b5bc4e903c88e15a12e596f8d9167d8eb09df8eedec3f1623989170c38d",
+      "com.docker.sandbox.kit-lock": "{}",
+      "com.docker.sandbox.kit-workspace-dir": "/Users/operator/Projects/project-h",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-h",
+      "com.docker.sandbox.skillsReserved": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha014",
+      "com.docker.sdk.container": "0.1.0-alpha017",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-11-06T07:21:46.525022Z",
+    "name": "project-h",
+    "runtime_mounts": [],
+    "status": "running",
+    "working_dir": "",
+    "workspace": "/Users/operator/Projects/project-h"
+  },
+  {
+    "additional_workspaces": [
+      {
+        "dir": "/Users/operator/Projects/project-i/sbxenv.yaml",
+        "read_only": true
+      }
+    ],
+    "agent": "claude",
+    "created_at": "2026-11-05T11:26:05+01:00",
+    "effective_working_dir": "/Users/operator/Projects/project-i",
+    "host_mounts": [
+      {
+        "container_target": "/Users/operator/Projects/project-i",
+        "host_path": "/Users/operator/Projects/project-i",
+        "read_only": false
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-i/sbxenv.yaml",
+        "host_path": "/Users/operator/Projects/project-i/sbxenv.yaml",
+        "read_only": true
+      },
+      {
+        "container_target": "/home/agent/.claude/skills",
+        "host_path": "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills",
+        "read_only": true
+      }
+    ],
+    "id": "cdd6586f-a5b6-44f4-aeb5-d4631fc931d2",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.container.fuse": "true",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.agent-start-script": "sha256:2fe707327ff7b6e1ee2d9c75ef9112aa6e2ff6fb25ae5e6590950c6a8fe03f25",
+      "com.docker.sandbox.createdVersion": "v0.51.0",
+      "com.docker.sandbox.kit-base-image": "sandbox-kit-assembled:6a0b3b3b526f48ba",
+      "com.docker.sandbox.kit-base-template": "docker.io/sbx/claude@sha256:094216016077ccaedc8527015997a44dedd6e9892e86c3026f3b9fe9e5f8ac37",
+      "com.docker.sandbox.kit-lock": "{}",
+      "com.docker.sandbox.kit-workspace-dir": "/Users/operator/Projects/project-i",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-i",
+      "com.docker.sandbox.skillsReserved": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha014",
+      "com.docker.sdk.container": "0.1.0-alpha017",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-11-06T07:21:11.517771Z",
+    "name": "project-i",
+    "runtime_mounts": [],
+    "status": "running",
+    "working_dir": "",
+    "workspace": "/Users/operator/Projects/project-i"
+  },
+  {
+    "additional_workspaces": [
+      {
+        "dir": "/Users/operator/Projects/project-e/sbxenv.yaml",
+        "read_only": true
+      }
+    ],
+    "agent": "claude",
+    "created_at": "2026-11-04T19:09:49+01:00",
+    "detached": true,
+    "effective_working_dir": "/Users/operator/Projects/project-e",
+    "host_mounts": [
+      {
+        "container_target": "/Users/operator/Projects/project-e",
+        "host_path": "/Users/operator/Projects/project-e",
+        "read_only": false
+      },
+      {
+        "container_target": "/Users/operator/Projects/project-e/sbxenv.yaml",
+        "host_path": "/Users/operator/Projects/project-e/sbxenv.yaml",
+        "read_only": true
+      },
+      {
+        "container_target": "/home/agent/.claude/skills",
+        "host_path": "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills",
+        "read_only": true
+      }
+    ],
+    "id": "f60661c0-e9ac-4781-9636-1652eee12c28",
+    "labels": {
+      "com.docker.container.etc-hosts": "disabled",
+      "com.docker.container.fuse": "true",
+      "com.docker.sandbox.agent": "claude",
+      "com.docker.sandbox.agent-start-script": "sha256:2fe707327ff7b6e1ee2d9c75ef9112aa6e2ff6fb25ae5e6590950c6a8fe03f25",
+      "com.docker.sandbox.createdVersion": "v0.51.0",
+      "com.docker.sandbox.kit-base-image": "sandbox-kit-assembled:6ea852faa943c18b",
+      "com.docker.sandbox.kit-base-template": "docker.io/sbx/claude@sha256:08f84b5bc4e903c88e15a12e596f8d9167d8eb09df8eedec3f1623989170c38d",
+      "com.docker.sandbox.kit-lock": "{}",
+      "com.docker.sandbox.kit-workspace-dir": "/Users/operator/Projects/project-e",
+      "com.docker.sandbox.kits": "[]",
+      "com.docker.sandbox.name": "project-e",
+      "com.docker.sandbox.skillsReserved": "true",
+      "com.docker.sandbox.usesWorktree": "false",
+      "com.docker.sdk": "true",
+      "com.docker.sdk.client": "0.1.0-alpha014",
+      "com.docker.sdk.container": "0.1.0-alpha017",
+      "com.docker.sdk.lang": "go",
+      "docker/sandbox": "true"
+    },
+    "last_used_at": "2026-11-06T07:30:09.854578Z",
+    "name": "project-e",
+    "runtime_mounts": [],
+    "status": "running",
+    "working_dir": "",
+    "workspace": "/Users/operator/Projects/project-e"
+  }
+]

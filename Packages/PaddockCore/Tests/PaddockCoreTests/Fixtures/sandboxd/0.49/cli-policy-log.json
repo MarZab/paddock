@@ -1,0 +1,1753 @@
+{
+  "allowed": [
+    {
+      "sandbox_id": "project-g",
+      "host": "registry.npmjs.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 376,
+      "first_seen": "2026-11-06T07:59:41.801801+01:00",
+      "last_seen": "2026-11-06T08:30:52.919213+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "api.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 853,
+      "first_seen": "2026-11-05T11:13:05.401251+01:00",
+      "last_seen": "2026-11-06T08:30:34.736364+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "api.github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 6,
+      "first_seen": "2026-11-06T08:21:46.795669+01:00",
+      "last_seen": "2026-11-06T08:30:22.392053+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "api.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 323,
+      "first_seen": "2026-11-04T18:36:24.124314+01:00",
+      "last_seen": "2026-11-06T08:30:13.173368+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "downloads.claude.ai:443",
+      "proxy_type": "forward-bypass",
+      "count": 159,
+      "first_seen": "2026-11-05T11:13:11.726346+01:00",
+      "last_seen": "2026-11-06T08:30:05.042034+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "downloads.claude.ai:443",
+      "proxy_type": "forward-bypass",
+      "count": 65,
+      "first_seen": "2026-11-04T15:32:25.382601+01:00",
+      "last_seen": "2026-11-06T08:29:38.202254+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "api.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 470,
+      "first_seen": "2026-11-04T15:26:44.052536+01:00",
+      "last_seen": "2026-11-06T08:29:24.784233+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "api.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 418,
+      "first_seen": "2026-11-04T16:21:40.164089+01:00",
+      "last_seen": "2026-11-06T08:29:06.384971+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "deb.debian.org:80",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-06T08:21:45.499207+01:00",
+      "last_seen": "2026-11-06T08:26:18.141392+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "dhi.io:80",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-06T08:21:45.518625+01:00",
+      "last_seen": "2026-11-06T08:26:18.136658+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "host18.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 4,
+      "first_seen": "2026-11-06T08:24:37.567269+01:00",
+      "last_seen": "2026-11-06T08:24:49.944353+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "host19.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-06T08:24:38.057583+01:00",
+      "last_seen": "2026-11-06T08:24:42.30755+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "swift.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-06T08:24:37.95883+01:00",
+      "last_seen": "2026-11-06T08:24:42.240284+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "mise-versions.jdx.dev:443",
+      "proxy_type": "forward-bypass",
+      "count": 5,
+      "first_seen": "2026-11-06T08:21:58.408517+01:00",
+      "last_seen": "2026-11-06T08:24:41.844406+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "downloads.claude.ai:443",
+      "proxy_type": "forward-bypass",
+      "count": 46,
+      "first_seen": "2026-11-04T16:21:44.326421+01:00",
+      "last_seen": "2026-11-06T08:23:50.906287+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-06T08:23:09.385635+01:00",
+      "last_seen": "2026-11-06T08:23:09.385635+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "github.com:22",
+      "proxy_type": "transparent",
+      "count": 2,
+      "first_seen": "2026-11-06T08:23:03.663998+01:00",
+      "last_seen": "2026-11-06T08:23:05.692251+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "mcp-proxy.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 1,
+      "first_seen": "2026-11-06T08:21:47.078411+01:00",
+      "last_seen": "2026-11-06T08:21:47.078411+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "host2.example.test:80",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "count": 48,
+      "first_seen": "2026-11-04T16:21:44.25107+01:00",
+      "last_seen": "2026-11-06T08:21:46.779175+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "platform.claude.com:443",
+      "proxy_type": "forward",
+      "count": 3,
+      "first_seen": "2026-11-05T02:01:01.838886+01:00",
+      "last_seen": "2026-11-06T08:21:45.511661+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "fonts.gstatic.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 17,
+      "first_seen": "2026-11-06T08:01:01.465096+01:00",
+      "last_seen": "2026-11-06T08:18:50.891346+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "fonts.googleapis.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 18,
+      "first_seen": "2026-11-06T08:00:29.708828+01:00",
+      "last_seen": "2026-11-06T08:18:50.725496+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "downloads.claude.ai:443",
+      "proxy_type": "forward-bypass",
+      "count": 31,
+      "first_seen": "2026-11-04T18:39:53.331764+01:00",
+      "last_seen": "2026-11-06T08:02:44.455779+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host28.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 57,
+      "first_seen": "2026-11-04T20:36:03.781561+01:00",
+      "last_seen": "2026-11-06T07:59:43.144859+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "mcp-proxy.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 5,
+      "first_seen": "2026-11-04T18:39:53.632964+01:00",
+      "last_seen": "2026-11-06T07:59:42.921952+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host2.example.test:80",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "count": 42,
+      "first_seen": "2026-11-04T18:39:53.288834+01:00",
+      "last_seen": "2026-11-06T07:59:42.625668+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "api.github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 4,
+      "first_seen": "2026-11-04T18:39:53.335951+01:00",
+      "last_seen": "2026-11-06T07:59:42.589385+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "platform.claude.com:443",
+      "proxy_type": "forward",
+      "count": 3,
+      "first_seen": "2026-11-04T23:46:59.581439+01:00",
+      "last_seen": "2026-11-06T07:59:40.794631+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "dhi.io:80",
+      "proxy_type": "forward",
+      "count": 3,
+      "first_seen": "2026-11-04T18:37:00.13182+01:00",
+      "last_seen": "2026-11-06T07:59:40.677132+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "deb.debian.org:80",
+      "proxy_type": "forward",
+      "count": 3,
+      "first_seen": "2026-11-04T18:37:00.120375+01:00",
+      "last_seen": "2026-11-06T07:59:40.63538+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host2.example.test:80",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "count": 67,
+      "first_seen": "2026-11-04T15:32:24.622339+01:00",
+      "last_seen": "2026-11-06T07:58:22.966285+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host2.example.test:80",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "count": 60,
+      "first_seen": "2026-11-05T11:13:11.66815+01:00",
+      "last_seen": "2026-11-06T07:58:18.478785+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host25.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 95,
+      "first_seen": "2026-11-05T11:47:53.604625+01:00",
+      "last_seen": "2026-11-06T07:23:41.40786+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host25.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 67,
+      "first_seen": "2026-11-04T19:51:25.127203+01:00",
+      "last_seen": "2026-11-06T07:23:23.170655+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "platform.claude.com:443",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-05T17:11:33.826412+01:00",
+      "last_seen": "2026-11-06T02:58:37.946418+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "platform.claude.com:443",
+      "proxy_type": "forward",
+      "count": 5,
+      "first_seen": "2026-11-05T01:29:44.809473+01:00",
+      "last_seen": "2026-11-06T02:09:55.376069+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host6.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 16,
+      "first_seen": "2026-11-04T19:51:25.11905+01:00",
+      "last_seen": "2026-11-05T16:02:15.64769+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host6.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 12,
+      "first_seen": "2026-11-05T11:48:18.573009+01:00",
+      "last_seen": "2026-11-05T15:54:13.768603+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "mcp-proxy.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 6,
+      "first_seen": "2026-11-05T11:13:12.074888+01:00",
+      "last_seen": "2026-11-05T15:21:38.398583+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:1433",
+      "proxy_type": "transparent",
+      "count": 3420,
+      "first_seen": "2026-11-04T20:09:11.287279+01:00",
+      "last_seen": "2026-11-05T15:09:44.796061+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host15.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 90,
+      "first_seen": "2026-11-04T19:31:07.916585+01:00",
+      "last_seen": "2026-11-05T15:09:36.9378+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "dc.services.visualstudio.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 554,
+      "first_seen": "2026-11-04T19:31:59.278828+01:00",
+      "last_seen": "2026-11-05T15:09:35.811174+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:5432",
+      "proxy_type": "transparent",
+      "count": 1512,
+      "first_seen": "2026-11-04T19:41:03.937412+01:00",
+      "last_seen": "2026-11-05T15:09:05.338181+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "rt.services.visualstudio.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 22,
+      "first_seen": "2026-11-04T19:31:47.97977+01:00",
+      "last_seen": "2026-11-05T15:09:00.941768+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:6379",
+      "proxy_type": "transparent",
+      "count": 76,
+      "first_seen": "2026-11-04T19:41:03.556242+01:00",
+      "last_seen": "2026-11-05T15:08:58.163399+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:9200",
+      "proxy_type": "forward",
+      "rule": "<dial failed>",
+      "count": 22,
+      "first_seen": "2026-11-04T19:41:04.550563+01:00",
+      "last_seen": "2026-11-05T15:08:58.100954+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host6.example.test:443",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-05T11:47:36.971246+01:00",
+      "last_seen": "2026-11-05T11:51:23.361589+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host25.example.test:443",
+      "proxy_type": "browser-open",
+      "count": 1,
+      "first_seen": "2026-11-05T11:47:47.32223+01:00",
+      "last_seen": "2026-11-05T11:47:47.32223+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host25.example.test:443",
+      "proxy_type": "forward",
+      "count": 1,
+      "first_seen": "2026-11-05T11:47:46.993758+01:00",
+      "last_seen": "2026-11-05T11:47:46.993758+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host6.example.test:443",
+      "proxy_type": "browser-open",
+      "count": 1,
+      "first_seen": "2026-11-05T11:47:37.104389+01:00",
+      "last_seen": "2026-11-05T11:47:37.104389+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "release-assets.githubusercontent.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 8,
+      "first_seen": "2026-11-05T11:13:27.96471+01:00",
+      "last_seen": "2026-11-05T11:45:35.622082+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 8,
+      "first_seen": "2026-11-05T11:13:27.470806+01:00",
+      "last_seen": "2026-11-05T11:45:35.472762+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "mise-versions.jdx.dev:443",
+      "proxy_type": "forward-bypass",
+      "count": 8,
+      "first_seen": "2026-11-05T11:13:26.68082+01:00",
+      "last_seen": "2026-11-05T11:45:32.862629+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host37.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-05T11:45:25.443568+01:00",
+      "last_seen": "2026-11-05T11:45:25.443568+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "github.com:22",
+      "proxy_type": "transparent",
+      "count": 1,
+      "first_seen": "2026-11-05T11:37:28.437374+01:00",
+      "last_seen": "2026-11-05T11:37:28.437374+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "api.github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 5,
+      "first_seen": "2026-11-05T11:13:11.715375+01:00",
+      "last_seen": "2026-11-05T11:34:55.56233+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "raw.githubusercontent.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 6,
+      "first_seen": "2026-11-05T11:13:11.342221+01:00",
+      "last_seen": "2026-11-05T11:34:55.203125+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "tuf-repo-cdn.sigstore.dev:443",
+      "proxy_type": "forward-bypass",
+      "count": 12,
+      "first_seen": "2026-11-05T11:13:40.078378+01:00",
+      "last_seen": "2026-11-05T11:26:53.304279+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "releases.hashicorp.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 3,
+      "first_seen": "2026-11-05T11:13:27.507585+01:00",
+      "last_seen": "2026-11-05T11:26:40.993598+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "awscli.amazonaws.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 3,
+      "first_seen": "2026-11-05T11:13:27.969221+01:00",
+      "last_seen": "2026-11-05T11:26:40.948232+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "nodejs.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-05T11:13:27.210466+01:00",
+      "last_seen": "2026-11-05T11:26:40.864138+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "mcp-proxy.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 5,
+      "first_seen": "2026-11-04T15:32:25.727962+01:00",
+      "last_seen": "2026-11-05T11:26:22.339504+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "dhi.io:80",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-05T11:13:06.797037+01:00",
+      "last_seen": "2026-11-05T11:26:16.613451+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "deb.debian.org:80",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-05T11:13:06.795979+01:00",
+      "last_seen": "2026-11-05T11:26:16.603726+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "dhi.io:80",
+      "proxy_type": "forward",
+      "count": 5,
+      "first_seen": "2026-11-04T15:26:45.033501+01:00",
+      "last_seen": "2026-11-05T11:26:15.927119+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "deb.debian.org:80",
+      "proxy_type": "forward",
+      "count": 5,
+      "first_seen": "2026-11-04T15:26:45.024669+01:00",
+      "last_seen": "2026-11-05T11:26:15.916217+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "docs.docker.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-05T11:15:35.159956+01:00",
+      "last_seen": "2026-11-05T11:15:35.159956+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "api.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 458,
+      "first_seen": "2026-11-04T16:55:07.978847+01:00",
+      "last_seen": "2026-11-05T11:02:03.363251+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "downloads.claude.ai:443",
+      "proxy_type": "forward-bypass",
+      "count": 52,
+      "first_seen": "2026-11-04T16:56:21.835014+01:00",
+      "last_seen": "2026-11-05T11:01:46.082425+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host30.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 30,
+      "first_seen": "2026-11-04T21:31:33.428346+01:00",
+      "last_seen": "2026-11-05T10:45:07.806683+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host32.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 4,
+      "first_seen": "2026-11-05T09:29:10.479825+01:00",
+      "last_seen": "2026-11-05T10:23:52.766021+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "update.googleapis.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-05T09:27:53.923821+01:00",
+      "last_seen": "2026-11-05T10:23:50.719518+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "www.google.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 5,
+      "first_seen": "2026-11-05T09:27:53.953709+01:00",
+      "last_seen": "2026-11-05T10:23:50.718369+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host2.example.test:80",
+      "proxy_type": "forward",
+      "rule": "<daemon-managed alias>",
+      "count": 47,
+      "first_seen": "2026-11-04T16:56:21.773458+01:00",
+      "last_seen": "2026-11-05T10:04:58.791429+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host32.example.test:443",
+      "proxy_type": "forward",
+      "count": 1,
+      "first_seen": "2026-11-05T09:29:10.258496+01:00",
+      "last_seen": "2026-11-05T09:29:10.258496+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "platform.claude.com:443",
+      "proxy_type": "forward",
+      "count": 2,
+      "first_seen": "2026-11-05T01:12:00.548031+01:00",
+      "last_seen": "2026-11-05T09:06:49.769907+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "docs.docker.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 12,
+      "first_seen": "2026-11-04T21:37:51.755279+01:00",
+      "last_seen": "2026-11-04T21:38:22.471495+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "www.docker.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-04T21:38:14.77+01:00",
+      "last_seen": "2026-11-04T21:38:17.820129+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host31.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-04T21:28:37.431689+01:00",
+      "last_seen": "2026-11-04T21:28:37.431689+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "checkpoint-api.hashicorp.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 4,
+      "first_seen": "2026-11-04T21:19:14.562083+01:00",
+      "last_seen": "2026-11-04T21:21:04.958491+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "api.github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 13,
+      "first_seen": "2026-11-04T16:56:21.820141+01:00",
+      "last_seen": "2026-11-04T21:19:27.856424+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host8.example.test:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-04T21:19:05.519822+01:00",
+      "last_seen": "2026-11-04T21:19:05.519822+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "cdn.playwright.dev:443",
+      "proxy_type": "forward-bypass",
+      "count": 16,
+      "first_seen": "2026-11-04T16:55:10.265588+01:00",
+      "last_seen": "2026-11-04T21:19:05.421617+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "storage.googleapis.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 15,
+      "first_seen": "2026-11-04T16:55:10.390789+01:00",
+      "last_seen": "2026-11-04T21:18:55.566114+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "registry.npmjs.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 179,
+      "first_seen": "2026-11-04T16:55:08.489174+01:00",
+      "last_seen": "2026-11-04T21:18:46.136642+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "mise-versions.jdx.dev:443",
+      "proxy_type": "forward-bypass",
+      "count": 39,
+      "first_seen": "2026-11-04T18:32:00.586784+01:00",
+      "last_seen": "2026-11-04T21:18:05.645444+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "nodejs.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 17,
+      "first_seen": "2026-11-04T18:32:00.437606+01:00",
+      "last_seen": "2026-11-04T21:18:05.642775+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "dhi.io:80",
+      "proxy_type": "forward",
+      "count": 8,
+      "first_seen": "2026-11-04T16:55:36.750695+01:00",
+      "last_seen": "2026-11-04T21:17:56.081594+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "deb.debian.org:80",
+      "proxy_type": "forward",
+      "count": 8,
+      "first_seen": "2026-11-04T16:55:36.755069+01:00",
+      "last_seen": "2026-11-04T21:17:56.051784+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "tuf-repo-cdn.sigstore.dev:443",
+      "proxy_type": "forward-bypass",
+      "count": 10,
+      "first_seen": "2026-11-04T21:16:36.795176+01:00",
+      "last_seen": "2026-11-04T21:16:38.682909+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "release-assets.githubusercontent.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-04T21:16:30.994387+01:00",
+      "last_seen": "2026-11-04T21:16:30.9963+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-04T21:16:30.360357+01:00",
+      "last_seen": "2026-11-04T21:16:30.642998+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "releases.hashicorp.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-04T21:16:28.986413+01:00",
+      "last_seen": "2026-11-04T21:16:28.986413+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "mise-versions.jdx.dev:443",
+      "proxy_type": "forward-bypass",
+      "rule": "<dial failed>",
+      "count": 1,
+      "first_seen": "2026-11-04T21:15:08.23338+01:00",
+      "last_seen": "2026-11-04T21:15:08.23338+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "files.pythonhosted.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-04T20:58:47.261284+01:00",
+      "last_seen": "2026-11-04T20:58:47.261284+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "pypi.org:443",
+      "proxy_type": "forward-bypass",
+      "count": 2,
+      "first_seen": "2026-11-04T20:58:46.675155+01:00",
+      "last_seen": "2026-11-04T20:58:46.958118+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "github.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 1,
+      "first_seen": "2026-11-04T20:58:25.607891+01:00",
+      "last_seen": "2026-11-04T20:58:25.607891+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host28.example.test:443",
+      "proxy_type": "browser-open",
+      "count": 4,
+      "first_seen": "2026-11-04T20:35:59.887215+01:00",
+      "last_seen": "2026-11-04T20:50:02.813195+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "mcp-proxy.anthropic.com:443",
+      "proxy_type": "forward",
+      "count": 10,
+      "first_seen": "2026-11-04T16:56:22.210872+01:00",
+      "last_seen": "2026-11-04T20:48:27.157115+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "raw.githubusercontent.com:443",
+      "proxy_type": "forward-bypass",
+      "count": 7,
+      "first_seen": "2026-11-04T16:56:21.509941+01:00",
+      "last_seen": "2026-11-04T20:48:26.389769+01:00"
+    }
+  ],
+  "blocked": [
+    {
+      "sandbox_id": "project-i",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 694,
+      "first_seen": "2026-11-05T11:13:26.540539+01:00",
+      "last_seen": "2026-11-06T08:30:45.039314+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 197,
+      "first_seen": "2026-11-04T16:21:59.093216+01:00",
+      "last_seen": "2026-11-06T08:30:37.565171+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 274,
+      "first_seen": "2026-11-04T18:40:08.147539+01:00",
+      "last_seen": "2026-11-06T08:29:58.144361+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 561,
+      "first_seen": "2026-11-04T15:32:39.364349+01:00",
+      "last_seen": "2026-11-06T08:29:53.186414+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host38.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host38.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 8,
+      "first_seen": "2026-11-05T15:51:02.261271+01:00",
+      "last_seen": "2026-11-05T15:51:04.403305+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "169.254.169.254:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:169.254.169.254:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 85,
+      "first_seen": "2026-11-04T19:31:47.676909+01:00",
+      "last_seen": "2026-11-05T15:09:00.890629+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "203.0.113.40:22",
+      "proxy_type": "transparent",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:203.0.113.40:22)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-05T13:16:42.280662+01:00",
+      "last_seen": "2026-11-05T13:17:15.245875+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host6.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host6.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-05T11:47:30.374208+01:00",
+      "last_seen": "2026-11-05T11:47:30.471069+01:00"
+    },
+    {
+      "sandbox_id": "project-i",
+      "host": "host25.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host25.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-05T11:47:30.373975+01:00",
+      "last_seen": "2026-11-05T11:47:30.46142+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "203.0.113.41:22",
+      "proxy_type": "transparent",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:203.0.113.41:22)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-05T11:30:02.978393+01:00",
+      "last_seen": "2026-11-05T11:30:02.978393+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 163,
+      "first_seen": "2026-11-04T16:56:36.539805+01:00",
+      "last_seen": "2026-11-05T11:02:01.278378+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host42.example.test:5228",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host42.example.test:5228)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 17,
+      "first_seen": "2026-11-05T09:29:10.437071+01:00",
+      "last_seen": "2026-11-05T10:55:54.27721+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host43.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host43.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 16,
+      "first_seen": "2026-11-05T09:27:53.873306+01:00",
+      "last_seen": "2026-11-05T10:39:38.158683+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host32.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host32.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-05T09:27:56.919419+01:00",
+      "last_seen": "2026-11-05T09:28:24.782664+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host44.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host44.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-04T20:13:53.342709+01:00",
+      "last_seen": "2026-11-05T02:01:08.604727+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host4.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host4.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T22:19:11.013945+01:00",
+      "last_seen": "2026-11-04T22:19:11.013945+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host27.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T22:06:18.030155+01:00",
+      "last_seen": "2026-11-04T22:06:18.030335+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host26.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T22:06:18.028357+01:00",
+      "last_seen": "2026-11-04T22:06:18.028374+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host31.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host31.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 3,
+      "first_seen": "2026-11-04T21:28:11.548519+01:00",
+      "last_seen": "2026-11-04T21:28:17.325444+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host30.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host30.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 3,
+      "first_seen": "2026-11-04T21:25:40.719925+01:00",
+      "last_seen": "2026-11-04T21:25:42.558876+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host22.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host22.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-04T21:19:28.128822+01:00",
+      "last_seen": "2026-11-04T21:19:28.128864+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host20.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host20.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T21:19:07.977192+01:00",
+      "last_seen": "2026-11-04T21:19:07.977192+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host21.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host21.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T21:19:07.875408+01:00",
+      "last_seen": "2026-11-04T21:19:07.875408+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host23.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host23.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T21:19:07.779745+01:00",
+      "last_seen": "2026-11-04T21:19:07.779745+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host24.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host24.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1200,
+      "first_seen": "2026-11-04T21:18:32.344789+01:00",
+      "last_seen": "2026-11-04T21:18:34.340815+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host29.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host29.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 4,
+      "first_seen": "2026-11-04T20:36:03.679352+01:00",
+      "last_seen": "2026-11-04T20:36:04.018655+01:00"
+    },
+    {
+      "sandbox_id": "project-g",
+      "host": "host28.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host28.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 9,
+      "first_seen": "2026-11-04T20:35:42.289986+01:00",
+      "last_seen": "2026-11-04T20:35:54.718294+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host45.example.test:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host45.example.test:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 8,
+      "first_seen": "2026-11-04T19:31:21.486394+01:00",
+      "last_seen": "2026-11-04T20:34:09.607901+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host46.example.test:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host46.example.test:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 8,
+      "first_seen": "2026-11-04T19:31:21.483514+01:00",
+      "last_seen": "2026-11-04T20:34:09.60487+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host47.example.test:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host47.example.test:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 8,
+      "first_seen": "2026-11-04T19:31:21.481122+01:00",
+      "last_seen": "2026-11-04T20:34:09.601646+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host48.example.test:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host48.example.test:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 8,
+      "first_seen": "2026-11-04T19:31:21.477568+01:00",
+      "last_seen": "2026-11-04T20:34:09.599129+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "host19.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host19.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:50:58.346306+01:00",
+      "last_seen": "2026-11-04T19:50:58.346306+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:10428",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:localhost:10428)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-04T19:41:09.753025+01:00",
+      "last_seen": "2026-11-04T19:41:39.777444+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:9428",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:localhost:9428)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:41:08.805128+01:00",
+      "last_seen": "2026-11-04T19:41:08.805128+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:9200",
+      "proxy_type": "transparent",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:localhost:9200)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:39:39.868597+01:00",
+      "last_seen": "2026-11-04T19:39:39.868597+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:6379",
+      "proxy_type": "transparent",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:localhost:6379)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:39:39.866251+01:00",
+      "last_seen": "2026-11-04T19:39:39.866251+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:1433",
+      "proxy_type": "transparent",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:localhost:1433)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:39:39.864057+01:00",
+      "last_seen": "2026-11-04T19:39:39.864057+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "localhost:5432",
+      "proxy_type": "transparent",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:localhost:5432)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:39:39.861858+01:00",
+      "last_seen": "2026-11-04T19:39:39.861858+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host49.example.test:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host49.example.test:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 6,
+      "first_seen": "2026-11-04T19:31:21.463129+01:00",
+      "last_seen": "2026-11-04T19:31:22.5894+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host6.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host6.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 6,
+      "first_seen": "2026-11-04T15:32:24.62942+01:00",
+      "last_seen": "2026-11-04T19:11:52.944514+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host25.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host25.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 6,
+      "first_seen": "2026-11-04T15:32:24.62831+01:00",
+      "last_seen": "2026-11-04T19:11:52.926175+01:00"
+    },
+    {
+      "sandbox_id": "project-h",
+      "host": "host18.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host18.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T19:06:07.016202+01:00",
+      "last_seen": "2026-11-04T19:06:07.016202+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host11.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host11.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 2,
+      "first_seen": "2026-11-04T18:41:27.446227+01:00",
+      "last_seen": "2026-11-04T18:41:42.557226+01:00"
+    },
+    {
+      "sandbox_id": "project-e",
+      "host": "host50.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host50.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T18:40:16.673748+01:00",
+      "last_seen": "2026-11-04T18:40:16.673748+01:00"
+    },
+    {
+      "sandbox_id": "project-j",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 92,
+      "first_seen": "2026-11-04T16:32:43.47988+01:00",
+      "last_seen": "2026-11-04T18:32:09.758487+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host51.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 4,
+      "first_seen": "2026-11-04T17:49:21.894866+01:00",
+      "last_seen": "2026-11-04T17:49:22.55226+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host52.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 4,
+      "first_seen": "2026-11-04T17:49:21.893153+01:00",
+      "last_seen": "2026-11-04T17:49:22.544008+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host53.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T17:49:22.266338+01:00",
+      "last_seen": "2026-11-04T17:49:22.266752+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host54.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T17:49:22.264427+01:00",
+      "last_seen": "2026-11-04T17:49:22.264458+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host55.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T17:49:22.237601+01:00",
+      "last_seen": "2026-11-04T17:49:22.237622+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host56.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T17:49:22.233573+01:00",
+      "last_seen": "2026-11-04T17:49:22.23359+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host57.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T17:48:47.718276+01:00",
+      "last_seen": "2026-11-04T17:48:47.718307+01:00"
+    },
+    {
+      "sandbox_id": "project-f",
+      "host": "host9.example.test",
+      "proxy_type": "network",
+      "rule": "<dns proxy policy>",
+      "reason": "DNS lookup blocked by proxy policy",
+      "count": 2,
+      "first_seen": "2026-11-04T17:48:47.716618+01:00",
+      "last_seen": "2026-11-04T17:48:47.716674+01:00"
+    },
+    {
+      "sandbox_id": "project-j",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:29f875fd-2ddb-4888-9c05-a8c47ab43542\" matched op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "Denied by local rule",
+      "count": 2,
+      "first_seen": "2026-11-04T17:30:34.206306+01:00",
+      "last_seen": "2026-11-04T17:30:39.239674+01:00"
+    },
+    {
+      "sandbox_id": "project-k",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 269,
+      "first_seen": "2026-11-04T13:29:43.550154+01:00",
+      "last_seen": "2026-11-04T16:11:53.736184+01:00"
+    },
+    {
+      "sandbox_id": "project-l",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 32,
+      "first_seen": "2026-11-04T13:43:33.553782+01:00",
+      "last_seen": "2026-11-04T16:06:35.387185+01:00"
+    },
+    {
+      "sandbox_id": "project-m",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T15:14:43.860372+01:00",
+      "last_seen": "2026-11-04T15:14:43.860372+01:00"
+    },
+    {
+      "sandbox_id": "project-m",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T15:14:43.860164+01:00",
+      "last_seen": "2026-11-04T15:14:43.860164+01:00"
+    },
+    {
+      "sandbox_id": "project-n",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T15:06:58.297937+01:00",
+      "last_seen": "2026-11-04T15:06:58.297937+01:00"
+    },
+    {
+      "sandbox_id": "project-n",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T15:06:58.29777+01:00",
+      "last_seen": "2026-11-04T15:06:58.29777+01:00"
+    },
+    {
+      "sandbox_id": "project-o",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T15:06:08.036589+01:00",
+      "last_seen": "2026-11-04T15:06:08.036652+01:00"
+    },
+    {
+      "sandbox_id": "project-o",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T15:06:08.036408+01:00",
+      "last_seen": "2026-11-04T15:06:08.036504+01:00"
+    },
+    {
+      "sandbox_id": "project-p",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T15:06:02.096089+01:00",
+      "last_seen": "2026-11-04T15:06:02.096107+01:00"
+    },
+    {
+      "sandbox_id": "project-p",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T15:06:02.095872+01:00",
+      "last_seen": "2026-11-04T15:06:02.095941+01:00"
+    },
+    {
+      "sandbox_id": "project-q",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T15:02:27.845788+01:00",
+      "last_seen": "2026-11-04T15:02:27.845788+01:00"
+    },
+    {
+      "sandbox_id": "project-q",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T15:02:27.845629+01:00",
+      "last_seen": "2026-11-04T15:02:27.845629+01:00"
+    },
+    {
+      "sandbox_id": "project-r",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:59:21.06384+01:00",
+      "last_seen": "2026-11-04T14:59:21.063919+01:00"
+    },
+    {
+      "sandbox_id": "project-r",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:59:21.063645+01:00",
+      "last_seen": "2026-11-04T14:59:21.063803+01:00"
+    },
+    {
+      "sandbox_id": "project-s",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:59:14.97008+01:00",
+      "last_seen": "2026-11-04T14:59:14.970139+01:00"
+    },
+    {
+      "sandbox_id": "project-s",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:59:14.96985+01:00",
+      "last_seen": "2026-11-04T14:59:14.969972+01:00"
+    },
+    {
+      "sandbox_id": "project-t",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T14:30:37.900225+01:00",
+      "last_seen": "2026-11-04T14:30:37.900225+01:00"
+    },
+    {
+      "sandbox_id": "project-t",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T14:30:37.900037+01:00",
+      "last_seen": "2026-11-04T14:30:37.900037+01:00"
+    },
+    {
+      "sandbox_id": "project-u",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:30:10.932813+01:00",
+      "last_seen": "2026-11-04T14:30:10.933112+01:00"
+    },
+    {
+      "sandbox_id": "project-u",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:30:10.932944+01:00",
+      "last_seen": "2026-11-04T14:30:10.933001+01:00"
+    },
+    {
+      "sandbox_id": "project-v",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:30:05.743454+01:00",
+      "last_seen": "2026-11-04T14:30:05.743711+01:00"
+    },
+    {
+      "sandbox_id": "project-v",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:30:05.743142+01:00",
+      "last_seen": "2026-11-04T14:30:05.743455+01:00"
+    },
+    {
+      "sandbox_id": "project-w",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:30:00.033004+01:00",
+      "last_seen": "2026-11-04T14:30:00.033052+01:00"
+    },
+    {
+      "sandbox_id": "project-w",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:30:00.032753+01:00",
+      "last_seen": "2026-11-04T14:30:00.03288+01:00"
+    },
+    {
+      "sandbox_id": "project-x",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T14:25:26.612302+01:00",
+      "last_seen": "2026-11-04T14:25:26.612302+01:00"
+    },
+    {
+      "sandbox_id": "project-x",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T14:25:26.612115+01:00",
+      "last_seen": "2026-11-04T14:25:26.612115+01:00"
+    },
+    {
+      "sandbox_id": "project-y",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:24:53.814392+01:00",
+      "last_seen": "2026-11-04T14:24:53.814471+01:00"
+    },
+    {
+      "sandbox_id": "project-y",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:24:53.814079+01:00",
+      "last_seen": "2026-11-04T14:24:53.814269+01:00"
+    },
+    {
+      "sandbox_id": "project-z",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:24:48.789178+01:00",
+      "last_seen": "2026-11-04T14:24:48.789338+01:00"
+    },
+    {
+      "sandbox_id": "project-z",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:24:48.789008+01:00",
+      "last_seen": "2026-11-04T14:24:48.789186+01:00"
+    },
+    {
+      "sandbox_id": "project-{",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:24:42.622671+01:00",
+      "last_seen": "2026-11-04T14:24:42.622765+01:00"
+    },
+    {
+      "sandbox_id": "project-{",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 2,
+      "first_seen": "2026-11-04T14:24:42.622442+01:00",
+      "last_seen": "2026-11-04T14:24:42.622614+01:00"
+    },
+    {
+      "sandbox_id": "project-|",
+      "host": "172.17.0.6:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T14:23:04.830253+01:00",
+      "last_seen": "2026-11-04T14:23:04.830253+01:00"
+    },
+    {
+      "sandbox_id": "project-|",
+      "host": "host58.example.test:792b:41fc::6]:3128",
+      "proxy_type": "network",
+      "rule": "<tcp proxy policy>",
+      "reason": "Direct TCP connections not allowed",
+      "count": 1,
+      "first_seen": "2026-11-04T14:23:04.829798+01:00",
+      "last_seen": "2026-11-04T14:23:04.829798+01:00"
+    },
+    {
+      "sandbox_id": "m0-v3-1",
+      "host": "deb.debian.org:80",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:deb.debian.org:80)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 6,
+      "first_seen": "2026-11-04T13:44:10.923335+01:00",
+      "last_seen": "2026-11-04T13:44:15.517118+01:00"
+    },
+    {
+      "sandbox_id": "m0-v3-1",
+      "host": "host59.example.test:443",
+      "proxy_type": "forward",
+      "rule": "denied: rule \"local:7fcc92a4-abef-4ead-87d4-60e98d52cff8\" matched op(action=net:connect:tcp, resource=net:domain:host59.example.test:443)",
+      "reason": "Denied by local rule",
+      "count": 1,
+      "first_seen": "2026-11-04T13:44:13.96138+01:00",
+      "last_seen": "2026-11-04T13:44:13.96138+01:00"
+    },
+    {
+      "sandbox_id": "m0-v3-1",
+      "host": "host7.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host7.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T13:44:13.628131+01:00",
+      "last_seen": "2026-11-04T13:44:13.628131+01:00"
+    },
+    {
+      "sandbox_id": "m0-v3-1",
+      "host": "host60.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host60.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T13:44:13.475243+01:00",
+      "last_seen": "2026-11-04T13:44:13.475243+01:00"
+    },
+    {
+      "sandbox_id": "m0-v3-1",
+      "host": "host61.example.test:443",
+      "proxy_type": "forward",
+      "rule": "HTTP request (query redacted)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T13:44:13.360147+01:00",
+      "last_seen": "2026-11-04T13:44:13.360147+01:00"
+    },
+    {
+      "sandbox_id": "project-}",
+      "host": "host5.example.test:443",
+      "proxy_type": "forward",
+      "rule": "no applicable policies for op(action=net:connect:tcp, resource=net:domain:host5.example.test:443)",
+      "reason": "No matching allow rule (default deny)",
+      "count": 1,
+      "first_seen": "2026-11-04T13:43:20.976345+01:00",
+      "last_seen": "2026-11-04T13:43:20.976345+01:00"
+    }
+  ]
+}

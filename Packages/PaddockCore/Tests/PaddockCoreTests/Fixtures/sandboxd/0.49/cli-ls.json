@@ -1,0 +1,107 @@
+[
+  {
+    "name": "project-f",
+    "id": "82880447-a3ef-4b22-b369-ca69b9a0e223",
+    "agent": "claude",
+    "status": "stopped",
+    "last_used_at": "2026-11-05T10:05:34.313623Z",
+    "mounts": [
+      "/Users/operator/Projects/project-f:/Users/operator/Projects/project-f",
+      "/Users/operator/Projects/project-f/sbxenv.yaml:/Users/operator/Projects/project-f/sbxenv.yaml:ro",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/project-f",
+      "/Users/operator/Projects/project-f/sbxenv.yaml:ro"
+    ],
+    "created_at": "2026-11-04T19:46:36Z"
+  },
+  {
+    "name": "project-g",
+    "id": "022eaff8-16fb-4011-abca-ab384a9bfbcb",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-11-06T07:29:58.001357Z",
+    "ports": [
+      {
+        "host_ip": "127.0.0.1",
+        "host_port": 49164,
+        "sandbox_port": 38323,
+        "protocol": "tcp"
+      },
+      {
+        "host_ip": "::1",
+        "host_port": 49164,
+        "sandbox_port": 38323,
+        "protocol": "tcp"
+      }
+    ],
+    "mounts": [
+      "/Users/operator/Projects/project-g:/Users/operator/Projects/project-g",
+      "/Users/operator/Projects/project-f:/Users/operator/Projects/project-f:ro",
+      "/Users/operator/Projects/project-h:/Users/operator/Projects/project-h:ro",
+      "/Users/operator/Projects/project-g/sbxenv.yaml:/Users/operator/Projects/project-g/sbxenv.yaml:ro",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/project-g",
+      "/Users/operator/Projects/project-f:ro",
+      "/Users/operator/Projects/project-h:ro",
+      "/Users/operator/Projects/project-g/sbxenv.yaml:ro"
+    ],
+    "created_at": "2026-11-04T17:36:12Z",
+    "detached": true
+  },
+  {
+    "name": "project-h",
+    "id": "8c6e43cf-62a0-453e-ae47-c9dfbe53f8dd",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-11-06T07:21:46.525022Z",
+    "mounts": [
+      "/Users/operator/Projects/project-h:/Users/operator/Projects/project-h",
+      "/Users/operator/Projects/project-h/sbxenv.yaml:/Users/operator/Projects/project-h/sbxenv.yaml:ro",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/project-h",
+      "/Users/operator/Projects/project-h/sbxenv.yaml:ro"
+    ],
+    "created_at": "2026-11-04T17:47:13Z"
+  },
+  {
+    "name": "project-i",
+    "id": "cdd6586f-a5b6-44f4-aeb5-d4631fc931d2",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-11-06T07:21:11.517771Z",
+    "mounts": [
+      "/Users/operator/Projects/project-i:/Users/operator/Projects/project-i",
+      "/Users/operator/Projects/project-i/sbxenv.yaml:/Users/operator/Projects/project-i/sbxenv.yaml:ro",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/project-i",
+      "/Users/operator/Projects/project-i/sbxenv.yaml:ro"
+    ],
+    "created_at": "2026-11-05T10:26:05Z"
+  },
+  {
+    "name": "project-e",
+    "id": "f60661c0-e9ac-4781-9636-1652eee12c28",
+    "agent": "claude",
+    "status": "running",
+    "last_used_at": "2026-11-06T07:30:09.854578Z",
+    "mounts": [
+      "/Users/operator/Projects/project-e:/Users/operator/Projects/project-e",
+      "/Users/operator/Projects/project-e/sbxenv.yaml:/Users/operator/Projects/project-e/sbxenv.yaml:ro",
+      "/Users/operator/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills:/home/agent/.claude/skills:ro"
+    ],
+    "workspaces": [
+      "/Users/operator/Projects/project-e",
+      "/Users/operator/Projects/project-e/sbxenv.yaml:ro"
+    ],
+    "created_at": "2026-11-04T18:09:49Z",
+    "detached": true
+  }
+]

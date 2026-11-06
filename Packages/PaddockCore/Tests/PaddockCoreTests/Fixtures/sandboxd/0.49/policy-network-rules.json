@@ -1,0 +1,1462 @@
+{
+  "governance_upsell_banner_flag_enabled": true,
+  "rules": [
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": true,
+      "id": "default-ai-services",
+      "layer": "local",
+      "name": "default-ai-services",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "network",
+      "resources": [
+        "api.anthropic.com:443",
+        "statsig.anthropic.com:443",
+        "platform.claude.com:443",
+        "mcp-proxy.anthropic.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "bridge.claudeusercontent.com:443",
+        "**.openai.com:443",
+        "chatgpt.com:443",
+        "**.chatgpt.com:443",
+        "**.oaistatic.com:443",
+        "**.oaiusercontent.com:443",
+        "cdn.openaimerge.com:443",
+        "cursor.com:443",
+        "**.cursor.sh:443",
+        "gemini.google.com:443",
+        "generativelanguage.googleapis.com:443",
+        "play.googleapis.com:443",
+        "api.perplexity.ai:443",
+        "models.dev:443",
+        "factory.ai:443",
+        "**.factory.ai:443",
+        "api.workos.com:443"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": true,
+      "id": "default-package-managers",
+      "layer": "local",
+      "name": "default-package-managers",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "network",
+      "resources": [
+        "registry.npmjs.org:443",
+        "npmjs.com:443",
+        "npmjs.org:443",
+        "npm.duckdb.org:443",
+        "yarnpkg.com:443",
+        "**.yarnpkg.com:443",
+        "nodejs.org:443",
+        "deb.nodesource.com:443",
+        "bun.sh:443",
+        "**.bun.sh:443",
+        "pypi.org:443",
+        "pypi.python.org:443",
+        "files.pythonhosted.org:443",
+        "pythonhosted.org:443",
+        "pypa.io:443",
+        "bootstrap.pypa.io:443",
+        "astral.sh:443",
+        "crates.io:443",
+        "index.crates.io:443",
+        "static.crates.io:443",
+        "rustup.rs:443",
+        "sh.rustup.rs:443",
+        "static.rust-lang.org:443",
+        "golang.org:443",
+        "goproxy.io:443",
+        "proxy.golang.org:443",
+        "sum.golang.org:443",
+        "pkg.go.dev:443",
+        "maven.org:443",
+        "repo.maven.apache.org:443",
+        "gradle.org:443",
+        "**.gradle.org:443",
+        "spring.io:443",
+        "java.com:443",
+        "java.net:443",
+        "packagist.org:443",
+        "**.packagist.org:443",
+        "packagist.com:443",
+        "rubygems.org:443",
+        "ruby-lang.org:443",
+        "rubyonrails.org:443",
+        "rvm.io:443",
+        "nuget.org:443",
+        "dot.net:443",
+        "dotnet.microsoft.com:443",
+        "pub.dev:443",
+        "hex.pm:443",
+        "cpan.org:443",
+        "metacpan.org:443",
+        "haskell.org:443",
+        "swift.org:443",
+        "cocoapods.org:443",
+        "ziglang.org:443",
+        "apache.org:443",
+        "eclipse.org:443",
+        "tuf-repo-cdn.sigstore.dev:443"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": true,
+      "id": "default-code-and-containers",
+      "layer": "local",
+      "name": "default-code-and-containers",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "network",
+      "resources": [
+        "github.com:443",
+        "**.github.com:443",
+        "**.githubusercontent.com:443",
+        "gitlab.com:443",
+        "**.gitlab.com:443",
+        "bitbucket.org:443",
+        "sourceforge.net:443",
+        "launchpad.net:443",
+        "ppa.launchpad.net:443",
+        "docker.io:443",
+        "**.docker.io:443",
+        "docker.com:443",
+        "**.docker.com:443",
+        "production.cloudflare.docker.com:443",
+        "**.production.cloudflare.docker.com:443",
+        "production.cloudfront.docker.com:443",
+        "**.production.cloudfront.docker.com:443",
+        "docker-images-prod.6aa30f8b08e16409b46e0173d6de2f56.r2.cloudflarestorage.com:443",
+        "dhi.io:443",
+        "dhi.io:80",
+        "ghcr.io:443",
+        "gcr.io:443",
+        "**.gcr.io:443",
+        "mcr.microsoft.com:443",
+        "**.data.mcr.microsoft.com:443",
+        "quay.io:443",
+        "registry.k8s.io:443",
+        "k8s.io:443",
+        "public.ecr.aws:443",
+        "d2glxqk2uabbnd.cloudfront.net:443",
+        "**.githubcopilot.com:443",
+        "code.visualstudio.com:443",
+        "vscode.dev:443",
+        "vscode.download.prss.microsoft.com:443"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": true,
+      "id": "default-cloud-infrastructure",
+      "layer": "local",
+      "name": "default-cloud-infrastructure",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "network",
+      "resources": [
+        "**.amazonaws.com:443",
+        "**.googleapis.com:443",
+        "azure.com:443",
+        "dev.azure.com:443",
+        "login.microsoftonline.com:443",
+        "**.blob.core.windows.net:443",
+        "visualstudio.com:443",
+        "**.visualstudio.com:443",
+        "packages.microsoft.com:443",
+        "hashicorp.com:443",
+        "**.hashicorp.com:443",
+        "vercel.com:443",
+        "**.public.blob.vercel-storage.com:443",
+        "challenges.cloudflare.com:443",
+        "fastly.com:443",
+        "unpkg.com:443",
+        "jsdelivr.net:443",
+        "**.gvt1.com:443",
+        "dl.google.com:443",
+        "binaries.prisma.sh:443",
+        "playwright.azureedge.net:443",
+        "cdn.playwright.dev:443",
+        "mise.run:443",
+        "mise-versions.jdx.dev:443",
+        "json-schema.org:443",
+        "json.schemastore.org:443",
+        "**.gstatic.com:443",
+        "**.googleusercontent.com:443",
+        "apis.google.com:443",
+        "play.google.com:443",
+        "www.google.com:443",
+        "csp.withgoogle.com:443",
+        "supabase.com:443",
+        "clerk.com:443",
+        "figma.com:443",
+        "app.daytona.io:443"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": true,
+      "id": "default-os-packages",
+      "layer": "local",
+      "name": "default-os-packages",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "network",
+      "resources": [
+        "archive.ubuntu.com:443",
+        "archive.ubuntu.com:80",
+        "security.ubuntu.com:443",
+        "security.ubuntu.com:80",
+        "ports.ubuntu.com:443",
+        "ports.ubuntu.com:80",
+        "ubuntu.com:443",
+        "debian.org:443",
+        "**.debian.org:443",
+        "archlinux.org:443",
+        "alpinelinux.org:443",
+        "dl-cdn.alpinelinux.org:443",
+        "centos.org:443",
+        "fedoraproject.org:443",
+        "apt.llvm.org:443",
+        "packagecloud.io:443"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": true,
+      "id": "default-cert-validation",
+      "layer": "local",
+      "name": "default-cert-validation",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "network",
+      "resources": [
+        "**.lencr.org:80",
+        "**.lencr.org:443",
+        "ocsp.digicert.com:80",
+        "crl*.digicert.com:80",
+        "cacerts.digicert.com:80",
+        "*.one.digicert.com:80",
+        "*.one.au.digicert.com:80",
+        "*.one.ch.digicert.com:80",
+        "*.one.nl.digicert.com:80",
+        "*.one.digicert.co.jp:80",
+        "ocsp.sectigo.com:80",
+        "crl.sectigo.com:80",
+        "crt.sectigo.com:80",
+        "ocsp.comodoca.com:80",
+        "crl.comodoca.com:80",
+        "ocsp.usertrust.com:80",
+        "crl.usertrust.com:80",
+        "**.pki.goog:80",
+        "**.pki.goog:443",
+        "**.amazontrust.com:80",
+        "**.amazontrust.com:443",
+        "isrg.trustid.ocsp.identrust.com:80",
+        "**.pki.microsoft.com:80",
+        "**.pki.microsoft.com:443",
+        "crl.globalsign.com:80",
+        "crl.globalsign.net:80",
+        "ocsp.globalsign.com:80",
+        "ocsp.globalsign.com:443",
+        "ocsp2.globalsign.com:80",
+        "ocsp2.globalsign.com:443"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "fs:mount:read"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": false,
+      "id": "default-fs-read-allow-all",
+      "layer": "local",
+      "name": "default-fs-read-allow-all",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "filesystem:read",
+      "resources": [
+        "**"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "fs:mount:read",
+        "fs:mount:write"
+      ],
+      "applies_to": "all",
+      "decision": "allow",
+      "editable": false,
+      "id": "default-fs-write-allow-all",
+      "layer": "local",
+      "name": "default-fs-write-allow-all",
+      "origin": "local",
+      "policy_id": "local-policy",
+      "provenance": {
+        "created_via": "default"
+      },
+      "resource_type": "filesystem:write",
+      "resources": [
+        "**"
+      ],
+      "scope": "global",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": false,
+      "id": "bd1d4cc1-e928-4096-8f13-77a8df0d5079",
+      "layer": "local",
+      "name": "kit:project-g",
+      "origin": "scoped",
+      "policy_id": "33c2c49f-0a15-4c90-9e48-5b82f42ae13c",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "resource_type": "network",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "mcp-proxy.anthropic.com:443",
+        "bridge.claudeusercontent.com:443",
+        "deb.debian.org:80",
+        "dhi.io:80",
+        "registry.npmjs.org:443",
+        "cdn.playwright.dev:443",
+        "host8.example.test:443",
+        "storage.googleapis.com:443",
+        "github.com",
+        "api.github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "cdn.playwright.dev",
+        "host8.example.test",
+        "storage.googleapis.com"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "deny",
+      "editable": true,
+      "id": "fb8abd17-83a4-488c-b5dd-535332a5b4e9",
+      "layer": "local",
+      "name": "fb8abd17-83a4-488c-b5dd-535332a5b4e9",
+      "origin": "scoped",
+      "policy_id": "14045d46-b7bd-404f-9993-e52963a9e9ea",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:17434"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "deny",
+      "editable": true,
+      "id": "5a106cfd-5db7-46f3-a583-e75c2a5a4b9d",
+      "layer": "local",
+      "name": "5a106cfd-5db7-46f3-a583-e75c2a5a4b9d",
+      "origin": "scoped",
+      "policy_id": "14045d46-b7bd-404f-9993-e52963a9e9ea",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host.docker.internal:17434"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-h",
+      "decision": "allow",
+      "editable": false,
+      "id": "85834a48-1caf-4838-9546-805c27cb393d",
+      "layer": "local",
+      "name": "kit:project-h",
+      "origin": "scoped",
+      "policy_id": "e1a6369b-0430-48ec-b35e-ab6ae9c90796",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "resource_type": "network",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "mcp-proxy.anthropic.com:443",
+        "bridge.claudeusercontent.com:443",
+        "deb.debian.org:80",
+        "dhi.io:80",
+        "github.com",
+        "api.github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com"
+      ],
+      "sandbox_id": "project-h",
+      "scope": "sandbox:project-h",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-h",
+      "decision": "deny",
+      "editable": true,
+      "id": "a52eab85-0823-490a-a5f4-5930c76a2977",
+      "layer": "local",
+      "name": "a52eab85-0823-490a-a5f4-5930c76a2977",
+      "origin": "scoped",
+      "policy_id": "1c4c0cb7-66c0-45e9-9145-c9fc8219cbc5",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:17434"
+      ],
+      "sandbox_id": "project-h",
+      "scope": "sandbox:project-h",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-h",
+      "decision": "deny",
+      "editable": true,
+      "id": "0c0b667d-f06e-4446-8078-9fef5908910d",
+      "layer": "local",
+      "name": "0c0b667d-f06e-4446-8078-9fef5908910d",
+      "origin": "scoped",
+      "policy_id": "1c4c0cb7-66c0-45e9-9145-c9fc8219cbc5",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host.docker.internal:17434"
+      ],
+      "sandbox_id": "project-h",
+      "scope": "sandbox:project-h",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": false,
+      "id": "6a8649a4-e3a4-4625-a87b-f4d45dd8d50d",
+      "layer": "local",
+      "name": "kit:project-e",
+      "origin": "scoped",
+      "policy_id": "ba31c910-7384-4496-8b14-154206718191",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "resource_type": "network",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "mcp-proxy.anthropic.com:443",
+        "bridge.claudeusercontent.com:443",
+        "deb.debian.org:80",
+        "dhi.io:80",
+        "host9.example.test",
+        "github.com",
+        "*.github.com",
+        "api.github.com",
+        "objects.githubusercontent.com",
+        "raw.githubusercontent.com",
+        "nodejs.org",
+        "registry.npmjs.org",
+        "dot.net",
+        "*.host10.example.test",
+        "host11.example.test",
+        "host12.example.test",
+        "host13.example.test",
+        "dotnetcli.blob.core.windows.net",
+        "host14.example.test",
+        "host15.example.test",
+        "*.host16.example.test",
+        "registry-1.docker.io",
+        "auth.docker.io",
+        "production.cloudflare.docker.com",
+        "mcr.microsoft.com",
+        "*.data.mcr.microsoft.com",
+        "host17.example.test",
+        "cognito-idp.us-east-1.amazonaws.com",
+        "release-assets.githubusercontent.com"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "deny",
+      "editable": true,
+      "id": "109bce2d-91c3-49ab-bb83-0761f7f10fb9",
+      "layer": "local",
+      "name": "109bce2d-91c3-49ab-bb83-0761f7f10fb9",
+      "origin": "scoped",
+      "policy_id": "8e878a6a-6d9e-4262-999e-fb0e09558f1f",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:17434"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "deny",
+      "editable": true,
+      "id": "384b65ea-df1e-45cf-9874-afcc89daf5ea",
+      "layer": "local",
+      "name": "384b65ea-df1e-45cf-9874-afcc89daf5ea",
+      "origin": "scoped",
+      "policy_id": "8e878a6a-6d9e-4262-999e-fb0e09558f1f",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host.docker.internal:17434"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-h",
+      "decision": "allow",
+      "editable": true,
+      "id": "768e66f3-ff5e-4394-9dc6-de68ca36448d",
+      "layer": "local",
+      "name": "approval:768e66f3-ff5e-4394-9dc6-de68ca36448d",
+      "origin": "scoped",
+      "policy_id": "bc02b430-6ab0-5c52-bac7-3c4b880ee634",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host18.example.test:443"
+      ],
+      "sandbox_id": "project-h",
+      "scope": "sandbox:project-h",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-h",
+      "decision": "allow",
+      "editable": true,
+      "id": "ed16923b-794b-4b7b-ba7a-51b8f653e3f9",
+      "layer": "local",
+      "name": "approval:ed16923b-794b-4b7b-ba7a-51b8f653e3f9",
+      "origin": "scoped",
+      "policy_id": "bc02b430-6ab0-5c52-bac7-3c4b880ee634",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host19.example.test:443"
+      ],
+      "sandbox_id": "project-h",
+      "scope": "sandbox:project-h",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "allow",
+      "editable": false,
+      "id": "0d7cd911-a4b0-4f24-9b4f-86d371b7376d",
+      "layer": "local",
+      "name": "kit:project-f",
+      "origin": "scoped",
+      "policy_id": "75dd67ce-e089-4140-ab43-b98826abb40d",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "resource_type": "network",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "mcp-proxy.anthropic.com:443",
+        "bridge.claudeusercontent.com:443",
+        "deb.debian.org:80",
+        "dhi.io:80",
+        "registry.npmjs.org:443",
+        "cdn.playwright.dev:443",
+        "host8.example.test:443",
+        "storage.googleapis.com:443",
+        "host9.example.test",
+        "mise-versions.jdx.dev",
+        "github.com",
+        "api.github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "nodejs.org",
+        "registry.npmjs.org",
+        "cdn.playwright.dev",
+        "host8.example.test",
+        "deb.debian.org",
+        "security.debian.org",
+        "storage.googleapis.com"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "deny",
+      "editable": true,
+      "id": "64f143ee-cc64-4ed9-b15e-098cf8703c32",
+      "layer": "local",
+      "name": "64f143ee-cc64-4ed9-b15e-098cf8703c32",
+      "origin": "scoped",
+      "policy_id": "cbba4bf2-a080-48d9-8479-1c732b4d4c78",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:17434"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "deny",
+      "editable": true,
+      "id": "3613e460-3b38-4e60-b061-a3ccb3d8e985",
+      "layer": "local",
+      "name": "3613e460-3b38-4e60-b061-a3ccb3d8e985",
+      "origin": "scoped",
+      "policy_id": "cbba4bf2-a080-48d9-8479-1c732b4d4c78",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host.docker.internal:17434"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "allow",
+      "editable": true,
+      "id": "7d865162-7e96-471e-9404-8efb9eea57f5",
+      "layer": "local",
+      "name": "approval:7d865162-7e96-471e-9404-8efb9eea57f5",
+      "origin": "scoped",
+      "policy_id": "9e8bf30b-eb26-5738-ac5d-2382026b8466",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host20.example.test:443"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "allow",
+      "editable": true,
+      "id": "5d998bb6-7696-46b7-b9ec-2961473ee397",
+      "layer": "local",
+      "name": "approval:5d998bb6-7696-46b7-b9ec-2961473ee397",
+      "origin": "scoped",
+      "policy_id": "9e8bf30b-eb26-5738-ac5d-2382026b8466",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host21.example.test:443"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "allow",
+      "editable": true,
+      "id": "dbba0a35-c0eb-4528-884c-e14e050b9d18",
+      "layer": "local",
+      "name": "approval:dbba0a35-c0eb-4528-884c-e14e050b9d18",
+      "origin": "scoped",
+      "policy_id": "9e8bf30b-eb26-5738-ac5d-2382026b8466",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host22.example.test:443"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "allow",
+      "editable": true,
+      "id": "da2d65dc-4ea3-472f-b744-a1f45beed653",
+      "layer": "local",
+      "name": "approval:da2d65dc-4ea3-472f-b744-a1f45beed653",
+      "origin": "scoped",
+      "policy_id": "9e8bf30b-eb26-5738-ac5d-2382026b8466",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host23.example.test:443"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-f",
+      "decision": "allow",
+      "editable": true,
+      "id": "07d913d3-9e0a-48ec-8317-c9a1f83170ee",
+      "layer": "local",
+      "name": "approval:07d913d3-9e0a-48ec-8317-c9a1f83170ee",
+      "origin": "scoped",
+      "policy_id": "9e8bf30b-eb26-5738-ac5d-2382026b8466",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host24.example.test:443"
+      ],
+      "sandbox_id": "project-f",
+      "scope": "sandbox:project-f",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "d756c0d1-0fca-4f0a-8b81-3cdc7520d197",
+      "layer": "local",
+      "name": "approval:d756c0d1-0fca-4f0a-8b81-3cdc7520d197",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host6.example.test:443"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "629d3a56-b8b1-4f72-97e6-5ff269991be0",
+      "layer": "local",
+      "name": "approval:629d3a56-b8b1-4f72-97e6-5ff269991be0",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host25.example.test:443"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "e180c39b-d0fd-4bbd-967c-799227026f1c",
+      "layer": "local",
+      "name": "approval:e180c39b-d0fd-4bbd-967c-799227026f1c",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:9200"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "d36ace46-f6ba-48fc-b34e-aedd0dea9042",
+      "layer": "local",
+      "name": "approval:d36ace46-f6ba-48fc-b34e-aedd0dea9042",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:6379"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "d8e21500-0ba5-48bf-9a2f-6f1ba1dfcbd3",
+      "layer": "local",
+      "name": "approval:d8e21500-0ba5-48bf-9a2f-6f1ba1dfcbd3",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:1433"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "5688783d-95a5-46d5-a0f0-3906e4a49242",
+      "layer": "local",
+      "name": "approval:5688783d-95a5-46d5-a0f0-3906e4a49242",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:5432"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "1bf35363-98aa-434d-82d2-e3a8f3db6039",
+      "layer": "local",
+      "name": "approval:1bf35363-98aa-434d-82d2-e3a8f3db6039",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:10428"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "f0718183-1351-47a3-8c39-be30a7902a22",
+      "layer": "local",
+      "name": "approval:f0718183-1351-47a3-8c39-be30a7902a22",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:9428"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "0fe3d813-1aa2-424c-98a0-1e9a5f45b7f2",
+      "layer": "local",
+      "name": "approval:0fe3d813-1aa2-424c-98a0-1e9a5f45b7f2",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host26.example.test:443"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-e",
+      "decision": "allow",
+      "editable": true,
+      "id": "854d765b-c195-4d57-9d55-9bfea917d414",
+      "layer": "local",
+      "name": "approval:854d765b-c195-4d57-9d55-9bfea917d414",
+      "origin": "scoped",
+      "policy_id": "033fec83-b9f6-5e41-9e23-e15734d8ec22",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host27.example.test:443"
+      ],
+      "sandbox_id": "project-e",
+      "scope": "sandbox:project-e",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": true,
+      "id": "1a170821-a040-4462-9fb1-9ad96a03c8c4",
+      "layer": "local",
+      "name": "approval:1a170821-a040-4462-9fb1-9ad96a03c8c4",
+      "origin": "scoped",
+      "policy_id": "7e8672cb-37c0-505f-aa76-6bd42827736a",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host28.example.test:443"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": true,
+      "id": "fab83f88-dd26-40cc-bd3f-6a9671603b2a",
+      "layer": "local",
+      "name": "approval:fab83f88-dd26-40cc-bd3f-6a9671603b2a",
+      "origin": "scoped",
+      "policy_id": "7e8672cb-37c0-505f-aa76-6bd42827736a",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host29.example.test:443"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": true,
+      "id": "ce835607-7315-42f2-a2ec-59e2e1ee8d08",
+      "layer": "local",
+      "name": "approval:ce835607-7315-42f2-a2ec-59e2e1ee8d08",
+      "origin": "scoped",
+      "policy_id": "7e8672cb-37c0-505f-aa76-6bd42827736a",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host30.example.test:443"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": true,
+      "id": "dbf46538-3aea-485b-94b4-3168cb490f62",
+      "layer": "local",
+      "name": "approval:dbf46538-3aea-485b-94b4-3168cb490f62",
+      "origin": "scoped",
+      "policy_id": "7e8672cb-37c0-505f-aa76-6bd42827736a",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host31.example.test:443"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": true,
+      "id": "4a21aaae-1713-43fe-a800-32e3d6b1b1a0",
+      "layer": "local",
+      "name": "approval:4a21aaae-1713-43fe-a800-32e3d6b1b1a0",
+      "origin": "scoped",
+      "policy_id": "7e8672cb-37c0-505f-aa76-6bd42827736a",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host4.example.test:443"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-g",
+      "decision": "allow",
+      "editable": true,
+      "id": "b23b2af2-a747-44c6-b033-85c714d0e7cf",
+      "layer": "local",
+      "name": "approval:b23b2af2-a747-44c6-b033-85c714d0e7cf",
+      "origin": "scoped",
+      "policy_id": "7e8672cb-37c0-505f-aa76-6bd42827736a",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host32.example.test:443"
+      ],
+      "sandbox_id": "project-g",
+      "scope": "sandbox:project-g",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-i",
+      "decision": "allow",
+      "editable": false,
+      "id": "a7cb3dae-23df-42f9-99c6-8dffb183ee5e",
+      "layer": "local",
+      "name": "kit:project-i",
+      "origin": "scoped",
+      "policy_id": "8d3a7658-f84a-4027-9f76-91aebf5a145c",
+      "provenance": {
+        "created_via": "provisioned",
+        "source": "sandboxes"
+      },
+      "resource_type": "network",
+      "resources": [
+        "api.anthropic.com:443",
+        "platform.claude.com:443",
+        "downloads.claude.ai:443",
+        "claude.com:443",
+        "mcp-proxy.anthropic.com:443",
+        "bridge.claudeusercontent.com:443",
+        "deb.debian.org:80",
+        "dhi.io:80",
+        "mise.run",
+        "host9.example.test",
+        "mise-versions.jdx.dev",
+        "github.com",
+        "api.github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "releases.hashicorp.com",
+        "host33.example.test",
+        "checkpoint-api.hashicorp.com",
+        "awscli.amazonaws.com",
+        "nodejs.org",
+        "registry.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org",
+        "login.microsoftonline.com",
+        "host34.example.test",
+        "host35.example.test",
+        "host36.example.test",
+        "host37.example.test"
+      ],
+      "sandbox_id": "project-i",
+      "scope": "sandbox:project-i",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-i",
+      "decision": "deny",
+      "editable": true,
+      "id": "3cdc5d97-3294-4654-b21c-d92bdb50c935",
+      "layer": "local",
+      "name": "3cdc5d97-3294-4654-b21c-d92bdb50c935",
+      "origin": "scoped",
+      "policy_id": "6e2631f3-2da2-498c-a027-7a42c356a845",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "localhost:17434"
+      ],
+      "sandbox_id": "project-i",
+      "scope": "sandbox:project-i",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "sandbox:project-i",
+      "decision": "deny",
+      "editable": true,
+      "id": "f486f412-cdc0-491b-ba3b-cbd42ca3876f",
+      "layer": "local",
+      "name": "f486f412-cdc0-491b-ba3b-cbd42ca3876f",
+      "origin": "scoped",
+      "policy_id": "6e2631f3-2da2-498c-a027-7a42c356a845",
+      "provenance": {
+        "created_via": "added"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host.docker.internal:17434"
+      ],
+      "sandbox_id": "project-i",
+      "scope": "sandbox:project-i",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-i",
+      "decision": "allow",
+      "editable": true,
+      "id": "877b8100-3c11-468a-bde0-0c3cc1b3936f",
+      "layer": "local",
+      "name": "approval:877b8100-3c11-468a-bde0-0c3cc1b3936f",
+      "origin": "scoped",
+      "policy_id": "76d4fd9a-7552-5a74-a19b-4ecdf58cadc4",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host6.example.test:443"
+      ],
+      "sandbox_id": "project-i",
+      "scope": "sandbox:project-i",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-i",
+      "decision": "allow",
+      "editable": true,
+      "id": "41e4f357-7a8f-411f-9970-2821fd0cd71e",
+      "layer": "local",
+      "name": "approval:41e4f357-7a8f-411f-9970-2821fd0cd71e",
+      "origin": "scoped",
+      "policy_id": "76d4fd9a-7552-5a74-a19b-4ecdf58cadc4",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host25.example.test:443"
+      ],
+      "sandbox_id": "project-i",
+      "scope": "sandbox:project-i",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp"
+      ],
+      "applies_to": "sandbox:project-i",
+      "decision": "allow",
+      "editable": true,
+      "id": "169b588f-5081-47e6-8ed9-3a596bc08cd7",
+      "layer": "local",
+      "name": "approval:169b588f-5081-47e6-8ed9-3a596bc08cd7",
+      "origin": "scoped",
+      "policy_id": "76d4fd9a-7552-5a74-a19b-4ecdf58cadc4",
+      "provenance": {
+        "created_via": "approval"
+      },
+      "resource_type": "network",
+      "resources": [
+        "host38.example.test:443"
+      ],
+      "sandbox_id": "project-i",
+      "scope": "sandbox:project-i",
+      "status": "active"
+    },
+    {
+      "actions": [
+        "net:connect:tcp",
+        "net:connect:udp"
+      ],
+      "applies_to": "all",
+      "decision": "deny",
+      "editable": false,
+      "id": "default-deny-all",
+      "layer": "local",
+      "name": "default-deny-all",
+      "origin": "local",
+      "policy_name": "default-deny-all",
+      "reason": "Implicit fallback when no applicable policy decides the request.",
+      "resource_type": "network",
+      "resources": [
+        "host39.example.test"
+      ],
+      "scope": "global",
+      "status": "active"
+    }
+  ]
+}
