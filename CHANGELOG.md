@@ -4,6 +4,8 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 
 ## Unreleased
 
+- PAD-125 An extra folder may be inside ~/Library/Logs, always read-only, with a warning.
+- PAD-124 Extra folders take a pasted or typed path, checked as you type, or a dropped folder.
 - PAD-123 Network counts Paddock's suggestions, and the rules table sorts by any column.
 - PAD-122 The sidebar's Log shows a red dot when an error arrived since it was last opened.
 - PAD-121 Paddock captures diagnostics of itself when it hangs, or on demand (System menu).

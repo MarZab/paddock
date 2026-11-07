@@ -164,7 +164,8 @@ public enum NewProject {
         for extra in draft.extraFolders {
             do throws(ExtraFolderProblem) {
                 let checked = try ExtraFolders.check(extra.path, for: project, policy: folderPolicy)
-                project.extraFolders.append(Project.ExtraFolder(path: checked, readOnly: extra.readOnly))
+                project.extraFolders.append(Project.ExtraFolder(
+                    path: checked, readOnly: ExtraFolders.readOnly(extra.readOnly, path: checked, policy: folderPolicy)))
             } catch {
                 throw .extraFolder(extra.path, error)
             }

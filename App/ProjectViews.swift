@@ -603,10 +603,12 @@ struct ExtraFoldersRow: View {
                     Text((folder.path as NSString).abbreviatingWithTildeInPath)
                         .truncationMode(.head)
                         .help(folder.path)
-                    Toggle("Read-only", isOn: Binding(get: { folder.readOnly },
+                    let logs = model.folderPolicy.isInsideLogs(folder.path)
+                    Toggle("Read-only", isOn: Binding(get: { folder.readOnly || logs },
                                                       set: { model.setExtraFolder(folder.path, readOnly: $0, in: project) }))
                         .toggleStyle(.checkbox)
-                        .help("Off: the agent can change this folder's files too")
+                        .disabled(logs)
+                        .help(logs ? "Inside ~/Library/Logs: always read-only" : "Off: the agent can change this folder's files too")
                     if let other = ExtraFolders.otherProject(folder.path, in: model.allProjects, except: project.name) {
                         Label("project \(other)", systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.orange)
@@ -624,25 +626,129 @@ struct ExtraFoldersRow: View {
                         .help("Stop mounting this folder (at the sandbox's next create)")
                 }
             }
-            HStack(spacing: 6) {
-                if project.extraFolders.isEmpty { Text("none") }
-                Button("Add Folder", systemImage: "plus.circle") { chooseFolder() }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
-                    .help("Mount another folder in the sandbox, read-only unless you switch it (at its next create)")
+            ExtraFolderField(projectFolder: project.folder, extraFolders: project.extraFolders.map(\.path),
+                             sandbox: project.name,
+                             otherProject: { ExtraFolders.otherProject($0, in: model.allProjects, except: project.name) }) { path in
+                model.addExtraFolder(path, to: project)
             }
         }
     }
+}
 
-    private func chooseFolder() {
+/// Where an extra folder is added (PAD-124), in Info and New Project alike: paste or type a path
+/// (`ExtraFolders.path(fromInput:)`), checked as it is typed with the checks it gets when added
+/// (`ExtraFolders.check`), Return or Add adds it; Choose... opens the Open panel at the nearest
+/// folder of what was typed; folders dropped from Finder are added, each checked. `add` gets the
+/// checked path; it checks again (backlog doc Security rules).
+struct ExtraFolderField: View {
+    @Environment(AppModel.self) private var model
+    /// The project's folder; nil until New Project has one.
+    let projectFolder: String?
+    let extraFolders: [String]
+    /// For the Open panel's message.
+    var sandbox: String?
+    /// The project whose folder this is, if another's (a warning, not a refusal).
+    var otherProject: (String) -> String? = { _ in nil }
+    let add: (String) -> Void
+    @State private var text = ""
+    @State private var dropTargeted = false
+
+    /// What was typed, as a checked path or why not.
+    private enum Verdict {
+        case empty
+        case ok(String)
+        case problem(String)
+    }
+
+    private var verdict: Verdict { verdict(for: text) }
+
+    private func verdict(for input: String) -> Verdict {
+        guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .empty }
+        guard let path = ExtraFolders.path(fromInput: input, home: NSHomeDirectory()) else {
+            return .problem("Not a full path: start with / or ~/")
+        }
+        guard let projectFolder else { return .problem("Choose the project folder first") }
+        let policy = model.folderPolicy
+        do throws(ExtraFolderProblem) {
+            return .ok(try ExtraFolders.check(path, projectFolder: projectFolder, extraFolders: extraFolders, policy: policy))
+        } catch {
+            return .problem(error.description.prefix(1).uppercased() + error.description.dropFirst())
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                TextField("Extra folder", text: $text, prompt: Text("Paste or type a folder path, or drop a folder here"))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .onSubmit(addTyped)
+                Button("Add", action: addTyped)
+                    .disabled({ if case .ok = verdict { false } else { true } }())
+                    .help("Mount this folder in the sandbox, read-only unless you switch it (at its next create)")
+                Button("Choose...", action: choose)
+                    .help("Pick the folder in the Open panel")
+            }
+            switch verdict {
+            case .empty:
+                EmptyView()
+            case .ok(let path):
+                if model.folderPolicy.isInsideLogs(path) {
+                    Label("Inside ~/Library/Logs: mounted read-only, and it may hold other apps' logs", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                } else if let other = otherProject(path) {
+                    Label("This is project \(other)'s folder; writable, this agent could change its files", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                } else {
+                    Label((path as NSString).abbreviatingWithTildeInPath, systemImage: "checkmark.circle")
+                        .foregroundStyle(.secondary)
+                }
+            case .problem(let problem):
+                Label(problem, systemImage: "xmark.circle").foregroundStyle(.red)
+            }
+        }
+        .font(.callout)
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: 6).stroke(Color.accentColor, lineWidth: dropTargeted ? 2 : 0))
+        .dropDestination(for: URL.self) { urls, _ in
+            let folders = urls.filter(\.isFileURL)
+            for url in folders { addChecked(url.path) }
+            return !folders.isEmpty
+        } isTargeted: { dropTargeted = $0 }
+    }
+
+    private func addTyped() {
+        guard case .ok(let path) = verdict else { return }
+        add(path)
+        text = ""
+    }
+
+    /// A dropped or chosen folder: added when it passes, else shown in the field with why not.
+    private func addChecked(_ path: String) {
+        if case .ok(let checked) = verdict(for: path) {
+            add(checked)
+        } else {
+            text = path
+        }
+    }
+
+    private func choose() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Add"
-        panel.message = "A folder to mount in \(project.name)'s sandbox, read-only"
+        panel.message = sandbox.map { "A folder to mount in \($0)'s sandbox, read-only" } ?? "A folder to mount in the sandbox, read-only"
+        // Start at what was typed, or the nearest folder above it that exists.
+        if var start = ExtraFolders.path(fromInput: text, home: NSHomeDirectory()) {
+            var isFolder: ObjCBool = false
+            while start != "/", !(FileManager.default.fileExists(atPath: start, isDirectory: &isFolder) && isFolder.boolValue) {
+                start = (start as NSString).deletingLastPathComponent
+            }
+            panel.directoryURL = URL(fileURLWithPath: start, isDirectory: true)
+        }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        model.addExtraFolder(url.path, to: project)
+        addChecked(url.path)
     }
 }
 
@@ -877,14 +983,16 @@ struct NewProjectSheet: View {
                             HStack(spacing: 6) {
                                 Text((folder.path as NSString).abbreviatingWithTildeInPath).truncationMode(.head)
                                 Spacer()
+                                let logs = model.folderPolicy.isInsideLogs(folder.path)
                                 Toggle("Read-only", isOn: Binding(
-                                    get: { folder.readOnly },
+                                    get: { folder.readOnly || logs },
                                     set: { readOnly in
                                         if let index = binding.wrappedValue.extraFolders.firstIndex(where: { $0.path == folder.path }) {
                                             binding.wrappedValue.extraFolders[index].readOnly = readOnly
                                         }
                                     }))
                                     .toggleStyle(.checkbox)
+                                    .disabled(logs)
                                 Button("Remove", systemImage: "minus.circle") {
                                     binding.wrappedValue.extraFolders.removeAll { $0.path == folder.path }
                                 }
@@ -892,15 +1000,10 @@ struct NewProjectSheet: View {
                                 .buttonStyle(.borderless)
                             }
                         }
-                        Button("Add Folder...") {
-                            let panel = NSOpenPanel()
-                            panel.canChooseDirectories = true
-                            panel.canChooseFiles = false
-                            panel.allowsMultipleSelection = false
-                            panel.prompt = "Add"
-                            guard panel.runModal() == .OK, let url = panel.url,
-                                  !binding.wrappedValue.extraFolders.contains(where: { $0.path == url.path }) else { return }
-                            binding.wrappedValue.extraFolders.append(Project.ExtraFolder(path: url.path))
+                        ExtraFolderField(projectFolder: binding.wrappedValue.folder,
+                                         extraFolders: binding.wrappedValue.extraFolders.map(\.path),
+                                         otherProject: { ExtraFolders.otherProject($0, in: model.allProjects, except: "") }) { path in
+                            binding.wrappedValue.extraFolders.append(Project.ExtraFolder(path: path))
                         }
                     } header: {
                         Text("Extra folders")

@@ -130,4 +130,30 @@ struct FolderPolicyTests {
         #expect(throws: FolderPolicyViolation.notADirectory(file)) { try fs.policy.check(file) }
         #expect(throws: FolderPolicyViolation.notADirectory(fs.root + "/nope")) { try fs.policy.check(fs.root + "/nope") }
     }
+
+    /// Inside ~/Library, only ~/Library/Logs, and only when asked for (an operator's extra folder, PAD-125).
+    @Test func logsPassOnlyWhenAllowedAndNothingElseInLibraryDoes() throws {
+        let fs = try Sandbox()
+        defer { fs.cleanup() }
+        let logs = fs.home + "/Library/Logs"
+        for dir in [logs + "/Paddock/hangs", fs.home + "/Library/Keychains", fs.home + "/Library/Cookies", fs.home + "/.ssh"] {
+            try fs.mkdir(dir)
+        }
+        // A project folder, or a project's file: refused as before.
+        #expect(throws: FolderPolicyViolation.insideSensitiveEntry("Library")) { try fs.policy.check(logs + "/Paddock") }
+        // An operator's extra folder: allowed, and known as one.
+        try fs.policy.check(logs + "/Paddock", allowingLogs: true)
+        try fs.policy.check(logs + "/Paddock/hangs", allowingLogs: true)
+        #expect(fs.policy.isInsideLogs(logs + "/Paddock"))
+        // Not ~/Library/Logs itself, nor the rest of ~/Library, nor a way out of Logs.
+        for path in [logs, fs.home + "/Library", fs.home + "/Library/Keychains", logs + "/../Cookies"] {
+            #expect(throws: FolderPolicyViolation.insideSensitiveEntry("Library")) { try fs.policy.check(path, allowingLogs: true) }
+        }
+        // A link inside Logs is followed first: one to ~/.ssh is ~/.ssh.
+        try FileManager.default.createSymbolicLink(atPath: logs + "/keys", withDestinationPath: fs.home + "/.ssh")
+        #expect(throws: FolderPolicyViolation.insideSensitiveEntry(".ssh")) { try fs.policy.check(logs + "/keys", allowingLogs: true) }
+        #expect(!fs.policy.isInsideLogs(logs + "/keys"))
+        // Case does not open a way around it.
+        #expect(fs.policy.isInsideLogs(fs.home + "/LIBRARY/LOGS/Paddock") == fs.policy.isInsideLogs(logs + "/Paddock"))
+    }
 }

@@ -1642,14 +1642,18 @@ final class AppModel {
 
     // MARK: - Extra folders (PAD-73.5)
 
+    /// The folder checks for this Mac (`FolderPolicy`).
+    var folderPolicy: FolderPolicy {
+        FolderPolicy(home: NSHomeDirectory(), paddockConfigDirectory: paths.configDirectory)
+    }
+
     /// Adds a folder the operator chose to the project, read-only, after the same checks as a
     /// project folder (`ExtraFolders`). The sandbox mounts it at its next create (a recreate item).
     func addExtraFolder(_ path: String, to project: Project) {
         guard withSaved(project, { self.addExtraFolder(path, to: $0) }) else { return }
         guard var updated = projects.project(named: project.name) else { return }
-        let policy = FolderPolicy(home: NSHomeDirectory(), paddockConfigDirectory: paths.configDirectory)
         do throws(ExtraFolderProblem) {
-            let checked = try ExtraFolders.check(path, for: updated, policy: policy)
+            let checked = try ExtraFolders.check(path, for: updated, policy: folderPolicy)
             updated.extraFolders.append(Project.ExtraFolder(path: checked))
         } catch {
             fail("Could not add \((path as NSString).abbreviatingWithTildeInPath): \(error.description)", in: project.name)
@@ -1670,6 +1674,10 @@ final class AppModel {
         guard withSaved(project, { self.setExtraFolder(path, readOnly: readOnly, in: $0) }) else { return }
         guard var updated = projects.project(named: project.name),
               let index = updated.extraFolders.firstIndex(where: { $0.path == path }) else { return }
+        guard ExtraFolders.readOnly(readOnly, path: path, policy: folderPolicy) else {
+            fail("\((path as NSString).abbreviatingWithTildeInPath) stays read-only: it is inside ~/Library/Logs", in: project.name)
+            return
+        }
         updated.extraFolders[index].readOnly = readOnly
         saveExtraFolders(updated)
     }
@@ -1864,22 +1872,6 @@ final class AppModel {
 
     /// Captures Paddock when its main thread hangs, and says so once it answers again (PAD-121).
     @ObservationIgnored private let hangWatchdog = HangWatchdog()
-
-    /// System > Capture Diagnostics: what the watchdog captures in a hang, now, then shown in Finder.
-    func captureDiagnostics() {
-        let folder = HangWatchdog.folder()
-        appendLog("Capturing diagnostics into \(folder.path)")
-        Task {
-            await HangWatchdog.run(into: folder, reason: "the operator asked (System > Capture Diagnostics)")
-            appendLog("Diagnostics captured in \(folder.path)")
-            NSWorkspace.shared.activateFileViewerSelecting([folder])
-        }
-    }
-
-    /// Shows this session's log file in Finder, next to the earlier sessions' (System > Log Files).
-    func revealLogFiles() {
-        NSWorkspace.shared.activateFileViewerSelecting([LogFile.shared.url])
-    }
 
     private func modified(_ url: URL) -> Date {
         (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
