@@ -120,6 +120,9 @@ final class AppModel {
 
     func start() {
         guard refreshLoop == nil else { return }
+        hangWatchdog.start { [weak self] stuck, folder in
+            self?.appendLog("Paddock did not respond for \(Int(stuck)) s; diagnostics are in \(folder.path)", isError: true)
+        }
         voice.app = self
         loadFiles()
         notifier.start()
@@ -998,12 +1001,12 @@ final class AppModel {
         requestedSelection = .filesystem
     }
 
-    /// Opens the Processes page (File > Processes, the status popover).
+    /// Opens the Processes page (System > Processes, the status popover).
     func showSbxProcesses() {
         requestedSelection = .processes
     }
 
-    /// Opens the Log page (File > Log, the status popover).
+    /// Opens the Log page (System > Log, the status popover).
     func showLog() {
         requestedSelection = .log
     }
@@ -1768,8 +1771,36 @@ final class AppModel {
         showLog(entries)
     }
 
+    /// Verbose Log (System menu; the `verboseLog` default, off at first): `debugLog` lines say why
+    /// things happen, such as what became of each voice message (PAD-119).
+    var verboseLog = UserDefaults.standard.bool(forKey: "verboseLog") {
+        didSet { UserDefaults.standard.set(verboseLog, forKey: "verboseLog") }
+    }
+
+    /// A line only Verbose Log keeps; the text is not even made otherwise.
+    func debugLog(_ text: @autoclosure () -> String, category: LogCategory = .paddock, source: String? = nil) {
+        guard verboseLog else { return }
+        appendLog("[verbose] " + text(), category: category, source: source)
+    }
+
+    /// An error line reached the Log page while it was not shown: the sidebar's Log shows a red dot
+    /// until the page is shown (PAD-122). Set only when it changes, so the dot redraws only then.
+    private(set) var logHasUnseenErrors = false
+    /// The Log page is shown now (set by the sidebar): its errors are seen as they come. Read by no
+    /// view, so setting it redraws nothing.
+    @ObservationIgnored var logIsShown = false {
+        didSet { if logIsShown, logHasUnseenErrors { logHasUnseenErrors = false } }
+    }
+
+    /// How many denies Paddock suggests, for the sidebar's Network item (PAD-123). From the rules
+    /// alone (suggestions do not depend on the network log), and only as often as a view asks.
+    var suggestedDenyCount: Int {
+        ruleRows().count(where: \.isSuggestion)
+    }
+
     /// Adds lines already in the log file to the Log page.
     private func showLog(_ entries: [LogEntry]) {
+        if !logIsShown, !logHasUnseenErrors, entries.contains(where: \.isError) { logHasUnseenErrors = true }
         errorLog.append(contentsOf: entries)
         if errorLog.count > Self.maxLogEntries { errorLog.removeFirst(errorLog.count - Self.maxLogEntries) }
     }
@@ -1829,6 +1860,25 @@ final class AppModel {
         } else if !NSWorkspace.shared.open(dir) {
             lastError = "Could not open \(dir.path)"
         }
+    }
+
+    /// Captures Paddock when its main thread hangs, and says so once it answers again (PAD-121).
+    @ObservationIgnored private let hangWatchdog = HangWatchdog()
+
+    /// System > Capture Diagnostics: what the watchdog captures in a hang, now, then shown in Finder.
+    func captureDiagnostics() {
+        let folder = HangWatchdog.folder()
+        appendLog("Capturing diagnostics into \(folder.path)")
+        Task {
+            await HangWatchdog.run(into: folder, reason: "the operator asked (System > Capture Diagnostics)")
+            appendLog("Diagnostics captured in \(folder.path)")
+            NSWorkspace.shared.activateFileViewerSelecting([folder])
+        }
+    }
+
+    /// Shows this session's log file in Finder, next to the earlier sessions' (System > Log Files).
+    func revealLogFiles() {
+        NSWorkspace.shared.activateFileViewerSelecting([LogFile.shared.url])
     }
 
     private func modified(_ url: URL) -> Date {

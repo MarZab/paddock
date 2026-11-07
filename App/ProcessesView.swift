@@ -1,7 +1,7 @@
 import PaddockCore
 import SwiftUI
 
-/// The sidebar's System > Processes page, also File > Processes (backlog doc UI, Processes):
+/// The sidebar's System > Processes page, also System > Processes (backlog doc UI, Processes):
 /// sbx's and Paddock's processes on this Mac in a table, by kind, with CPU, memory, and how long they
 /// run. sbx tools whose terminal is gone can be stopped, after a confirmation that lists them; nothing
 /// else can, and nothing outside sbx and Paddock is listed (that is Activity Monitor's).

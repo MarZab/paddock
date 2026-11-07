@@ -4,6 +4,11 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 
 ## Unreleased
 
+- PAD-123 Network counts Paddock's suggestions, and the rules table sorts by any column.
+- PAD-122 The sidebar's Log shows a red dot when an error arrived since it was last opened.
+- PAD-121 Paddock captures diagnostics of itself when it hangs, or on demand (System menu).
+- PAD-120 The microphone follows the tab in front; another tab no longer holds it.
+- PAD-119 Verbose Log (System menu) says what became of each voice message.
 - PAD-118 The speech model download shows its progress and starts listening when done.
 - PAD-33 Project cards and the toolbar name waiting approval requests in their tooltip.
 - PAD-104 The version (yymmdd.N, from git) shows next to the status button.

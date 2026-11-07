@@ -20,12 +20,19 @@ struct PaddockApp: App {
         // macOS 26 rounds a window's corners by its toolbar; the compact one gets the smaller radius.
         .windowToolbarStyle(.unifiedCompact)
         .commands {
-            CommandGroup(after: .newItem) {
-                Button("Edit Paddock's Config") { model.editAppConfig() }
-                // Pages in the main window (System), not windows of their own.
+            // Paddock itself, as the sidebar's System section is (backlog doc UI, System menu).
+            CommandMenu("System") {
+                // Pages in the main window, not windows of their own.
                 Button("Log") { model.showLog() }
                     .keyboardShortcut("l", modifiers: [.command, .shift])
                 Button("Processes") { model.showSbxProcesses() }
+                Divider()
+                Toggle("Verbose Log", isOn: $model.verboseLog)
+                Button("Log Files") { model.revealLogFiles() }
+                Button("Crash Reports") { model.revealCrashReports() }
+                Button("Capture Diagnostics") { model.captureDiagnostics() }
+                Divider()
+                Button("Edit Paddock's Config") { model.editAppConfig() }
             }
         }
     }

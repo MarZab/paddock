@@ -57,15 +57,13 @@ struct ContentView: View {
                     }
                     Section("System") {
                         Label("Models", systemImage: "cpu").tag(SidebarSelection.models)
-                        Label("Network", systemImage: "network").tag(SidebarSelection.network)
-                            .help("Every network rule, with what sandboxes connected to")
+                        NetworkSidebarLabel().tag(SidebarSelection.network)
                         Label("Filesystem", systemImage: "folder.badge.gearshape").tag(SidebarSelection.filesystem)
                         Label("Processes", systemImage: "list.bullet.rectangle").tag(SidebarSelection.processes)
                             .help("sbx's processes on this Mac, and the ones whose terminal is gone")
                         Label("Templates", systemImage: "shippingbox").tag(SidebarSelection.templates)
                             .help("sbx's images, what uses them, and removing them")
-                        Label("Log", systemImage: "text.alignleft").tag(SidebarSelection.log)
-                            .help("Errors, sandbox setup and activity, and voice, by category")
+                        LogSidebarLabel().tag(SidebarSelection.log)
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220)
@@ -128,6 +126,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: selection, initial: true) { _, selected in
+            model.logIsShown = selected == .log
             switch selected {
             case .agent(let name, let tab)?:
                 model.shownProject = name
@@ -313,5 +312,40 @@ extension ToolbarContent {
         } else {
             self
         }
+    }
+}
+
+/// The sidebar's Network item, with the number of denies Paddock suggests (none when zero; PAD-123).
+/// A view of its own, so only this label follows the rules, not the whole window.
+private struct NetworkSidebarLabel: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let suggested = model.suggestedDenyCount
+        Label("Network", systemImage: "network")
+            .badge(suggested)
+            .help(suggested == 0 ? "Every network rule, with what sandboxes connected to"
+                : "Every network rule, with what sandboxes connected to; Paddock suggests \(suggested) to deny")
+    }
+}
+
+/// The sidebar's Log item, with a red dot while an error came since the Log was last shown (PAD-122).
+private struct LogSidebarLabel: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let unseen = model.logHasUnseenErrors
+        Label {
+            HStack(spacing: 6) {
+                Text("Log")
+                if unseen {
+                    Circle().fill(.red).frame(width: 7, height: 7)
+                        .accessibilityLabel("New errors")
+                }
+            }
+        } icon: {
+            Image(systemName: "text.alignleft")
+        }
+        .help(unseen ? "An error came since the Log was last shown" : "Errors, sandbox setup and activity, and voice, by category")
     }
 }

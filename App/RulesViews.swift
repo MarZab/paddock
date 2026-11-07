@@ -118,7 +118,11 @@ struct RulesPanel: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 260)
                 Picker("Decision", selection: $filter.decision) {
-                    ForEach(RuleFilter.Decision.allCases, id: \.self) { Text($0.title).tag($0) }
+                    // The suggestions are counted (PAD-123).
+                    let suggested = rows.filter(\.isSuggestion).count
+                    ForEach(RuleFilter.Decision.allCases, id: \.self) { decision in
+                        Text(decision == .suggested && suggested > 0 ? "\(decision.title) (\(suggested))" : decision.title).tag(decision)
+                    }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -169,6 +173,8 @@ struct RuleRowsTable: View {
     var context: String?
     /// The row under the pointer, slightly highlighted (every cell of it).
     @State private var hovered: String?
+    /// The column the operator sorted by (PAD-123); none keeps the rows' scope order.
+    @State private var sortOrder: [KeyPathComparator<Shown>] = []
 
     /// A row and whether the pointer is on it. The hover is part of the row's data: a table redraws
     /// a row's cells only when its data changes.
@@ -176,11 +182,22 @@ struct RuleRowsTable: View {
         let row: RuleRow
         let hovered: Bool
         var id: String { row.id }
+
+        // What each column sorts by.
+        var decision: String { row.decision }
+        var sandbox: String { row.sandbox ?? "" }
+        var target: String { row.target }
+        var kind: String { row.kind.title }
+        var source: String { row.source.title }
+        var seen: Date { row.activity?.lastSeen ?? .distantPast }
+        var connections: Int { (row.activity?.allowed ?? 0) + (row.activity?.blocked ?? 0) }
+        var rule: String { row.ruleName ?? "" }
     }
 
     var body: some View {
-        Table(rows.map { Shown(row: $0, hovered: $0.id == hovered) }) {
-            TableColumn("Decision") { shown in
+        let shown = rows.map { Shown(row: $0, hovered: $0.id == hovered) }
+        Table(sortOrder.isEmpty ? shown : shown.sorted(using: sortOrder), sortOrder: $sortOrder) {
+            TableColumn("Decision", value: \.decision) { shown in
                 cell(shown) {
                     let row = shown.row
                     // A suggestion is shown disabled until it is applied.
@@ -188,7 +205,7 @@ struct RuleRowsTable: View {
                 }
             }
             .width(min: 40, ideal: 48, max: 64)
-            TableColumn("Sandbox") { shown in
+            TableColumn("Sandbox", value: \.sandbox) { shown in
                 cell(shown) {
                     let row = shown.row
                     // Whom the rule applies to: one sandbox, or all of them.
@@ -198,7 +215,7 @@ struct RuleRowsTable: View {
                 }
             }
             .width(min: 50, ideal: 90, max: 140)
-            TableColumn("Target") { shown in
+            TableColumn("Target", value: \.target) { shown in
                 cell(shown) {
                     let row = shown.row
                     Text(row.target)
@@ -210,9 +227,9 @@ struct RuleRowsTable: View {
                 }
             }
             .width(min: 120, ideal: 220)
-            TableColumn("Kind") { shown in cell(shown) { Text(shown.row.kind.title).foregroundStyle(.secondary) } }
+            TableColumn("Kind", value: \.kind) { shown in cell(shown) { Text(shown.row.kind.title).foregroundStyle(.secondary) } }
                 .width(min: 36, ideal: 48, max: 64)
-            TableColumn("Source") { shown in
+            TableColumn("Source", value: \.source) { shown in
                 cell(shown) {
                     let row = shown.row
                     Text(row.source.title)
@@ -221,7 +238,7 @@ struct RuleRowsTable: View {
                 }
             }
             .width(min: 56, ideal: 84, max: 110)
-            TableColumn("Seen") { shown in
+            TableColumn("Seen", value: \.seen) { shown in
                 cell(shown) {
                     let row = shown.row
                     // "just now" stands out for a few seconds, orange when the row has blocked connections.
@@ -238,7 +255,7 @@ struct RuleRowsTable: View {
             }
             .width(min: 44, ideal: 64, max: 90)
             .defaultVisibility(showsActivity ? .visible : .hidden)
-            TableColumn("Connections") { shown in
+            TableColumn("Connections", value: \.connections) { shown in
                 cell(shown) {
                     let row = shown.row
                     Text(connectionsText(row.activity))
@@ -247,7 +264,7 @@ struct RuleRowsTable: View {
             }
             .width(min: 44, ideal: 72, max: 110)
             .defaultVisibility(showsActivity ? .visible : .hidden)
-            TableColumn("Rule") { shown in
+            TableColumn("Rule", value: \.rule) { shown in
                 cell(shown) {
                     let row = shown.row
                     Text(ruleText(row))
