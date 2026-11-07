@@ -553,10 +553,7 @@ final class AppModel {
     /// After a create: keeps the kits and the `sbxenv.yaml` the sandbox was created from in its
     /// project file.
     private func recordCreated(_ created: Project) {
-        guard var updated = projects.project(named: created.name),
-              updated.sandboxEnvironment != created.sandboxEnvironment || updated.sandboxKits != created.sandboxKits else { return }
-        updated.sandboxEnvironment = created.sandboxEnvironment
-        updated.sandboxKits = created.sandboxKits
+        guard let updated = projects.project(named: created.name)?.recordingCreate(created) else { return }
         do {
             try projectDirectory.save(updated)
             projects.remove(named: updated.name)

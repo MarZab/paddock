@@ -167,6 +167,21 @@ extension Project {
     }
 }
 
+extension Project {
+    /// What a create recorded about the sandbox (`ProjectRunner.create`'s result), taken into the
+    /// saved project: its kits, the sbxenv.yaml it came from and that file's record, and the Claude
+    /// sessions folder it mounted. Nil when nothing differs. Every field Sync compares with the
+    /// project must be here, or Sync keeps showing a difference a recreate already fixed.
+    public func recordingCreate(_ created: Project) -> Project? {
+        var updated = self
+        updated.sandboxKits = created.sandboxKits
+        updated.sandboxEnvironment = created.sandboxEnvironment
+        updated.sandboxEnvironmentRecord = created.sandboxEnvironmentRecord
+        updated.sandboxClaudeSessions = created.sandboxClaudeSessions
+        return updated == self ? nil : updated
+    }
+}
+
 public enum ProjectStoreError: Error, Equatable, CustomStringConvertible {
     case malformed(file: String, message: String)
     case unsupportedVersion(file: String, version: Int?)

@@ -235,3 +235,43 @@ struct ClaudeSessionsTests {
         setup.runner.respond(to: ["ls", "--json"], with: Data(json.utf8))
     }
 }
+
+/// What a create records goes into the saved project (PAD-133): a field left out kept Sync's item
+/// for it after the recreate that fixed it.
+@Suite("Recording a create")
+struct RecordingCreateTests {
+    @Test func everyCreateTimeFieldIsTaken() throws {
+        let saved = Project(name: "paddock-app", folder: "/src/app", keepsClaudeSessions: true)
+        var created = saved
+        created.sandboxKits = ["docker.io/sbx/claude:latest"]
+        created.sandboxEnvironment = "abc"
+        created.sandboxEnvironmentRecord = try JSONDecoder().decode(EnvironmentRecord.self, from: Data(#"{"pieces": {"sbxenv.yaml:agent": "ab12"}}"#.utf8))
+        created.sandboxClaudeSessions = "/d/sessions/paddock-app/claude"
+        let updated = try #require(saved.recordingCreate(created))
+        #expect(updated.sandboxKits == created.sandboxKits && updated.sandboxEnvironment == "abc")
+        #expect(updated.sandboxEnvironmentRecord == created.sandboxEnvironmentRecord)
+        #expect(updated.sandboxClaudeSessions == "/d/sessions/paddock-app/claude")
+        // Only the sessions folder changed: still saved.
+        var again = updated
+        again.sandboxClaudeSessions = nil
+        #expect(updated.recordingCreate(again)?.sandboxClaudeSessions == .some(nil))
+        // Nothing changed: nothing to save.
+        #expect(updated.recordingCreate(updated) == nil)
+    }
+
+    @Test func syncHasNothingLeftAfterTheRecreateIsRecorded() throws {
+        let app = AppConfig()
+        let sandbox = SbxSandbox(name: "paddock-app", id: "1", agent: "claude", status: "running", lastUsedAt: nil,
+                                 workspaces: ["/src/app"], createdAt: Date())
+        let snapshot = SandboxSnapshot(sandbox: sandbox, ports: [], rules: [])
+        let folder = "/d/sessions/paddock-app/claude"
+        let saved = Project(name: "paddock-app", folder: "/src/app", kits: [], sandboxKits: [], keepsClaudeSessions: true)
+        #expect(SandboxSync.diff(project: saved, snapshot: snapshot, globalRules: [], app: app, claudeSessions: folder)
+            .contains { $0.id == "claude-sessions" })
+        var created = saved
+        created.sandboxClaudeSessions = folder
+        let recorded = try #require(saved.recordingCreate(created))
+        #expect(!SandboxSync.diff(project: recorded, snapshot: snapshot, globalRules: [], app: app, claudeSessions: folder)
+            .contains { $0.id == "claude-sessions" })
+    }
+}
