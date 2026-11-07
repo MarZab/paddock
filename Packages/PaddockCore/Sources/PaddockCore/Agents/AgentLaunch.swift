@@ -45,7 +45,8 @@ public struct AgentLaunchPlanner: Sendable {
         publish: [Project.PortMapping] = [],
         template: String? = nil,
         clone: Bool = false,
-        extraFolders: [String] = []
+        extraFolders: [String] = [],
+        mounts: [String] = []
     ) -> SandboxLaunch {
         var arguments = ["create", "--name", name, "--no-progress"]
         if clone { arguments.append("--clone") }
@@ -58,6 +59,10 @@ public struct AgentLaunchPlanner: Sendable {
         arguments += policy.createArguments
         for kit in kits {
             arguments += ["--kit", kit]
+        }
+        // A kit's host mounts (`HOST:TARGET`), only at create (`ClaudeSessions`).
+        for mount in mounts {
+            arguments += ["--mount", mount]
         }
 
         for (name, value) in environment(agent: agent, gateway: gateway) {

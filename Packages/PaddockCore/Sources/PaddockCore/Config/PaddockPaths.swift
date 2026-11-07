@@ -3,14 +3,21 @@ import Foundation
 /// Where Paddock keeps its files: one folder, `$XDG_CONFIG_HOME/paddock` or `~/.config/paddock`.
 public struct PaddockPaths: Sendable, Equatable {
     public let configDirectory: String
+    /// What Paddock keeps that is not configuration: Claude's sessions (PAD-127). Apart from the
+    /// config folder, so nothing a sandbox can write is ever inside it.
+    public let dataDirectory: String
 
-    public init(configDirectory: String) {
+    /// `dataDirectory` defaults to `.local/share/paddock` beside `.config/paddock`.
+    public init(configDirectory: String, dataDirectory: String? = nil) {
         self.configDirectory = configDirectory
+        self.dataDirectory = dataDirectory
+            ?? ((configDirectory as NSString).deletingLastPathComponent + "/../.local/share/paddock" as NSString).standardizingPath
     }
 
     public init(environment: [String: String], home: String) {
         let base = environment["XDG_CONFIG_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? home + "/.config"
-        self.init(configDirectory: base + "/paddock")
+        let data = environment["XDG_DATA_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? home + "/.local/share"
+        self.init(configDirectory: base + "/paddock", dataDirectory: data + "/paddock")
     }
 
     /// The operator's config (backlog doc App config).
@@ -18,6 +25,8 @@ public struct PaddockPaths: Sendable, Equatable {
     /// One `<name>.json` per project.
     public var projects: String { configDirectory + "/projects" }
     public var kits: String { configDirectory + "/kits" }
+    /// One folder per project with Claude's sessions (`ClaudeSessions`).
+    public var sessions: String { dataDirectory + "/sessions" }
 
     /// Makes Paddock's config folders owner-only (0700) and the files in them 0600, whatever they
     /// were created with (PAD-94). Approvals in `projects/` and the overlays are the operator's

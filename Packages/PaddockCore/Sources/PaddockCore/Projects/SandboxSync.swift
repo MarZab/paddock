@@ -73,8 +73,11 @@ public enum SandboxSync {
     /// `expectedKits` are the kits the project asks for (`ResolvedKit.recorded`), nil to leave
     /// kits out. `environment` is the record of the project's `sbxenv.yaml` as it is now, when that
     /// is the confirmed version; it says what changed since the create.
+    /// `claudeSessions` is the folder the project's sandbox should mount for Claude's sessions
+    /// (`ClaudeSessions.folder`), nil when it should mount none.
     public static func diff(project: Project, snapshot: SandboxSnapshot?, globalRules: [SbxPolicyRule], app: AppConfig,
-                            expectedKits: Result<[String], KitError>? = nil, environment: EnvironmentRecord? = nil) -> [SyncItem] {
+                            expectedKits: Result<[String], KitError>? = nil, environment: EnvironmentRecord? = nil,
+                            claudeSessions: String? = nil) -> [SyncItem] {
         guard let snapshot else {
             return [SyncItem(id: "sandbox", kind: .sandbox, summary: "No sandbox yet", apply: .create)]
         }
@@ -119,6 +122,14 @@ public enum SandboxSync {
             items.append(SyncItem(id: "kits", kind: .setting, summary: "The project's kits cannot be used: \(error.description)", apply: nil))
         case nil:
             break
+        }
+        // Only when Paddock created the sandbox: it recorded the sessions folder it mounted then.
+        if project.sandboxKits != nil, project.sandboxClaudeSessions.map(FolderPolicy.canonical) != claudeSessions.map(FolderPolicy.canonical) {
+            let summary = claudeSessions == nil
+                ? "The sandbox keeps Claude's sessions on this Mac, the project no longer does; recreate it to stop"
+                : "Claude's sessions are not kept on this Mac yet; recreate the sandbox to keep them (its current sessions are lost once)"
+            items.append(SyncItem(id: "claude-sessions", kind: .setting, summary: summary,
+                                  apply: app.agents[project.agent] == nil ? nil : .recreate))
         }
         items += networkItems(project: project, snapshot: snapshot, globalRules: globalRules, app: app)
         return items

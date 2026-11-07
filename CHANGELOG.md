@@ -4,6 +4,8 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 
 ## Unreleased
 
+- PAD-130 Claude's sessions can be kept on this Mac for projects with an sbxenv.yaml too.
+- PAD-127 Claude's sessions can be kept on this Mac across recreates, and cleared in Info.
 - PAD-125 An extra folder may be inside ~/Library/Logs, always read-only, with a warning.
 - PAD-124 Extra folders take a pasted or typed path, checked as you type, or a dropped folder.
 - PAD-123 Network counts Paddock's suggestions, and the rules table sorts by any column.

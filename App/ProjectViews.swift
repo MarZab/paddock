@@ -752,6 +752,45 @@ struct ExtraFolderField: View {
     }
 }
 
+/// Claude's sessions on this Mac (PAD-127): whether they are kept across recreates, how many there
+/// are, Show in Finder, and Clear Sessions (confirmed). Turning it on or off applies at the
+/// sandbox's next create.
+struct ClaudeSessionsRow: View {
+    @Environment(AppModel.self) private var model
+    let project: Project
+    @State private var confirmsClear = false
+
+    var body: some View {
+        let summary = model.claudeSessionsSummary(of: project)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Toggle("Keep on this Mac", isOn: Binding(get: { project.keepsClaudeSessions },
+                                                        set: { model.setKeepsClaudeSessions($0, for: project) }))
+                    .toggleStyle(.checkbox)
+                    .help("Claude's sessions (claude --resume) go to a folder of this project's on the Mac and survive recreating the sandbox (at its next create)")
+                if let summary {
+                    Text("\(summary.sessions) session\(summary.sessions == 1 ? "" : "s"), \(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file))")
+                        .foregroundStyle(.secondary)
+                    Button("Show in Finder", systemImage: "folder") { model.revealClaudeSessions(of: project) }
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .help("Show the sessions folder in Finder")
+                    Button("Clear Sessions...") { confirmsClear = true }
+                        .disabled(summary.sessions == 0 && summary.bytes == 0)
+                        .help("Remove every kept session of this project")
+                }
+            }
+        }
+        .confirmationDialog("Clear \(project.name)'s Claude sessions?", isPresented: $confirmsClear) {
+            Button("Clear Sessions", role: .destructive) { model.clearClaudeSessions(of: project) }
+        } message: {
+            Text(model.state(of: project) == .running
+                ? "Every kept session of this project is removed, the one the agent is in now too. This cannot be undone."
+                : "Every kept session of this project is removed. This cannot be undone.")
+        }
+    }
+}
+
 /// The project's details at the top of its Info tab: what sbx and the project file say about it.
 struct ProjectStatusHeader: View {
     @Environment(AppModel.self) private var model
@@ -829,6 +868,11 @@ struct ProjectStatusHeader: View {
             }
             row("Extra folders") {
                 ExtraFoldersRow(project: project)
+            }
+            if model.appConfig.agents[project.agent] == .claudeCode {
+                row("Claude sessions") {
+                    ClaudeSessionsRow(project: project)
+                }
             }
             if let port = project.gatewayPort {
                 row("Gateway") { Text(model.gatewayPorts[project.name] == nil ? "port \(port), not listening" : "port \(port)") }
@@ -977,6 +1021,15 @@ struct NewProjectSheet: View {
                         Text("Kits")
                     } footer: {
                         KitsFootnote()
+                    }
+                    if model.appConfig.agents[binding.wrappedValue.agent] == .claudeCode {
+                        Section {
+                            Toggle("Keep Claude's sessions on this Mac", isOn: binding.keepsClaudeSessions)
+                        } footer: {
+                            Text("Sessions (claude --resume) go to a folder of this project in Paddock's data folder and survive recreating the sandbox. Clear them in the project's Info.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     Section {
                         ForEach(binding.wrappedValue.extraFolders, id: \.path) { folder in

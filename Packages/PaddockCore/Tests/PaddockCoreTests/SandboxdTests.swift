@@ -103,7 +103,13 @@ struct SandboxdReadsTests {
     @Test(arguments: SandboxdFixture.apiVersions)
     func sandboxesMatchSbxLs(api: String) async throws {
         let reads = SandboxdReads(transport: try SandboxdFixture.transport(api: api))
+        // Everything but `mounts`: the socket does not report them (`SbxSandbox.mounts`, PAD-127).
         let expected = try Fixture.decode([SbxSandbox].self, SandboxdFixture.folder(api), "cli-ls.json")
+            .map { sandbox in
+                var sandbox = sandbox
+                sandbox.mounts = nil
+                return sandbox
+            }
         #expect(try await reads.sandboxes() == expected)
         #expect(!expected.isEmpty)
     }

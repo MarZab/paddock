@@ -30,6 +30,8 @@ public enum ProjectRunError: Error, Equatable, CustomStringConvertible {
     case extraFolder(String, ExtraFolderProblem)
     /// A file a native tab asked for that Paddock does not read.
     case invalidShowPath(String)
+    /// Claude's sessions folder cannot be mounted, or sbx mounted another one (PAD-127).
+    case claudeSessions(ClaudeSessionsProblem)
 
     public var description: String {
         switch self {
@@ -51,6 +53,7 @@ public enum ProjectRunError: Error, Equatable, CustomStringConvertible {
         case .stillRunning(let name): "sbx stopped \(name), but it is running again; something started it (sbx exec or sbx run in a terminal)"
         case .kit(let error): error.description
         case .invalidShowPath(let path): "Paddock does not read \(path) for a shown file"
+        case .claudeSessions(let problem): "Claude's sessions cannot be kept on this Mac: \(problem.description)"
         }
     }
 }
@@ -140,12 +143,26 @@ public struct ProjectRunner: Sendable {
             throw ProjectRunError.extraFolder(project.extraFolders.first?.path ?? "", error)
         }
 
+        // Claude's sessions on this Mac (PAD-127): the kit always with the project's own folder,
+        // given with sbx create --mount, or for an sbxenv.yaml in Paddock's overlay (PAD-130).
+        var sessionsFolder: String?
+        var sessionsKit: [String] = []
+        if project.keepsClaudeSessions, agent == .claudeCode {
+            do throws(ClaudeSessionsProblem) {
+                sessionsFolder = try ClaudeSessions.prepare(project: project.name, paths: paths, policy: folderPolicy)
+            } catch {
+                throw ProjectRunError.claudeSessions(error)
+            }
+            sessionsKit = [try ClaudeSessions.installKit(in: paths)]
+        }
+
         let planner = AgentLaunchPlanner(paths: paths)
         await progress?("Creating the sandbox")
         if let environment {
             let overlay = PaddockOverlay(agent: agent.sbxAgent, workspace: FolderPolicy.canonical(project.folder),
-                                         kits: kits.map(\.argument), env: planner.environment(agent: agent, gateway: gateway),
-                                         extraFolders: extras)
+                                         kits: kits.map(\.argument) + sessionsKit, env: planner.environment(agent: agent, gateway: gateway),
+                                         extraFolders: extras,
+                                         mounts: sessionsFolder.map { [ClaudeSessions.target: $0] } ?? [:])
             let overlayPath = PaddockOverlay.path(project: project.name, paths: paths)
             try overlay.write(to: overlayPath)
             log?("sbx env create for \(project.name): \(environment.kits.count) project kits, \(kits.count) of Paddock's")
@@ -166,8 +183,19 @@ public struct ProjectRunner: Sendable {
         } else {
             // Ports are published afterwards: the app picks free host ports across every sandbox.
             try await sbx.create(planner.create(name: project.name, agent: agent, folder: project.folder,
-                                                policy: plan, gateway: gateway, kits: kits.map(\.argument),
-                                                clone: project.cloneMode, extraFolders: extras.map(ExtraFolders.argument)))
+                                                policy: plan, gateway: gateway, kits: kits.map(\.argument) + sessionsKit,
+                                                clone: project.cloneMode, extraFolders: extras.map(ExtraFolders.argument),
+                                                mounts: sessionsFolder.map { [ClaudeSessions.mountArgument(folder: $0)] } ?? []))
+        }
+        // sbx mounts a folder of its own, shared by every sandbox with the kit, when it does not
+        // take Paddock's: the sandbox is kept only with the project's own folder.
+        if let sessionsFolder {
+            let mounts = try await sbx.sandboxesWithMounts().first { $0.name == project.name }?.mounts
+            let host = mounts.flatMap(ClaudeSessions.mounted(in:))
+            if host.map(FolderPolicy.canonical) != FolderPolicy.canonical(sessionsFolder) {
+                try? await sbx.perform(["rm", "--force", "--json", project.name])
+                throw ProjectRunError.claudeSessions(.mountedElsewhere(host))
+            }
         }
         for command in planner.policyCommands(name: project.name, plan: plan) {
             try await sbx.perform(command)
@@ -182,6 +210,7 @@ public struct ProjectRunner: Sendable {
         created.sandboxKits = kits.map(\.recorded)
         created.sandboxEnvironment = environment?.fingerprint
         created.sandboxEnvironmentRecord = environment?.record
+        created.sandboxClaudeSessions = sessionsFolder
         return created
     }
 

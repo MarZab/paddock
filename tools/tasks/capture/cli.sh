@@ -1,7 +1,7 @@
 #!/bin/bash
 #MISE description="Capture sbx and llmman CLI output on the operator's Mac, for fixtures (the M0 capture)"
 #USAGE arg "<phase>" help="readonly first, then lifecycle, models; v3 for sbx >= 0.51 kits and sbx env (PAD-73.1), kits for Paddock's own kits (PAD-73.2)" {
-#USAGE   choices "readonly" "lifecycle" "models" "v3" "kits" "mounts"
+#USAGE   choices "readonly" "lifecycle" "models" "v3" "kits" "mounts" "sessions-hostmount" "sessions-env"
 #USAGE }
 #USAGE arg "[parts]" help="kits only: a comma-separated choice of status, voice, browser, gateway, claude, opencode (all when left out)"
 # M0 CLI contract spike. Run on the operator's Mac, from the repo root.
@@ -9,6 +9,8 @@
 #   mise run capture:cli readonly    # safe: versions, status, lists, --help texts, llmman GETs
 #   mise run capture:cli lifecycle   # creates throwaway sbx sandboxes (claude, builder), then removes them
 #   mise run capture:cli mounts      # can a folder be added to an existing sandbox without a recreate? (throwaway sandboxes)
+#   mise run capture:cli sessions-hostmount  # does a kit's host-mount@1 with --mount keep them in a folder on this Mac?
+#   mise run capture:cli sessions-env    # the same through sbx env: an overlay's kits and mounts: (PAD-130)
 #   mise run capture:cli models      # enables sbx --model (asks), runs a tiny local model, probes llmman from inside
 #
 # Output goes to .tmp/captures/ (gitignored, outside the Swift package); throwaway projects to .tmp/capture-projects/.
@@ -314,6 +316,166 @@ YAML
 
   log "remove"
   cap mounts-rm json sbx rm --force --json "$cli" "$env"
+  trap - EXIT
+}
+
+# ---------------------------------------------------------------- sessions-hostmount
+
+# A mixin kit declaring host-mount@1 at ~/.claude/projects, given a folder on this Mac with
+# sbx create --mount: owner and writability inside, whether a session shows on the Mac and survives
+# Paddock's recreate, what a link made inside looks like on the Mac, and what sbx does without
+# --mount (PAD-127).
+phase_sessions_hostmount() {
+  local dir="$TESTDIR/sessions-hostmount" name="$RUN_ID-sessh" bare="$RUN_ID-sessh0" kit host
+  kit="$dir/kit/paddock-sessions-probe"
+  host="$dir/claude-sessions"
+  log "will create sandboxes $name and $bare (claude) with a probe kit mounting $host at ~/.claude/projects, recreate $name twice, then remove both"
+  confirm "Proceed?" || return 0
+  mkdir -p "$dir/project" "$dir/extra" "$kit" "$host"
+  chmod 700 "$host"
+  echo "project" > "$dir/project/README.md"
+  cat > "$kit/paddock-sessions-probe.yaml" <<'YAML'
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+version: "0.0.1"
+displayName: Paddock sessions probe
+description: Keeps Claude Code's sessions in a folder on the Mac.
+provides: [paddock-sessions-probe]
+
+capabilities:
+  - type: com.docker.sandbox/host-mount@1
+    config:
+      path: /home/agent/.claude/projects
+YAML
+  trap 'sbx rm --force "$RUN_ID-sessh" >/dev/null 2>&1; sbx rm --force "$RUN_ID-sessh0" >/dev/null 2>&1' EXIT
+  cap sessions-hostmount-sbx-version json sbx version --json
+  cap sessions-hostmount-kit-validate txt sbx kit validate "$kit"
+
+  look() {
+    # shellcheck disable=SC2016  # expanded inside the sandbox
+    cap "sessions-hostmount-$1-inside" txt sbx exec "$2" /bin/sh -c \
+      'id; echo "## projects"; ls -lad "$HOME/.claude/projects" 2>&1; ls -la "$HOME/.claude/projects" 2>&1 | head; echo "## mounts"; grep -E "claude" /proc/mounts 2>&1; echo "## marker"; cat "$HOME/.claude/projects/paddock-probe/probe.jsonl" 2>&1'
+    cap "sessions-hostmount-$1-host" txt /bin/sh -c "ls -laR '$host' 2>&1 | head -30"
+  }
+
+  log "1. create with the kit and --mount; can the agent write, and does it show on the Mac?"
+  if ! cap sessions-hostmount-create txt sbx create --name "$name" --kit "$kit" --mount "$host:/home/agent/.claude/projects" claude "$dir/project"; then
+    warn "create failed; see sessions-hostmount-create"
+    return 1
+  fi
+  look created "$name"
+  # a session, and a link pointing out of the folder (how it looks on the Mac)
+  # shellcheck disable=SC2016  # expanded inside the sandbox
+  cap sessions-hostmount-write txt sbx exec "$name" /bin/sh -c \
+    'mkdir -p "$HOME/.claude/projects/paddock-probe" && echo "{\"probe\":\"kept\"}" > "$HOME/.claude/projects/paddock-probe/probe.jsonl" && ln -s /etc/passwd "$HOME/.claude/projects/paddock-probe/link" && echo written'
+  look written "$name"
+  cap sessions-hostmount-ls json sbx ls --json
+
+  log "2. recreate as Paddock does"
+  cap sessions-hostmount-rm-1 json sbx rm --force --json "$name"
+  cap sessions-hostmount-recreate txt sbx create --name "$name" --kit "$kit" --mount "$host:/home/agent/.claude/projects" claude "$dir/project"
+  look recreated "$name"
+
+  log "3. recreate with an extra folder"
+  cap sessions-hostmount-rm-2 json sbx rm --force --json "$name"
+  cap sessions-hostmount-recreate-extra txt sbx create --name "$name" --kit "$kit" --mount "$host:/home/agent/.claude/projects" claude "$dir/project" "$dir/extra:ro"
+  look recreated-extra "$name"
+
+  log "4. the kit without --mount: what does sbx mount?"
+  cap sessions-hostmount-bare-create txt sbx create --name "$bare" --kit "$kit" claude "$dir/project"
+  # shellcheck disable=SC2016  # expanded inside the sandbox
+  cap sessions-hostmount-bare-inside txt sbx exec "$bare" /bin/sh -c 'ls -lad "$HOME/.claude/projects" 2>&1; grep -E "claude" /proc/mounts 2>&1'
+  cap sessions-hostmount-bare-ls json sbx ls --json
+
+  log "remove"
+  cap sessions-hostmount-rm json sbx rm --force --json "$name" "$bare"
+  cap sessions-hostmount-after-rm-host txt /bin/sh -c "ls -laR '$host' 2>&1 | head -30"
+  trap - EXIT
+}
+
+# ---------------------------------------------------------------- sessions-env
+
+# What PAD-127 does with sbx create --mount, through sbx env as Paddock creates a project with an
+# sbxenv.yaml: Paddock's overlay names the sessions kit and binds its host-mount@1 path with the
+# environment file's top-level `mounts:` (docs.docker.com/ai/sandboxes/configuration/environment-files,
+# mounts). Is it taken, does sbx ls list it, and does a session survive Paddock's recreate (PAD-130)?
+phase_sessions_env() {
+  local dir="$TESTDIR/sessions-env" name="$RUN_ID-sesse" kit host
+  kit="$dir/kit/paddock-sessions-probe"
+  host="$dir/claude-sessions"
+  log "will create sandbox $name (claude) with sbx env, an overlay binding $host at ~/.claude/projects, recreate it, then remove it"
+  confirm "Proceed?" || return 0
+  mkdir -p "$dir/project" "$kit" "$host" "$dir/overlay"
+  chmod 700 "$host"
+  echo "project" > "$dir/project/README.md"
+  cat > "$kit/paddock-sessions-probe.yaml" <<'YAML'
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+version: "0.0.1"
+displayName: Paddock sessions probe
+description: Keeps Claude Code's sessions in a folder on the Mac.
+provides: [paddock-sessions-probe]
+
+capabilities:
+  - type: com.docker.sandbox/host-mount@1
+    config:
+      path: /home/agent/.claude/projects
+YAML
+  cat > "$dir/project/sbxenv.yaml" <<YAML
+schemaVersion: "1"
+name: $name
+agent: claude
+workspace: .
+YAML
+  # Paddock's overlay: absolute paths, as Paddock writes them
+  cat > "$dir/overlay/sbxenv.yaml" <<YAML
+schemaVersion: "1"
+agent: "claude"
+workspace: "$dir/project"
+kits:
+  - "$kit"
+mounts:
+  /home/agent/.claude/projects: "$host"
+YAML
+  trap 'sbx rm --force "$RUN_ID-sesse" >/dev/null 2>&1' EXIT
+  cap sessions-env-sbx-version json sbx version --json
+  local files=("$dir/project/sbxenv.yaml" "$dir/overlay/sbxenv.yaml")
+
+  look() {
+    # shellcheck disable=SC2016  # expanded inside the sandbox
+    cap "sessions-env-$1-inside" txt sbx exec "$name" /bin/sh -c \
+      'id; ls -lad "$HOME/.claude/projects" 2>&1; echo "## mounts"; grep -E "claude" /proc/mounts 2>&1; echo "## marker"; cat "$HOME/.claude/projects/paddock-probe/probe.jsonl" 2>&1'
+    cap "sessions-env-$1-host" txt /bin/sh -c "ls -laR '$host' 2>&1 | head -20"
+  }
+
+  log "plan: does sbx take mounts: from the overlay?"
+  cap sessions-env-plan txt sbx env plan "${files[@]}"
+  cap sessions-env-plan-json json sbx env plan "${files[@]}" --json
+
+  log "1. create through sbx env, as Paddock does"
+  if ! cap sessions-env-create txt sbx env create "${files[@]}" --name "$name" --skip-host-commands --force; then
+    warn "create failed; see sessions-env-create"
+    return 1
+  fi
+  cap sessions-env-ls json sbx ls --json
+  look created
+  # shellcheck disable=SC2016  # expanded inside the sandbox
+  cap sessions-env-write txt sbx exec "$name" /bin/sh -c \
+    'mkdir -p "$HOME/.claude/projects/paddock-probe" && echo "{\"probe\":\"kept\"}" > "$HOME/.claude/projects/paddock-probe/probe.jsonl" && echo written'
+  look written
+
+  log "2. recreate as Paddock does: sbx rm, then sbx env create"
+  cap sessions-env-rm-1 json sbx rm --force --json "$name"
+  cap sessions-env-recreate txt sbx env create "${files[@]}" --name "$name" --skip-host-commands --force
+  look recreated
+
+  log "3. the project's own file naming mounts: (Paddock refuses that; does sbx take it?)"
+  cap sessions-env-project-mounts-plan txt /bin/sh -c "printf 'mounts:\n  /home/agent/.claude/projects: ../claude-sessions\n' >> '$dir/project/sbxenv.yaml'; sbx env plan '$dir/project/sbxenv.yaml'"
+
+  log "remove"
+  cap sessions-env-rm json sbx rm --force --json "$name"
   trap - EXIT
 }
 
@@ -689,6 +851,8 @@ case "${1:-}" in
   v3) phase_v3 ;;
   kits) M0_ONLY="${2:-}" phase_kits || exit 1 ;;
   mounts) phase_mounts ;;
-  *) echo "usage: $0 readonly|lifecycle|models|v3|kits [status,voice,browser,gateway,claude,opencode]|mounts"; exit 2 ;;
+  sessions-hostmount) phase_sessions_hostmount ;;
+  sessions-env) phase_sessions_env ;;
+  *) echo "usage: $0 readonly|lifecycle|models|v3|kits [status,voice,browser,gateway,claude,opencode]|mounts|sessions-hostmount|sessions-env"; exit 2 ;;
 esac
 log "done. Fixtures in $FIX"

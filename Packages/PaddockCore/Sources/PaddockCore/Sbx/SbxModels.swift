@@ -37,6 +37,9 @@ public struct SbxSandbox: Sendable, Equatable, Codable, Identifiable {
     public let status: String
     public let lastUsedAt: Date?
     public let workspaces: [String]
+    /// Every mount as `HOST:TARGET[:ro]`, a kit's host mounts too (`sbx ls --json`, sbx 0.51); nil
+    /// when not known: older sbx, and sandboxd's socket, which does not report a kit's host mounts.
+    public var mounts: [String]?
     /// Missing while sbx is still creating the sandbox.
     public let createdAt: Date?
 
