@@ -28,19 +28,63 @@ public enum ExtraFolders {
     /// `folder` checked for `project` (its other extra folders excluded `except`); returns it canonical.
     public static func check(_ folder: String, for project: Project, policy: FolderPolicy,
                              except: String? = nil) throws(ExtraFolderProblem) -> String {
+        try check(folder, projectFolder: project.folder, extraFolders: project.extraFolders.map(\.path),
+                  policy: policy, except: except)
+    }
+
+    /// The same check for a project not saved yet (New Project's draft): its folder, and the extra
+    /// folders it has so far.
+    public static func check(_ folder: String, projectFolder: String, extraFolders: [String], policy: FolderPolicy,
+                             except: String? = nil) throws(ExtraFolderProblem) -> String {
         let path = FolderPolicy.canonical(folder)
         guard !path.contains(":") else { throw .colon }
         do throws(FolderPolicyViolation) {
-            try policy.check(path)
+            // The operator's own extra folder may be inside ~/Library/Logs, read-only (PAD-125).
+            try policy.check(path, allowingLogs: true)
         } catch {
             throw .folder(error)
         }
-        let projectFolder = FolderPolicy.canonical(project.folder)
-        if overlaps(path, projectFolder) { throw .overlapsProject }
-        for extra in project.extraFolders where extra.path != except && overlaps(path, FolderPolicy.canonical(extra.path)) {
-            throw .overlapsExtra(extra.path)
+        if overlaps(path, FolderPolicy.canonical(projectFolder)) { throw .overlapsProject }
+        for extra in extraFolders where extra != except && overlaps(path, FolderPolicy.canonical(extra)) {
+            throw .overlapsExtra(extra)
         }
         return path
+    }
+
+    /// What the operator pasted or typed into an extra folder field (PAD-124) as a full path, or nil
+    /// when it is none. Takes a full path, `~` or `~/...`, a `file://` URL, Finder's Copy as Pathname
+    /// (quoted when it has spaces), and a path a terminal escaped (`My\ Folder`). Says nothing about
+    /// whether the folder may be mounted: that is `check`, after this.
+    public static func path(fromInput input: String, home: String) -> String? {
+        var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        for quote in ["\"", "'"] where text.count >= 2 && text.hasPrefix(quote) && text.hasSuffix(quote) {
+            text = String(text.dropFirst().dropLast())
+        }
+        if text.hasPrefix("file://") {
+            // This Mac's files only: no host, or localhost.
+            guard let url = URL(string: text), url.isFileURL, [nil, "", "localhost"].contains(url.host) else { return nil }
+            text = url.path
+        } else if text.contains("\\") {
+            // A terminal's escapes: a backslash keeps the next character as it is.
+            var unescaped = ""
+            var escaping = false
+            for character in text {
+                if escaping || character != "\\" {
+                    unescaped.append(character)
+                    escaping = false
+                } else {
+                    escaping = true
+                }
+            }
+            text = unescaped
+        }
+        if text == "~" {
+            text = home
+        } else if text.hasPrefix("~/") {
+            text = home + text.dropFirst()
+        }
+        guard text.hasPrefix("/"), !text.contains("\0") else { return nil }
+        return text.count > 1 && text.hasSuffix("/") ? String(text.dropLast()) : text
     }
 
     /// Every extra folder of `project` checked again (a folder can change after it was added, or
@@ -50,9 +94,16 @@ public enum ExtraFolders {
         for extra in project.extraFolders {
             var others = project
             others.extraFolders = checked
-            checked.append(Project.ExtraFolder(path: try check(extra.path, for: others, policy: policy), readOnly: extra.readOnly))
+            let path = try check(extra.path, for: others, policy: policy)
+            checked.append(Project.ExtraFolder(path: path, readOnly: readOnly(extra.readOnly, path: path, policy: policy)))
         }
         return checked
+    }
+
+    /// Whether a folder is mounted read-only: as asked, and always inside `~/Library/Logs`
+    /// (PAD-125), whatever a project file says.
+    public static func readOnly(_ requested: Bool, path: String, policy: FolderPolicy) -> Bool {
+        requested || policy.isInsideLogs(path)
     }
 
     /// What `sbx create` takes after the project folder: `PATH`, or `PATH:ro`.

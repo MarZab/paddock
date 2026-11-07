@@ -67,6 +67,12 @@ public actor SbxService {
         try await reads.sandboxes()
     }
 
+    /// `sbx ls --json` from the CLI itself: the only read that lists a kit's host mounts
+    /// (`SbxSandbox.mounts`; sandboxd's socket does not).
+    public func sandboxesWithMounts() async throws -> [SbxSandbox] {
+        try await cli.query([SbxSandbox].self, ["ls", "--json"])
+    }
+
     public func policies(sandbox: String? = nil) async throws -> SbxPolicyList {
         try await reads.policies(sandbox: sandbox)
     }

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "sbx-kit-builder",
+    "id": "00000000-0000-4000-8000-000000000001",
+    "agent": "sbx-kit-builder",
+    "status": "running",
+    "last_used_at": "2026-11-07T14:35:46.367263Z",
+    "cpus": 4,
+    "memory": "8192m",
+    "memory_mib": 8192,
+    "created_at": "2026-11-07T14:32:23Z",
+    "detached": true
+  }
+]

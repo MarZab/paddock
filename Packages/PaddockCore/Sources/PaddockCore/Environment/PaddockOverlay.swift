@@ -22,21 +22,26 @@ public struct PaddockOverlay: Sendable, Equatable {
     /// The folders the operator added in Paddock (`Project.extraFolders`), checked at this create;
     /// sbx adds them to the project file's own `additionalWorkspaces`.
     public var extraFolders: [Project.ExtraFolder]
+    /// A kit's host mounts: the sandbox path a kit declares (`host-mount@1`) to a folder on the Mac
+    /// (Claude's sessions, PAD-130). Only Paddock's own: a project's file may not name `mounts`.
+    public var mounts: [String: String]
 
     public init(agent: String, workspace: String, kits: [String] = [], env: [String: String] = [:],
-                extraFolders: [Project.ExtraFolder] = []) {
+                extraFolders: [Project.ExtraFolder] = [], mounts: [String: String] = [:]) {
         self.agent = agent
         self.workspace = workspace
         self.kits = kits
         self.env = env
         self.extraFolders = extraFolders
+        self.mounts = mounts
     }
 
     /// From `AgentLaunchPlanner.environment`'s pairs.
     public init(agent: String, workspace: String, kits: [String], env: [(name: String, value: String)],
-                extraFolders: [Project.ExtraFolder]) {
+                extraFolders: [Project.ExtraFolder], mounts: [String: String] = [:]) {
         self.init(agent: agent, workspace: workspace, kits: kits,
-                  env: Dictionary(env.map { ($0.name, $0.value) }, uniquingKeysWith: { _, last in last }), extraFolders: extraFolders)
+                  env: Dictionary(env.map { ($0.name, $0.value) }, uniquingKeysWith: { _, last in last }), extraFolders: extraFolders,
+                  mounts: mounts)
     }
 
     /// Writes the file, owner-only, in Paddock's config dir.
@@ -80,6 +85,10 @@ public struct PaddockOverlay: Sendable, Equatable {
         if !env.isEmpty {
             lines.append("env:")
             lines += env.keys.sorted().map { "  \(Self.quoted($0)): \(Self.quoted(env[$0] ?? ""))" }
+        }
+        if !mounts.isEmpty {
+            lines.append("mounts:")
+            lines += mounts.keys.sorted().map { "  \(Self.quoted($0)): \(Self.quoted(mounts[$0] ?? ""))" }
         }
         return lines.joined(separator: "\n") + "\n"
     }

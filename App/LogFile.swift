@@ -10,7 +10,7 @@ final class LogFile: @unchecked Sendable {
     static let shared = LogFile()
 
     private let lock = NSLock()
-    private let url: URL
+    let url: URL
     private var handle: FileHandle?
 
     var path: String { url.path }

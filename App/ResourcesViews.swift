@@ -19,74 +19,74 @@ enum ResourceText {
     static func cores(_ value: Double) -> String { "\(Int((value * 100).rounded()))%" }
 }
 
-/// Info's Resources: the sandbox's CPU, memory, and disk, read every 5 s only while Info is shown
-/// (backlog doc UI, Resources), and the way to its Processes tab.
-struct SandboxResourcesSection: View {
+/// The sandbox's CPU, memory, disk, and load in Info's Status card, read every 5 s only while Info
+/// is shown (backlog doc UI, Resources); nothing while the sandbox does not run (the card's title
+/// says so). Always in place, empty then, so its reading goes on.
+struct SandboxResourcesMeters: View {
     @Environment(AppModel.self) private var model
     let project: Project
     @State private var sample: SandboxSample?
     /// CPU use since the sample before; nil until there are two.
     @State private var cpuBusy: Double?
     @State private var problem: String?
+    @Environment(\.cardLabelWidth) private var labelWidth
     static let interval: Duration = .seconds(5)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Resources").font(.headline)
-                Spacer()
-                Button("Processes", systemImage: "cpu") { model.openProcesses(of: project) }
-                    .disabled(!model.mayPoll(project))
-                    .help("What runs in the sandbox, by app, in a tab of its own")
-            }
-            // A gray box, like Info's other sections.
-            Group {
-                if !model.mayPoll(project) {
-                    Text("Shown while the sandbox runs.").foregroundStyle(.secondary)
-                } else if let sample {
-                    Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
-                        meter("CPU", share: cpuBusy, text: cpuBusy.map { "\(ResourceText.percent($0)) of \(sample.cpus) CPUs" }
-                              ?? "\(sample.cpus) CPUs")
-                        meter("Memory", share: Self.share(sample.memoryUsedKiB, of: sample.memoryTotalKiB),
-                              text: "\(ResourceText.gigabytes(sample.memoryUsedKiB)) of \(ResourceText.gigabytes(sample.memoryTotalKiB)) GB")
-                        if sample.diskTotalKiB > 0 {
-                            meter("Disk", share: Self.share(sample.diskUsedKiB, of: sample.diskTotalKiB),
-                                  text: "\(ResourceText.gigabytes(sample.diskUsedKiB)) of \(ResourceText.gigabytes(sample.diskTotalKiB)) GB")
-                        }
-                        if sample.load.count == 3 {
-                            GridRow {
-                                Text("Load").foregroundStyle(.secondary)
-                                Text(sample.load.map { String(format: "%.2f", $0) }.joined(separator: "  "))
-                                    .monospacedDigit()
-                                    .help("Processes waiting for a CPU on average over 1, 5, and 15 minutes; \(sample.cpus) CPUs")
-                                    .gridCellColumns(2)
-                            }
+        Group {
+            if !model.mayPoll(project) {
+                Color.clear.frame(height: 0)
+            } else if let sample {
+                // The same gap as the card's facts below (`CardFacts`), so the lines are even.
+                VStack(alignment: .leading, spacing: CardMetrics.lineSpacing) {
+                    meter("CPU", share: cpuBusy, text: cpuBusy.map { "\(ResourceText.percent($0)) of \(sample.cpus) CPUs" }
+                          ?? "\(sample.cpus) CPUs")
+                    meter("Memory", share: Self.share(sample.memoryUsedKiB, of: sample.memoryTotalKiB),
+                          text: "\(ResourceText.gigabytes(sample.memoryUsedKiB)) of \(ResourceText.gigabytes(sample.memoryTotalKiB)) GB")
+                    if sample.diskTotalKiB > 0 {
+                        meter("Disk", share: Self.share(sample.diskUsedKiB, of: sample.diskTotalKiB),
+                              text: "\(ResourceText.gigabytes(sample.diskUsedKiB)) of \(ResourceText.gigabytes(sample.diskTotalKiB)) GB")
+                    }
+                    if sample.load.count == 3 {
+                        HStack(spacing: 12) {
+                            label("Load")
+                            Text(sample.load.map { String(format: "%.2f", $0) }.joined(separator: "  "))
+                                .monospacedDigit()
+                                .help("Processes waiting for a CPU on average over 1, 5, and 15 minutes; \(sample.cpus) CPUs")
                         }
                     }
-                } else if let problem {
-                    Text(problem).foregroundStyle(.secondary).font(.callout)
-                } else {
-                    ProgressView().controlSize(.small)
                 }
+            } else if let problem {
+                Text(problem).foregroundStyle(.secondary).font(.callout)
+            } else {
+                ProgressView().controlSize(.small)
             }
-            .font(.callout)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
         }
         .task(id: project.name) { await poll() }
     }
 
+    /// A label, its bar across the rest of the width, and the value under the bar.
     private func meter(_ title: String, share: Double?, text: String) -> some View {
-        GridRow {
-            Text(title).foregroundStyle(.secondary)
-            ProgressView(value: share ?? 0)
-                .progressViewStyle(.linear)
-                .tint(Self.color(share ?? 0))
-                .frame(width: 120)
-                .opacity(share == nil ? 0.3 : 1)
-            Text(text).monospacedDigit()
+        HStack(alignment: .center, spacing: 12) {
+            label(title)
+            VStack(alignment: .leading, spacing: 0) {
+                ProgressView(value: share ?? 0)
+                    .progressViewStyle(.linear)
+                    .tint(Self.color(share ?? 0))
+                    .opacity(share == nil ? 0.3 : 1)
+                Text(text)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
         }
+    }
+
+    /// In the card's label column (`cardLabelWidth`).
+    private func label(_ title: String) -> some View {
+        Text(title)
+            .foregroundStyle(.secondary)
+            .frame(width: labelWidth, alignment: .leading)
     }
 
     static func share(_ used: Int, of total: Int) -> Double? {

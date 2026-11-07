@@ -55,7 +55,7 @@ struct StatusButton: View {
         }
         let orphans = model.orphanedSbxTools.count
         if orphans > 0 {
-            lines.append("\(orphans) sbx process\(orphans == 1 ? "" : "es") without a terminal (File > Processes)")
+            lines.append("\(orphans) sbx process\(orphans == 1 ? "" : "es") without a terminal (System > Processes)")
         }
         return lines.joined(separator: "\n")
     }

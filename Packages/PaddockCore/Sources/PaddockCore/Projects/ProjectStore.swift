@@ -79,11 +79,17 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
     public var terminalTheme: String?
     /// Folders mounted besides the project folder, in the order added (`ExtraFolders`).
     public var extraFolders: [ExtraFolder]
+    /// Claude's sessions kept on this Mac across recreates (`ClaudeSessions`, PAD-127): the
+    /// operator's choice, in New Project or Info; only for a Claude Code project.
+    public var keepsClaudeSessions: Bool
+    /// The sessions folder Paddock mounted, and read back, when it created the sandbox; nil when
+    /// none. sbx's reads over the socket do not list a kit's host mounts, so Sync compares this.
+    public var sandboxClaudeSessions: String?
 
     public init(id: UUID = UUID(), name: String, folder: String, agent: String = "claude", provider: String = "agent-default",
                 cloneMode: Bool = false, gatewayPort: Int? = nil, approvedEnvironment: String? = nil,
                 declinedHosts: [String] = [], sandboxEnvironment: String? = nil, kits: [String]? = nil, sandboxKits: [String]? = nil, ignoredSuggestions: [String] = [],
-                terminalTheme: String? = nil, extraFolders: [ExtraFolder] = []) {
+                terminalTheme: String? = nil, extraFolders: [ExtraFolder] = [], keepsClaudeSessions: Bool = false) {
         self.id = id
         self.name = name
         self.folder = folder
@@ -99,13 +105,14 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
         self.ignoredSuggestions = ignoredSuggestions
         self.terminalTheme = terminalTheme
         self.extraFolders = extraFolders
+        self.keepsClaudeSessions = keepsClaudeSessions
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, name, folder, agent, provider, cloneMode, gatewayPort, approvedEnvironment, declinedHosts, sandboxEnvironment
         case sandboxEnvironmentRecord
         case kits, sandboxKits, ignoredSuggestions
-        case terminalTheme, extraFolders
+        case terminalTheme, extraFolders, keepsClaudeSessions, sandboxClaudeSessions
     }
 
     /// Files are hand-editable, so the optional parts may be left out. Keys from older versions
@@ -129,6 +136,8 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
         ignoredSuggestions = try c.decodeIfPresent([String].self, forKey: .ignoredSuggestions) ?? []
         terminalTheme = try c.decodeIfPresent(String.self, forKey: .terminalTheme)
         extraFolders = try c.decodeIfPresent([ExtraFolder].self, forKey: .extraFolders) ?? []
+        keepsClaudeSessions = try c.decodeIfPresent(Bool.self, forKey: .keepsClaudeSessions) ?? false
+        sandboxClaudeSessions = try c.decodeIfPresent(String.self, forKey: .sandboxClaudeSessions)
     }
 }
 
@@ -155,6 +164,21 @@ extension Project {
         guard let agent = app.agents[agent] else { return [] }
         return try KitSelection.resolve(chosenKits(app), agent: agent, usesGateway: usesGateway(app), app: app,
                                         paths: paths, projectFolders: projectFolders)
+    }
+}
+
+extension Project {
+    /// What a create recorded about the sandbox (`ProjectRunner.create`'s result), taken into the
+    /// saved project: its kits, the sbxenv.yaml it came from and that file's record, and the Claude
+    /// sessions folder it mounted. Nil when nothing differs. Every field Sync compares with the
+    /// project must be here, or Sync keeps showing a difference a recreate already fixed.
+    public func recordingCreate(_ created: Project) -> Project? {
+        var updated = self
+        updated.sandboxKits = created.sandboxKits
+        updated.sandboxEnvironment = created.sandboxEnvironment
+        updated.sandboxEnvironmentRecord = created.sandboxEnvironmentRecord
+        updated.sandboxClaudeSessions = created.sandboxClaudeSessions
+        return updated == self ? nil : updated
     }
 }
 

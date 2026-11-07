@@ -2,7 +2,7 @@ import AppKit
 import PaddockCore
 import SwiftUI
 
-/// The Log page (sidebar, System; also File > Log): the errors the status popover showed, what long
+/// The Log page (sidebar, System; also System > Log): the errors the status popover showed, what long
 /// work (a create) reported, what sbx said the sandboxes did, and voice, oldest first, in
 /// full, with what each came from: this session's, or an earlier session's read back from its
 /// file (PAD-78). Filtered by category (none chosen shows all), errors only, and text (`LogFilter`).

@@ -236,6 +236,8 @@ struct ProjectDetailView: View {
     let project: Project
     /// A remove step waiting for the operator's confirmation.
     @State private var confirming: AppModel.Teardown?
+    /// Recreate waiting for the operator's confirmation.
+    @State private var confirmsRecreate = false
 
     init(project: Project) {
         self.project = project
@@ -248,7 +250,7 @@ struct ProjectDetailView: View {
         let requests = !model.approvalRequests(for: project).isEmpty
         let needsAttention = pendingPorts || requests || !changes.isEmpty || model.needsConfirmation(for: project)
         ProjectTabs(project: project, needsAttention: needsAttention) {
-            info(state)
+            info
         }
         .navigationTitle(project.name)
         .toolbar { actions(state) }
@@ -260,6 +262,13 @@ struct ProjectDetailView: View {
             Button(step.title, role: .destructive) { model.tearDown(project, to: step) }
         } message: { step in
             Text(teardownMessage(step, state: state))
+        }
+        .confirmationDialog("Recreate \(project.name)'s sandbox?", isPresented: $confirmsRecreate) {
+            Button("Recreate", role: .destructive) { model.recreateSandbox(project) }
+        } message: {
+            Text("The sandbox is removed and created again with what the project names now: its folders, kits, and settings. "
+                 + "Its terminals close, and everything inside it that is not in the project folder or an extra folder is lost"
+                 + (project.keepsClaudeSessions ? ", except Claude's kept sessions." : ", Claude's sessions too."))
         }
     }
 
@@ -315,6 +324,14 @@ struct ProjectDetailView: View {
                     Button("Start", systemImage: "play.fill") { model.startSandbox(project) }
                         .help("Start the sandbox")
                 }
+                // Always there with a sandbox, not only when Sync finds a difference.
+                if state != nil {
+                    Button("Recreate", systemImage: "arrow.triangle.2.circlepath") { confirmsRecreate = true }
+                        .disabled(model.appConfig.agents[project.agent] == nil)
+                        .help(model.appConfig.agents[project.agent] == nil
+                              ? "Paddock cannot create this sandbox: its agent is not a paddock.yaml agent entry"
+                              : "Remove the sandbox and create it again with what the project names now")
+                }
                 teardownButton
             }
             .disabled(model.isBusy(project))
@@ -352,7 +369,7 @@ struct ProjectDetailView: View {
             } primaryAction: {
                 request(main)
             }
-            .menuIndicator(steps.count > 1 ? .visible : .hidden)
+            .menuIndicator(steps.count > 1 || offersRecreate ? .visible : .hidden)
             .contextMenu { teardownItems(steps) }
             .help(steps.count > 1 ? "\(main.title); the arrow or a right click offers \(steps.dropFirst().map(\.title).joined(separator: " and "))"
                                   : main.title)
@@ -361,93 +378,74 @@ struct ProjectDetailView: View {
 
     @ViewBuilder
     private func teardownItems(_ steps: [AppModel.Teardown]) -> some View {
-        ForEach(steps) { step in
-            Button(step.title, systemImage: step.systemImage, role: step == .stop ? nil : .destructive) { request(step) }
+        ForEach(steps.filter { $0 == .stop }) { step in
+            Button(step.title, systemImage: step.systemImage) { request(step) }
+        }
+        // Recreate here too (PAD-132), between stopping and removing.
+        if offersRecreate {
+            Button("Recreate...", systemImage: "arrow.triangle.2.circlepath") { confirmsRecreate = true }
+                .disabled(model.appConfig.agents[project.agent] == nil)
+            Divider()
+        }
+        ForEach(steps.filter { $0 != .stop }) { step in
+            Button(step.title, systemImage: step.systemImage, role: .destructive) { request(step) }
         }
     }
 
-    /// Wider than this, the Info tab shows its two columns side by side.
-    private static let twoColumnWidth: CGFloat = 820
+    /// A sandbox exists, so it can be recreated.
+    private var offersRecreate: Bool { model.state(of: project) != nil }
 
-    /// The Info tab, one page in two columns (stacked when the window is narrow): on the left the
-    /// project's details, what needs attention (only when something does), Paddock's suggestions,
-    /// and shortcuts to its rules on the Network and Filesystem pages; on the right
-    /// its ports. Hosts are allowed and denied on the Network page.
-    private func info(_ state: SandboxStates.State?) -> some View {
+    /// The Info tab, one page of cards in two columns (backlog doc UI, Project Info): a third on
+    /// the left: Agent, Status (with the sandbox's resources), Network, Ports; two thirds
+    /// on the right: the notices, only when there is one (attention, Paddock's suggestions, sbx's
+    /// approval requests), Folders, Kits, Recent Activity. In a narrow window the narrow column
+    /// comes first.
+    /// Hosts are allowed and denied on the Network page.
+    private var info: some View {
         let network = model.networkRows(for: project.name)
-        let filesystem = model.filesystemRows(for: project.name)
-        let left = VStack(alignment: .leading, spacing: 14) {
-            ProjectStatusHeader(project: project, state: state)
-            SandboxResourcesSection(project: project)
-            AttentionSections(project: project)
-            serviceDenyRow
-            approvalRows
-            networkShortcut(network)
-            filesystemShortcut(filesystem)
-            RecentActivity(entries: model.timeline[project.name])
-        }
-        let right = VStack(alignment: .leading, spacing: 18) {
-            ProjectPortsSections(project: project)
-        }
-        return GeometryReader { geometry in
-            ScrollView {
-                Group {
-                    if geometry.size.width >= Self.twoColumnWidth {
-                        HStack(alignment: .top, spacing: 24) {
-                            left.frame(width: min(geometry.size.width * 0.45, 520))
-                            Divider()
-                            right.frame(maxWidth: .infinity, alignment: .topLeading)
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: 18) {
-                            left
-                            right
-                        }
+        return ScrollView {
+            InfoColumns {
+                // The notices first (only when there is one), then the wide cards.
+                VStack(alignment: .leading, spacing: 12) {
+                    AttentionSections(project: project)
+                    serviceDenyRow
+                    approvalRows
+                    ProjectFoldersCard(project: project)
+                    if model.appConfig.agents[project.agent] != nil {
+                        ProjectKitsCard(project: project)
                     }
+                    RecentActivity(entries: model.timeline[project.name])
                 }
-                .padding(16)
+                VStack(alignment: .leading, spacing: 12) {
+                    ProjectAgentCard(project: project)
+                    ProjectStatusCard(project: project)
+                    networkCard(network)
+                    ProjectPortsSections(project: project)
+                }
             }
+            .padding(16)
         }
     }
 
-    /// The sandbox's rules and activity live on the Network page; here, a count and the way there.
-    private func networkShortcut(_ rules: [RuleRow]) -> some View {
+    /// The sandbox's rules and activity live on the Network page; here, counts and the way there.
+    private func networkCard(_ rules: [RuleRow]) -> some View {
         let blocked = rules.filter { ($0.activity?.blocked ?? 0) > 0 }.count
         let suggested = rules.filter(\.isSuggestion).count
-        return HStack(spacing: 6) {
-            Image(systemName: "network").foregroundStyle(.secondary)
-            Text("\(rules.count) rules")
-            if blocked > 0 {
-                Text("· \(blocked) blocked").foregroundStyle(.orange)
-                    .help("Rules or hosts with blocked connections")
+        return InfoCard("Network", systemImage: "network") {
+            HStack(spacing: 6) {
+                Text("\(rules.count) rules")
+                if blocked > 0 {
+                    Text("· \(blocked) blocked").foregroundStyle(.orange)
+                        .help("Rules or hosts with blocked connections")
+                }
+                if suggested > 0 {
+                    Text("· \(suggested) suggested").foregroundStyle(.yellow)
+                }
             }
-            if suggested > 0 {
-                Text("· \(suggested) suggested").foregroundStyle(.yellow)
-            }
-            Spacer()
-            Button("Open in Network") { model.showNetwork(for: project.name) }
-                .help("The rules for this sandbox, with what it connected to")
+        } actions: {
+            Button("Open in Network", systemImage: "arrow.right.circle") { model.showNetwork(for: project.name) }
+                .help("The rules for this sandbox, with what it connected to, on the Network page")
         }
-        .font(.callout)
-        .padding(10)
-        .frame(maxWidth: .infinity)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    /// The sandbox's filesystem rules and mounts live on the Filesystem page; here, a count and the way there.
-    private func filesystemShortcut(_ rules: [RuleRow]) -> some View {
-        let mounts = rules.filter { $0.kind == .mount }.count
-        return HStack(spacing: 6) {
-            Image(systemName: "folder.badge.gearshape").foregroundStyle(.secondary)
-            Text("\(mounts) mount\(mounts == 1 ? "" : "s") · \(rules.count - mounts) rules")
-            Spacer()
-            Button("Open in Filesystem") { model.showFilesystem(for: project.name) }
-                .help("The filesystem rules and mounts for this sandbox")
-        }
-        .font(.callout)
-        .padding(10)
-        .frame(maxWidth: .infinity)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
     }
 
     /// Paddock's denies for its own services (llmman, other projects' gateways), missing from the
@@ -540,15 +538,7 @@ struct RecentActivity: View {
 
     var body: some View {
         if !entries.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Recent Activity").font(.headline)
-                    Spacer()
-                    if entries.count > Self.shortList {
-                        Button(showsAll ? "Show Less" : "Show All \(entries.count)") { showsAll.toggle() }
-                            .buttonStyle(.link)
-                    }
-                }
+            InfoCard("Recent Activity", systemImage: "clock") {
                 ForEach(showsAll ? entries : Array(entries.prefix(Self.shortList))) { entry in
                     HStack(spacing: 8) {
                         Image(systemName: Self.icon(entry.kind)).foregroundStyle(Self.color(entry.kind)).frame(width: 16)
@@ -559,11 +549,12 @@ struct RecentActivity: View {
                     }
                     .help(Self.help(entry))
                 }
+            } actions: {
+                if entries.count > Self.shortList {
+                    Button(showsAll ? "Show Less" : "Show All \(entries.count)") { showsAll.toggle() }
+                        .buttonStyle(.link)
+                }
             }
-            .font(.callout)
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -590,201 +581,467 @@ struct RecentActivity: View {
     }
 }
 
-/// The folders mounted besides the project folder (PAD-73.5): read-only unless switched, each with
-/// Show in Finder and Remove, and Add. A change applies at the sandbox's next create.
-struct ExtraFoldersRow: View {
+/// The project's folders as a table (PAD-124), in Info and New Project alike: in Info first the
+/// project folder (always writable; Show in Finder and Config), then one row per extra folder (its
+/// path, a mark when it is another project's folder, Read-only, Show in Finder, Remove), and a last
+/// row with the field to add one (`ExtraFolderField`), shown and hidden by the header's plus
+/// button. A folder inside ~/Library/Logs stays read-only.
+struct FoldersTable: View {
     @Environment(AppModel.self) private var model
-    let project: Project
+    let folders: [Project.ExtraFolder]
+    /// The project's folder; nil until New Project has one.
+    let projectFolder: String?
+    /// The project's name: its own folder is no other project's; nil in New Project.
+    var sandbox: String?
+    var showsInFinder = false
+    /// The project folder as the first row (Info; New Project chooses it above the table).
+    var showsProjectFolder = false
+    /// Config in the project folder's row: edit its sbxenv.yaml.
+    var editConfig: (() -> Void)?
+    let setReadOnly: (String, Bool) -> Void
+    let remove: (String) -> Void
+    let add: (String) -> Void
+    @State private var adding = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(project.extraFolders, id: \.path) { folder in
-                HStack(spacing: 6) {
-                    Text((folder.path as NSString).abbreviatingWithTildeInPath)
-                        .truncationMode(.head)
-                        .help(folder.path)
-                    Toggle("Read-only", isOn: Binding(get: { folder.readOnly },
-                                                      set: { model.setExtraFolder(folder.path, readOnly: $0, in: project) }))
-                        .toggleStyle(.checkbox)
-                        .help("Off: the agent can change this folder's files too")
-                    if let other = ExtraFolders.otherProject(folder.path, in: model.allProjects, except: project.name) {
-                        Label("project \(other)", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.orange)
-                            .help("This is \(other)'s folder: writable, this agent could change that project's files")
-                    }
-                    Button("Show in Finder", systemImage: "folder") {
-                        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: folder.path)])
-                    }
+        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 0) {
+            GridRow {
+                Text("Folder")
+                Text("Read-only").gridColumnAlignment(.center)
+                Button(adding ? "Close" : "Add Folder", systemImage: adding ? "xmark.circle" : "plus.circle") { adding.toggle() }
                     .labelStyle(.iconOnly)
                     .buttonStyle(.borderless)
-                    .help("Show in Finder")
-                    Button("Remove", systemImage: "minus.circle") { model.removeExtraFolder(folder.path, from: project) }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
-                        .help("Stop mounting this folder (at the sandbox's next create)")
-                }
+                    .font(.body)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .help(adding ? "Hide the field to add a folder" : "Add a folder: paste or type its path, choose it, or drop it")
             }
-            HStack(spacing: 6) {
-                if project.extraFolders.isEmpty { Text("none") }
-                Button("Add Folder", systemImage: "plus.circle") { chooseFolder() }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
-                    .help("Mount another folder in the sandbox, read-only unless you switch it (at its next create)")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.bottom, 4)
+            Divider()
+            if showsProjectFolder, let projectFolder {
+                projectRow(projectFolder)
+                Divider()
+            } else if folders.isEmpty && !adding {
+                GridRow {
+                    Text("None").foregroundStyle(.secondary).gridCellColumns(3)
+                }
+                .padding(.vertical, 4)
+            }
+            ForEach(folders, id: \.path) { folder in
+                row(folder)
+                Divider()
+            }
+            if adding {
+                GridRow {
+                    ExtraFolderField(projectFolder: projectFolder, extraFolders: folders.map(\.path), sandbox: sandbox,
+                                     otherProject: otherProject, add: add)
+                        .gridCellColumns(3)
+                }
+                .padding(.top, 6)
             }
         }
     }
 
-    private func chooseFolder() {
+    /// The project folder: mounted writable, never removed here.
+    private func projectRow(_ folder: String) -> some View {
+        GridRow(alignment: .center) {
+            HStack(spacing: 6) {
+                Text((folder as NSString).abbreviatingWithTildeInPath)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                    .help(folder)
+                Text("project").font(.caption).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle("Read-only", isOn: .constant(false))
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+                .disabled(true)
+                .help("The project folder is always writable: the agent works in it")
+            HStack(spacing: 6) {
+                Button("Show in Finder", systemImage: "folder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: folder)])
+                }
+                .help("Show the project folder in Finder")
+                if let editConfig {
+                    Button("Config", systemImage: "doc.text", action: editConfig)
+                        .help("Edit sbxenv.yaml in the project folder; Paddock writes one, with a kit for the project, when there is none")
+                }
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.borderless)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func row(_ folder: Project.ExtraFolder) -> some View {
+        let logs = model.folderPolicy.isInsideLogs(folder.path)
+        return GridRow(alignment: .center) {
+            HStack(spacing: 4) {
+                Text((folder.path as NSString).abbreviatingWithTildeInPath)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                    .help(folder.path)
+                if let other = otherProject(folder.path) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                        .help("This is project \(other)'s folder: writable, this agent could change that project's files")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle("Read-only", isOn: Binding(get: { folder.readOnly || logs }, set: { setReadOnly(folder.path, $0) }))
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+                .disabled(logs)
+                .help(logs ? "Inside ~/Library/Logs: always read-only" : "Off: the agent can change this folder's files too")
+            HStack(spacing: 6) {
+                if showsInFinder {
+                    Button("Show in Finder", systemImage: "folder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: folder.path)])
+                    }
+                    .help("Show in Finder")
+                }
+                Button("Remove", systemImage: "minus.circle") { remove(folder.path) }
+                    .help("Stop mounting this folder (at the sandbox's next create)")
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.borderless)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func otherProject(_ path: String) -> String? {
+        ExtraFolders.otherProject(path, in: model.allProjects, except: sandbox ?? "")
+    }
+}
+
+/// Where an extra folder is added (PAD-124), in Info and New Project alike: paste or type a path
+/// (`ExtraFolders.path(fromInput:)`), checked as it is typed with the checks it gets when added
+/// (`ExtraFolders.check`), Return or Add adds it; Choose... opens the Open panel at the nearest
+/// folder of what was typed; folders dropped from Finder are added, each checked. `add` gets the
+/// checked path; it checks again (backlog doc Security rules).
+struct ExtraFolderField: View {
+    @Environment(AppModel.self) private var model
+    /// The project's folder; nil until New Project has one.
+    let projectFolder: String?
+    let extraFolders: [String]
+    /// For the Open panel's message.
+    var sandbox: String?
+    /// The project whose folder this is, if another's (a warning, not a refusal).
+    var otherProject: (String) -> String? = { _ in nil }
+    let add: (String) -> Void
+    @State private var text = ""
+    @State private var dropTargeted = false
+
+    /// What was typed, as a checked path or why not.
+    private enum Verdict {
+        case empty
+        case ok(String)
+        case problem(String)
+    }
+
+    private var verdict: Verdict { verdict(for: text) }
+
+    private func verdict(for input: String) -> Verdict {
+        guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .empty }
+        guard let path = ExtraFolders.path(fromInput: input, home: NSHomeDirectory()) else {
+            return .problem("Not a full path: start with / or ~/")
+        }
+        guard let projectFolder else { return .problem("Choose the project folder first") }
+        let policy = model.folderPolicy
+        do throws(ExtraFolderProblem) {
+            return .ok(try ExtraFolders.check(path, projectFolder: projectFolder, extraFolders: extraFolders, policy: policy))
+        } catch {
+            return .problem(error.description.prefix(1).uppercased() + error.description.dropFirst())
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                TextField("Extra folder", text: $text, prompt: Text("Paste or type a folder path, or drop a folder here"))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .onSubmit(addTyped)
+                Button("Add", action: addTyped)
+                    .disabled({ if case .ok = verdict { false } else { true } }())
+                    .help("Mount this folder in the sandbox, read-only unless you switch it (at its next create)")
+                Button("Choose...", action: choose)
+                    .help("Pick the folder in the Open panel")
+            }
+            switch verdict {
+            case .empty:
+                EmptyView()
+            case .ok(let path):
+                if model.folderPolicy.isInsideLogs(path) {
+                    Label("Inside ~/Library/Logs: mounted read-only, and it may hold other apps' logs", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                } else if let other = otherProject(path) {
+                    Label("This is project \(other)'s folder; writable, this agent could change its files", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                } else {
+                    Label((path as NSString).abbreviatingWithTildeInPath, systemImage: "checkmark.circle")
+                        .foregroundStyle(.secondary)
+                }
+            case .problem(let problem):
+                Label(problem, systemImage: "xmark.circle").foregroundStyle(.red)
+            }
+        }
+        .font(.callout)
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: 6).stroke(Color.accentColor, lineWidth: dropTargeted ? 2 : 0))
+        .dropDestination(for: URL.self) { urls, _ in
+            let folders = urls.filter(\.isFileURL)
+            for url in folders { addChecked(url.path) }
+            return !folders.isEmpty
+        } isTargeted: { dropTargeted = $0 }
+    }
+
+    private func addTyped() {
+        guard case .ok(let path) = verdict else { return }
+        add(path)
+        text = ""
+    }
+
+    /// A dropped or chosen folder: added when it passes, else shown in the field with why not.
+    private func addChecked(_ path: String) {
+        if case .ok(let checked) = verdict(for: path) {
+            add(checked)
+        } else {
+            text = path
+        }
+    }
+
+    private func choose() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Add"
-        panel.message = "A folder to mount in \(project.name)'s sandbox, read-only"
+        panel.message = sandbox.map { "A folder to mount in \($0)'s sandbox, read-only" } ?? "A folder to mount in the sandbox, read-only"
+        // Start at what was typed, or the nearest folder above it that exists.
+        if var start = ExtraFolders.path(fromInput: text, home: NSHomeDirectory()) {
+            var isFolder: ObjCBool = false
+            while start != "/", !(FileManager.default.fileExists(atPath: start, isDirectory: &isFolder) && isFolder.boolValue) {
+                start = (start as NSString).deletingLastPathComponent
+            }
+            panel.directoryURL = URL(fileURLWithPath: start, isDirectory: true)
+        }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        model.addExtraFolder(url.path, to: project)
+        addChecked(url.path)
     }
 }
 
-/// The project's details at the top of its Info tab: what sbx and the project file say about it.
-struct ProjectStatusHeader: View {
+/// Claude's sessions in Info's Agent card (PAD-127), on one line: Keep (on this Mac, across
+/// recreates; it applies at the sandbox's next create), how many there are and their size, and
+/// Show in Finder and Clear (confirmed) once there is a folder.
+struct ClaudeSessionsLine: View {
     @Environment(AppModel.self) private var model
     let project: Project
-    let state: SandboxStates.State?
-    @State private var editsKits = false
-    @State private var confirmsFiles = false
+    @State private var confirmsClear = false
+
+    var body: some View {
+        let summary = model.claudeSessionsSummary(of: project)
+        HStack(spacing: 6) {
+            Toggle("Keep", isOn: Binding(get: { project.keepsClaudeSessions },
+                                         set: { model.setKeepsClaudeSessions($0, for: project) }))
+                .toggleStyle(.checkbox)
+                .help(project.keepsClaudeSessions
+                      ? "Claude's sessions (claude --resume) are kept on this Mac and survive recreating the sandbox"
+                      : "Keep Claude's sessions (claude --resume) on this Mac, so recreating the sandbox does not lose them")
+            if let summary {
+                Text("\(summary.sessions) · \(ByteCountFormatter.string(fromByteCount: summary.bytes, countStyle: .file))")
+                    .foregroundStyle(.secondary)
+                    .help("\(summary.sessions) session\(summary.sessions == 1 ? "" : "s") kept on this Mac")
+                Group {
+                    Button("Show in Finder", systemImage: "folder") { model.revealClaudeSessions(of: project) }
+                        .help("Show the sessions folder in Finder")
+                    Button("Clear Sessions...", systemImage: "trash") { confirmsClear = true }
+                        .disabled(summary.sessions == 0 && summary.bytes == 0)
+                        .help("Remove every kept session of this project")
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+            }
+        }
+        .confirmationDialog("Clear \(project.name)'s Claude sessions?", isPresented: $confirmsClear) {
+            Button("Clear Sessions", role: .destructive) { model.clearClaudeSessions(of: project) }
+        } message: {
+            Text(model.state(of: project) == .running
+                ? "Every kept session of this project is removed, the one the agent is in now too. This cannot be undone."
+                : "Every kept session of this project is removed. This cannot be undone.")
+        }
+    }
+}
+
+/// Info's Status card: titled with the sandbox's state and what asks for the operator; its CPU,
+/// memory, disk, and load while it runs (Processes in the card's actions); when it was created and
+/// used, and the gateway (backlog doc UI, Project Info). Ports are in their own card.
+struct ProjectStatusCard: View {
+    @Environment(AppModel.self) private var model
+    let project: Project
 
     var body: some View {
         let sandbox = model.sandboxes.first { $0.name == project.name }
-        let ports = model.snapshots[project.name]?.ports.count
-        Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 7) {
-            row("Status") {
-                HStack(spacing: 6) {
-                    ProjectBadgeView(badge: model.badge(of: project), help: model.badgeHelp(of: project))
-                    // The state and what asks for the operator, as the tooltip says it, first letter up.
-                    let words = model.badgeHelp(of: project)
-                    Text(words.prefix(1).uppercased() + words.dropFirst())
-                }
+        // The card's title is the state and what asks for the operator, as the tooltip says it.
+        InfoCard {
+            HStack(spacing: 6) {
+                ProjectBadgeView(badge: model.badge(of: project), help: model.badgeHelp(of: project))
+                let words = model.badgeHelp(of: project)
+                Text(words.prefix(1).uppercased() + words.dropFirst()).lineLimit(2)
             }
-            row("Agent") { Text(project.agent) }
-            row("Provider") { Text(providerSummary) }
-            row("Terminal") {
-                // So this project's terminals look unlike other projects' (kept in its project file).
-                Picker("Terminal theme", selection: Binding(get: { project.terminalTheme },
-                                                            set: { model.setTerminalTheme($0, for: project) })) {
-                    Text("Default").tag(String?.none)
-                    Divider()
-                    ForEach(TerminalTheme.all) { theme in
-                        Label {
-                            Text(theme.name)
-                        } icon: {
-                            Image(systemName: "square.fill")
-                                .foregroundStyle(Color(red: Double(theme.background.red) / 255,
-                                                       green: Double(theme.background.green) / 255,
-                                                       blue: Double(theme.background.blue) / 255))
-                        }
-                        .tag(Optional(theme.id))
+        } content: {
+            VStack(alignment: .leading, spacing: CardMetrics.lineSpacing) {
+                SandboxResourcesMeters(project: project)
+                CardFacts {
+                    CardFact("Created") {
+                        Text(sandbox?.createdAt.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "-")
                     }
-                }
-                .labelsHidden()
-                .fixedSize()
-                .help("The colors of this project's terminals in Paddock, to tell its sessions apart")
-            }
-            row("Folder") {
-                HStack(spacing: 4) {
-                    Text((project.folder as NSString).abbreviatingWithTildeInPath)
-                        .truncationMode(.head)
-                    Button("Show in Finder", systemImage: "folder") {
-                        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: project.folder)])
+                    CardFact("Last used") {
+                        Text(sandbox?.lastUsedAt.map { $0.formatted(.relative(presentation: .named)) } ?? "-")
                     }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
-                    .help("Show in Finder")
-                    Button("Config", systemImage: "doc.text") { model.openProjectConfig(project) }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
-                        .help("Edit sbxenv.yaml in the project folder; Paddock writes one, with a kit for the project, when there is none")
-                }
-            }
-            if model.environment(of: project) == nil {
-                row("sbxenv.yaml") {
-                    HStack(spacing: 6) {
-                        Text("none")
-                        Button("Create...", systemImage: "doc.badge.plus") { confirmsFiles = true }
-                            .buttonStyle(.borderless)
-                            .help("Write sbxenv.yaml and a kit for this project into its folder, to run it with `sbx env run` too")
-                    }
-                    .confirmationDialog("Create sbxenv.yaml for \(project.name)?", isPresented: $confirmsFiles) {
-                        Button("Create") { model.createSandboxFiles(for: project) }
-                    } message: {
-                        Text("Writes sbxenv.yaml, tools/sandbox/\(SandboxFiles.kitName(for: project.name)) and tools/sandbox/run.sh into the project folder. Existing files are never replaced.")
-                    }
-                }
-            }
-            row("Extra folders") {
-                ExtraFoldersRow(project: project)
-            }
-            if let port = project.gatewayPort {
-                row("Gateway") { Text(model.gatewayPorts[project.name] == nil ? "port \(port), not listening" : "port \(port)") }
-            }
-            if project.cloneMode {
-                row("Clone mode") { Text("the agent works on its own clone") }
-            }
-            if model.appConfig.agents[project.agent] != nil {
-                // The project file's kits (sbx's and its own) apart from Paddock's: each is changed
-                // in its own place (backlog doc Kits).
-                if let environment = model.environment(of: project) {
-                    row("Project kits") {
-                        HStack(spacing: 4) {
-                            let kits = environment.kits.map(\.source)
-                            Text(kits.isEmpty ? "none" : kits.joined(separator: ", "))
-                                .truncationMode(.tail)
-                                .help("From sbxenv.yaml: " + (kits.isEmpty ? "none" : kits.joined(separator: ", ")))
-                            Button("Review", systemImage: "checklist") {
-                                model.confirmation = .init(project: project.name, then: .nothing)
-                            }
-                            .labelStyle(.iconOnly)
-                            .buttonStyle(.borderless)
-                            .help("Review sbxenv.yaml: its kits and hosts, and which hosts the agent may reach")
+                    if let port = project.gatewayPort {
+                        CardFact("Gateway") {
+                            Text(model.gatewayPorts[project.name] == nil ? "port \(port), not listening" : "port \(port)")
                         }
                     }
-                }
-                row(model.environment(of: project) == nil ? "Kits" : "Paddock kits") {
-                    HStack(spacing: 4) {
-                        let kits = project.chosenKits(model.appConfig)
-                        Text(kits.isEmpty ? "none" : kits.joined(separator: ", "))
-                            .truncationMode(.tail)
-                            .help(kits.joined(separator: ", "))
-                        Button("Edit Kits", systemImage: "puzzlepiece.extension") { editsKits = true }
-                            .labelStyle(.iconOnly)
-                            .buttonStyle(.borderless)
-                            .help("Choose the sbx kits the sandbox is created with")
+                    if project.cloneMode {
+                        CardFact("Clone mode") { Text("the agent works on its own clone") }
                     }
                 }
             }
-            row("Published") { Text(ports.map { "\($0) port\($0 == 1 ? "" : "s")" } ?? "-") }
-            row("Created") {
-                Text(sandbox?.createdAt.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "-")
-            }
-            row("Last used") { Text(sandbox?.lastUsedAt.map { $0.formatted(.relative(presentation: .named)) } ?? "-") }
+            // One label column for the meters and the facts.
+            .environment(\.cardLabelWidth, 72)
+        } actions: {
+            Button("Processes", systemImage: "cpu") { model.openProcesses(of: project) }
+                .disabled(!model.mayPoll(project))
+                .help("What runs in the sandbox, by app, in a tab of its own")
         }
-        .font(.callout)
-        .lineLimit(1)
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
-        .sheet(isPresented: $editsKits) { KitsSheet(project: project) }
+    }
+}
+
+/// Info's Agent card: the agent and its model, the terminals' colors, and Claude's sessions.
+struct ProjectAgentCard: View {
+    @Environment(AppModel.self) private var model
+    let project: Project
+
+    var body: some View {
+        InfoCard("Agent", systemImage: "sparkles") {
+            CardFacts {
+                CardFact("Agent") { Text(project.agent) }
+                CardFact("Model") { Text(providerSummary).truncationMode(.middle) }
+                CardFact("Terminal") { themePicker }
+                if model.appConfig.agents[project.agent] == .claudeCode {
+                    CardFact("Sessions") { ClaudeSessionsLine(project: project) }
+                }
+            }
+        }
     }
 
-    private func row(_ title: String, @ViewBuilder value: () -> some View) -> some View {
-        GridRow {
-            Text(title).foregroundStyle(.secondary).gridColumnAlignment(.trailing)
-            value()
+    /// So this project's terminals look unlike other projects' (kept in its project file).
+    private var themePicker: some View {
+        Picker("Terminal theme", selection: Binding(get: { project.terminalTheme },
+                                                    set: { model.setTerminalTheme($0, for: project) })) {
+            Text("Default").tag(String?.none)
+            Divider()
+            ForEach(TerminalTheme.all) { theme in
+                Label {
+                    Text(theme.name)
+                } icon: {
+                    Image(systemName: "square.fill")
+                        .foregroundStyle(Color(red: Double(theme.background.red) / 255,
+                                               green: Double(theme.background.green) / 255,
+                                               blue: Double(theme.background.blue) / 255))
+                }
+                .tag(Optional(theme.id))
+            }
         }
+        .labelsHidden()
+        .fixedSize()
+        .help("The colors of this project's terminals in Paddock, to tell its sessions apart")
     }
 
     private var providerSummary: String {
         model.appConfig.provider(named: project.provider)?.summary ?? "\(project.provider) (not defined)"
+    }
+}
+
+/// Info's Folders card: one table of the project folder and the extra folders, with the field to
+/// add one, Create for an sbxenv.yaml when there is none, and the way to the Filesystem page. A
+/// change applies at the sandbox's next create.
+struct ProjectFoldersCard: View {
+    @Environment(AppModel.self) private var model
+    let project: Project
+    @State private var confirmsFiles = false
+
+    var body: some View {
+        let hasEnvironment = model.environment(of: project) != nil
+        InfoCard("Folders", systemImage: "folder") {
+            VStack(alignment: .leading, spacing: 8) {
+                FoldersTable(folders: project.extraFolders, projectFolder: project.folder, sandbox: project.name,
+                             showsInFinder: true, showsProjectFolder: true,
+                             editConfig: { model.openProjectConfig(project) },
+                             setReadOnly: { model.setExtraFolder($0, readOnly: $1, in: project) },
+                             remove: { model.removeExtraFolder($0, from: project) },
+                             add: { model.addExtraFolder($0, to: project) })
+                if !hasEnvironment {
+                    HStack(spacing: 6) {
+                        Text("No sbxenv.yaml").foregroundStyle(.secondary)
+                        Button("Create...") { confirmsFiles = true }
+                            .buttonStyle(.link)
+                            .help("Write sbxenv.yaml and a kit for this project into its folder, to run it with `sbx env run` too")
+                    }
+                }
+            }
+        } actions: {
+            Button("Open in Filesystem", systemImage: "arrow.right.circle") { model.showFilesystem(for: project.name) }
+                .help("The filesystem rules and mounts for this sandbox, on the Filesystem page")
+        }
+        .confirmationDialog("Create sbxenv.yaml for \(project.name)?", isPresented: $confirmsFiles) {
+            Button("Create") { model.createSandboxFiles(for: project) }
+        } message: {
+            Text("Writes sbxenv.yaml, tools/sandbox/\(SandboxFiles.kitName(for: project.name)) and tools/sandbox/run.sh into the project folder. Existing files are never replaced.")
+        }
+    }
+}
+
+/// Info's Kits card: Paddock's kits for the sandbox (Edit Kits) and, with an sbxenv.yaml, the
+/// project's own (Review): each is changed in its own place (backlog doc Kits).
+struct ProjectKitsCard: View {
+    @Environment(AppModel.self) private var model
+    let project: Project
+    @State private var editsKits = false
+
+    var body: some View {
+        let environment = model.environment(of: project)
+        InfoCard("Kits", systemImage: "puzzlepiece.extension") {
+            CardFacts {
+                CardFact(environment == nil ? "Paddock" : "Paddock's") {
+                    let kits = project.chosenKits(model.appConfig)
+                    Text(kits.isEmpty ? "none" : kits.joined(separator: ", "))
+                        .truncationMode(.tail)
+                        .help(kits.joined(separator: ", "))
+                }
+                if let environment {
+                    CardFact("Project's") {
+                        let kits = environment.kits.map(\.source)
+                        Text(kits.isEmpty ? "none" : kits.joined(separator: ", "))
+                            .truncationMode(.tail)
+                            .help("From sbxenv.yaml: " + (kits.isEmpty ? "none" : kits.joined(separator: ", ")))
+                    }
+                }
+            }
+        } actions: {
+            if environment != nil {
+                Button("Review", systemImage: "checklist") { model.confirmation = .init(project: project.name, then: .nothing) }
+                    .help("Review sbxenv.yaml: its kits and hosts, and which hosts the agent may reach")
+            }
+            Button("Edit Kits", systemImage: "slider.horizontal.3") { editsKits = true }
+                .help("Choose the sbx kits the sandbox is created with")
+        }
+        .sheet(isPresented: $editsKits) { KitsSheet(project: project) }
     }
 }
 
@@ -872,36 +1129,24 @@ struct NewProjectSheet: View {
                     } footer: {
                         KitsFootnote()
                     }
+                    if model.appConfig.agents[binding.wrappedValue.agent] == .claudeCode {
+                        Section {
+                            Toggle("Keep Claude's sessions on this Mac", isOn: binding.keepsClaudeSessions)
+                        } footer: {
+                            Text("Sessions (claude --resume) go to a folder of this project in Paddock's data folder and survive recreating the sandbox. Clear them in the project's Info.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     Section {
-                        ForEach(binding.wrappedValue.extraFolders, id: \.path) { folder in
-                            HStack(spacing: 6) {
-                                Text((folder.path as NSString).abbreviatingWithTildeInPath).truncationMode(.head)
-                                Spacer()
-                                Toggle("Read-only", isOn: Binding(
-                                    get: { folder.readOnly },
-                                    set: { readOnly in
-                                        if let index = binding.wrappedValue.extraFolders.firstIndex(where: { $0.path == folder.path }) {
-                                            binding.wrappedValue.extraFolders[index].readOnly = readOnly
-                                        }
-                                    }))
-                                    .toggleStyle(.checkbox)
-                                Button("Remove", systemImage: "minus.circle") {
-                                    binding.wrappedValue.extraFolders.removeAll { $0.path == folder.path }
-                                }
-                                .labelStyle(.iconOnly)
-                                .buttonStyle(.borderless)
-                            }
-                        }
-                        Button("Add Folder...") {
-                            let panel = NSOpenPanel()
-                            panel.canChooseDirectories = true
-                            panel.canChooseFiles = false
-                            panel.allowsMultipleSelection = false
-                            panel.prompt = "Add"
-                            guard panel.runModal() == .OK, let url = panel.url,
-                                  !binding.wrappedValue.extraFolders.contains(where: { $0.path == url.path }) else { return }
-                            binding.wrappedValue.extraFolders.append(Project.ExtraFolder(path: url.path))
-                        }
+                        FoldersTable(folders: binding.wrappedValue.extraFolders, projectFolder: binding.wrappedValue.folder,
+                                     setReadOnly: { path, readOnly in
+                                              if let index = binding.wrappedValue.extraFolders.firstIndex(where: { $0.path == path }) {
+                                                  binding.wrappedValue.extraFolders[index].readOnly = readOnly
+                                              }
+                                          },
+                                          remove: { path in binding.wrappedValue.extraFolders.removeAll { $0.path == path } },
+                                          add: { path in binding.wrappedValue.extraFolders.append(Project.ExtraFolder(path: path)) })
                     } header: {
                         Text("Extra folders")
                     } footer: {

@@ -306,7 +306,9 @@ struct LineStreamerQuitTests {
         // Its own list of running processes: the app-wide one would end other tests' streams too.
         let running = RunningProcesses()
         let stream = FoundationLineStreamer(running: running)
-            .lines(URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", "echo up; exec sleep 10"])
+            // Two minutes: a loaded runner stalled this test 13 s between "up" and the count, and
+            // a shorter sleep had ended on its own by then (PAD-91).
+            .lines(URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", "echo up; exec sleep 120"])
         var iterator = stream.makeAsyncIterator()
         #expect(try await iterator.next() == "up")
         #expect(running.count == 1)
@@ -316,7 +318,8 @@ struct LineStreamerQuitTests {
         running.terminateAll()
         // Ended by a signal: the stream finishes without an error, at once.
         #expect(try await iterator.next() == nil)
-        #expect(clock.now - start < .seconds(2))
+        // Well short of the two minutes; a loaded machine may take seconds (PAD-112).
+        #expect(clock.now - start < .seconds(20))
         #expect(running.count == 0)
     }
 }

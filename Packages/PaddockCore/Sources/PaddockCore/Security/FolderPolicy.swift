@@ -45,8 +45,20 @@ public struct FolderPolicy: Sendable {
         self.paddockConfigDirectory = Self.canonical(paddockConfigDirectory)
     }
 
+    /// Inside `~/Library`, the one place a folder may be: `~/Library/Logs` (Paddock's own logs and
+    /// hang captures, other apps' logs), and only when the operator adds it in Paddock as an extra
+    /// folder, which then stays read-only (`ExtraFolders`, PAD-125). Never a project folder, and
+    /// never from a project's file.
+    public static let readOnlyLogs = "Library/Logs"
+
+    /// Whether `folder` (symlinks resolved) is inside `~/Library/Logs`.
+    public func isInsideLogs(_ folder: String) -> Bool {
+        Self.canonical(folder).lowercased().hasPrefix((home + "/" + Self.readOnlyLogs + "/").lowercased())
+    }
+
     /// Checks `folder` after resolving symlinks, so a link to `$HOME` is treated as `$HOME`.
-    public func check(_ folder: String) throws(FolderPolicyViolation) {
+    /// `allowingLogs`: a folder inside `~/Library/Logs` passes (an operator's read-only extra folder).
+    public func check(_ folder: String, allowingLogs: Bool = false) throws(FolderPolicyViolation) {
         let path = Self.canonical(folder)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue else {
@@ -64,7 +76,10 @@ public struct FolderPolicy: Sendable {
         let lowered = path.lowercased()
         for entry in Self.sensitiveEntries {
             let root = (home + "/" + entry).lowercased()
-            if lowered == root || lowered.hasPrefix(root + "/") { throw .insideSensitiveEntry(entry) }
+            if lowered == root || lowered.hasPrefix(root + "/") {
+                if allowingLogs, isInsideLogs(path) { continue }
+                throw .insideSensitiveEntry(entry)
+            }
         }
         for entry in Self.sensitiveEntries
         where FileManager.default.fileExists(atPath: (path as NSString).appendingPathComponent(entry)) {

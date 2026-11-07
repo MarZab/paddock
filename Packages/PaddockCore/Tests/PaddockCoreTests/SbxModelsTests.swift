@@ -46,6 +46,14 @@ struct SbxModelsTests {
         #expect(sandboxes.first?.isRunning == true)
     }
 
+    // Capture: sbx's own sbx-kit-builder has no workspaces or mounts (PAD-134).
+    @Test func sandboxWithoutWorkspaces() throws {
+        let sandboxes = try Fixture.decode([SbxSandbox].self, "sbx", "ls-kit-builder.json")
+        #expect(sandboxes.first?.name == "sbx-kit-builder")
+        #expect(sandboxes.first?.workspaces == [])
+        #expect(sandboxes.first?.mounts == nil)
+    }
+
     @Test func policyList() throws {
         let policy = try Fixture.decode(SbxPolicyList.self, "sbx", "policy-ls.json")
         let defaults = policy.rules.filter { $0.createdVia == "default" && $0.resourceType == "network" }

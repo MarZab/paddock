@@ -37,10 +37,29 @@ public struct SbxSandbox: Sendable, Equatable, Codable, Identifiable {
     public let status: String
     public let lastUsedAt: Date?
     public let workspaces: [String]
+    /// Every mount as `HOST:TARGET[:ro]`, a kit's host mounts too (`sbx ls --json`, sbx 0.51); nil
+    /// when not known: older sbx, and sandboxd's socket, which does not report a kit's host mounts.
+    public var mounts: [String]?
     /// Missing while sbx is still creating the sandbox.
     public let createdAt: Date?
 
     public var isRunning: Bool { status == "running" }
+}
+
+extension SbxSandbox {
+    /// `workspaces` is missing on sbx's own `sbx-kit-builder` (PAD-134): it counts as none, so one
+    /// such entry does not fail the whole list.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name)
+        id = try c.decode(String.self, forKey: .id)
+        agent = try c.decode(String.self, forKey: .agent)
+        status = try c.decode(String.self, forKey: .status)
+        lastUsedAt = try c.decodeIfPresent(Date.self, forKey: .lastUsedAt)
+        workspaces = try c.decodeIfPresent([String].self, forKey: .workspaces) ?? []
+        mounts = try c.decodeIfPresent([String].self, forKey: .mounts)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
+    }
 }
 
 /// One entry of `sbx ports N --json`.

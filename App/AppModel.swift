@@ -29,7 +29,7 @@ final class AppModel {
     private var errorSource: String?
 
     /// Sets `lastError`, with what it came from (a project's sandbox) for the Log's source column.
-    private func fail(_ message: String, in source: String) {
+    func fail(_ message: String, in source: String) {
         errorSource = source
         lastError = message
         errorSource = nil
@@ -120,6 +120,9 @@ final class AppModel {
 
     func start() {
         guard refreshLoop == nil else { return }
+        hangWatchdog.start { [weak self] stuck, folder in
+            self?.appendLog("Paddock did not respond for \(Int(stuck)) s; diagnostics are in \(folder.path)", isError: true)
+        }
         voice.app = self
         loadFiles()
         notifier.start()
@@ -550,10 +553,7 @@ final class AppModel {
     /// After a create: keeps the kits and the `sbxenv.yaml` the sandbox was created from in its
     /// project file.
     private func recordCreated(_ created: Project) {
-        guard var updated = projects.project(named: created.name),
-              updated.sandboxEnvironment != created.sandboxEnvironment || updated.sandboxKits != created.sandboxKits else { return }
-        updated.sandboxEnvironment = created.sandboxEnvironment
-        updated.sandboxKits = created.sandboxKits
+        guard let updated = projects.project(named: created.name)?.recordingCreate(created) else { return }
         do {
             try projectDirectory.save(updated)
             projects.remove(named: updated.name)
@@ -610,7 +610,7 @@ final class AppModel {
 
     /// True when the project has a file, so the caller goes on. Otherwise writes the file from the
     /// sandbox's state first, then runs `retry` with the saved project, and returns false.
-    private func withSaved(_ project: Project, _ retry: @escaping @MainActor (Project) -> Void) -> Bool {
+    func withSaved(_ project: Project, _ retry: @escaping @MainActor (Project) -> Void) -> Bool {
         if projects.project(named: project.name) != nil { return true }
         Task {
             if let saved = await adopt(project.name) { retry(saved) }
@@ -666,6 +666,13 @@ final class AppModel {
         }
     }
 
+    /// The folder the project's sandbox mounts for Claude's sessions (PAD-127): when the operator
+    /// chose it for a Claude Code project; nil otherwise.
+    func claudeSessionsFolder(of project: Project) -> String? {
+        guard project.keepsClaudeSessions, appConfig.agents[project.agent] == .claudeCode else { return nil }
+        return ClaudeSessions.folder(project: project.name, paths: paths)
+    }
+
     /// The differences between the project file and its sandbox. Empty until the sandbox was read.
     func syncItems(for project: Project) -> [SyncItem] {
         let exists = state(of: project) != nil
@@ -683,7 +690,7 @@ final class AppModel {
         // What changed is known only for the confirmed version as it is on disk.
         let record = environment.flatMap { $0.fingerprint == project.approvedEnvironment ? $0.record : nil }
         return SandboxSync.diff(project: current, snapshot: exists ? snapshots[project.name] : nil, globalRules: globalRules, app: appConfig,
-                                expectedKits: expectedKits, environment: record)
+                                expectedKits: expectedKits, environment: record, claudeSessions: claudeSessionsFolder(of: project))
     }
 
     /// What the kit field did: added a kit to Paddock's config (its name, for the picker to
@@ -998,12 +1005,12 @@ final class AppModel {
         requestedSelection = .filesystem
     }
 
-    /// Opens the Processes page (File > Processes, the status popover).
+    /// Opens the Processes page (System > Processes, the status popover).
     func showSbxProcesses() {
         requestedSelection = .processes
     }
 
-    /// Opens the Log page (File > Log, the status popover).
+    /// Opens the Log page (System > Log, the status popover).
     func showLog() {
         requestedSelection = .log
     }
@@ -1639,27 +1646,31 @@ final class AppModel {
 
     // MARK: - Extra folders (PAD-73.5)
 
+    /// The folder checks for this Mac (`FolderPolicy`).
+    var folderPolicy: FolderPolicy {
+        FolderPolicy(home: NSHomeDirectory(), paddockConfigDirectory: paths.configDirectory)
+    }
+
     /// Adds a folder the operator chose to the project, read-only, after the same checks as a
     /// project folder (`ExtraFolders`). The sandbox mounts it at its next create (a recreate item).
     func addExtraFolder(_ path: String, to project: Project) {
         guard withSaved(project, { self.addExtraFolder(path, to: $0) }) else { return }
         guard var updated = projects.project(named: project.name) else { return }
-        let policy = FolderPolicy(home: NSHomeDirectory(), paddockConfigDirectory: paths.configDirectory)
         do throws(ExtraFolderProblem) {
-            let checked = try ExtraFolders.check(path, for: updated, policy: policy)
+            let checked = try ExtraFolders.check(path, for: updated, policy: folderPolicy)
             updated.extraFolders.append(Project.ExtraFolder(path: checked))
         } catch {
             fail("Could not add \((path as NSString).abbreviatingWithTildeInPath): \(error.description)", in: project.name)
             return
         }
-        saveExtraFolders(updated)
+        saveProject(updated)
     }
 
     func removeExtraFolder(_ path: String, from project: Project) {
         guard withSaved(project, { self.removeExtraFolder(path, from: $0) }) else { return }
         guard var updated = projects.project(named: project.name) else { return }
         updated.extraFolders.removeAll { $0.path == path }
-        saveExtraFolders(updated)
+        saveProject(updated)
     }
 
     /// Read-only, or writable: the agent can then change that folder's files too.
@@ -1667,17 +1678,22 @@ final class AppModel {
         guard withSaved(project, { self.setExtraFolder(path, readOnly: readOnly, in: $0) }) else { return }
         guard var updated = projects.project(named: project.name),
               let index = updated.extraFolders.firstIndex(where: { $0.path == path }) else { return }
+        guard ExtraFolders.readOnly(readOnly, path: path, policy: folderPolicy) else {
+            fail("\((path as NSString).abbreviatingWithTildeInPath) stays read-only: it is inside ~/Library/Logs", in: project.name)
+            return
+        }
         updated.extraFolders[index].readOnly = readOnly
-        saveExtraFolders(updated)
+        saveProject(updated)
     }
 
-    private func saveExtraFolders(_ project: Project) {
+    /// Saves a change the operator made to a project: its file, then the list.
+    func saveProject(_ project: Project, what: String = "extra folders") {
         do {
             try projectDirectory.save(project)
             try projects.update(project)
             lastError = nil
         } catch {
-            fail("Could not save \(project.name)'s extra folders: \(String(describing: error))", in: project.name)
+            fail("Could not save \(project.name)'s \(what): \(String(describing: error))", in: project.name)
         }
     }
 
@@ -1768,8 +1784,36 @@ final class AppModel {
         showLog(entries)
     }
 
+    /// Verbose Log (System menu; the `verboseLog` default, off at first): `debugLog` lines say why
+    /// things happen, such as what became of each voice message (PAD-119).
+    var verboseLog = UserDefaults.standard.bool(forKey: "verboseLog") {
+        didSet { UserDefaults.standard.set(verboseLog, forKey: "verboseLog") }
+    }
+
+    /// A line only Verbose Log keeps; the text is not even made otherwise.
+    func debugLog(_ text: @autoclosure () -> String, category: LogCategory = .paddock, source: String? = nil) {
+        guard verboseLog else { return }
+        appendLog("[verbose] " + text(), category: category, source: source)
+    }
+
+    /// An error line reached the Log page while it was not shown: the sidebar's Log shows a red dot
+    /// until the page is shown (PAD-122). Set only when it changes, so the dot redraws only then.
+    private(set) var logHasUnseenErrors = false
+    /// The Log page is shown now (set by the sidebar): its errors are seen as they come. Read by no
+    /// view, so setting it redraws nothing.
+    @ObservationIgnored var logIsShown = false {
+        didSet { if logIsShown, logHasUnseenErrors { logHasUnseenErrors = false } }
+    }
+
+    /// How many denies Paddock suggests, for the sidebar's Network item (PAD-123). From the rules
+    /// alone (suggestions do not depend on the network log), and only as often as a view asks.
+    var suggestedDenyCount: Int {
+        ruleRows().count(where: \.isSuggestion)
+    }
+
     /// Adds lines already in the log file to the Log page.
     private func showLog(_ entries: [LogEntry]) {
+        if !logIsShown, !logHasUnseenErrors, entries.contains(where: \.isError) { logHasUnseenErrors = true }
         errorLog.append(contentsOf: entries)
         if errorLog.count > Self.maxLogEntries { errorLog.removeFirst(errorLog.count - Self.maxLogEntries) }
     }
@@ -1830,6 +1874,9 @@ final class AppModel {
             lastError = "Could not open \(dir.path)"
         }
     }
+
+    /// Captures Paddock when its main thread hangs, and says so once it answers again (PAD-121).
+    @ObservationIgnored private let hangWatchdog = HangWatchdog()
 
     private func modified(_ url: URL) -> Date {
         (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast

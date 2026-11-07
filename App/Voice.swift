@@ -341,17 +341,25 @@ private func convertAudio(_ buffer: AVAudioPCMBuffer, with converter: AVAudioCon
 final class SpeechListener {
     enum Problem: Error, CustomStringConvertible {
         case microphoneDenied
-        case unsupportedLanguage
+        case unsupportedLanguage(Locale)
         /// The language's model is not on this Mac; macOS downloads it once the operator agrees.
         case needsDownload
+        /// macOS is downloading the language's model.
+        case downloading
+        /// macOS offered nothing to download, yet the model is still not installed.
+        case nothingToDownload(Locale, status: String)
         case noAudioFormat
         case noConversion(String)
 
         var description: String {
             switch self {
             case .microphoneDenied: "Paddock may not use the microphone (System Settings, Privacy & Security, Microphone)"
-            case .unsupportedLanguage: "Speech recognition does not support this Mac's language"
+            case .unsupportedLanguage(let locale):
+                "Speech recognition does not support this Mac's language (\(locale.identifier))"
             case .needsDownload: "The speech model for this language is not downloaded yet"
+            case .downloading: "The speech model for this language is still downloading"
+            case .nothingToDownload(let locale, let status):
+                "macOS has nothing to download for the speech model (\(locale.identifier)), yet it is not installed (\(status))"
             case .noAudioFormat: "Speech recognition found no audio format it can use"
             case .noConversion(let formats): "Cannot convert the microphone's audio for speech recognition: \(formats)"
             }
@@ -385,33 +393,49 @@ final class SpeechListener {
         self.audio = audio
     }
 
-    private static func transcriber() async throws -> SpeechTranscriber {
+    private static func transcriber() async throws -> (SpeechTranscriber, Locale) {
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Locale.current) else {
-            throw Problem.unsupportedLanguage
+            throw Problem.unsupportedLanguage(Locale.current)
         }
-        return SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [.volatileResults],
-                                 attributeOptions: [])
+        let transcriber = SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [.volatileResults],
+                                            attributeOptions: [])
+        return (transcriber, locale)
     }
 
-    /// Whether the language's model still has to be downloaded.
-    static func needsDownload() async -> Bool {
-        guard let transcriber = try? await transcriber() else { return false }
-        return await AssetInventory.status(forModules: [transcriber]) != .installed
+    /// Throws unless the language's model is installed: each status of its own, so a model being
+    /// downloaded is not offered for download again.
+    private static func requireModel(_ transcriber: SpeechTranscriber, locale: Locale) async throws {
+        switch await AssetInventory.status(forModules: [transcriber]) {
+        case .installed: return
+        case .downloading: throw Problem.downloading
+        case .supported: throw Problem.needsDownload
+        case .unsupported: throw Problem.unsupportedLanguage(locale)
+        @unknown default: throw Problem.needsDownload
+        }
+    }
+
+    /// The locale whose model `download` fetches.
+    static func modelLocale() async -> Locale? {
+        try? await transcriber().1
     }
 
     /// Downloads the language's model through macOS (`AssetInventory`), after the operator agreed.
-    static func download() async throws {
-        let transcriber = try await transcriber()
+    /// `onStart` gets the download's progress.
+    static func download(onStart: (Progress) -> Void) async throws {
+        let (transcriber, locale) = try await transcriber()
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+            onStart(request.progress)
             try await request.downloadAndInstall()
         }
+        let status = await AssetInventory.status(forModules: [transcriber])
+        guard status == .installed else { throw Problem.nothingToDownload(locale, status: "\(status)") }
     }
 
     func start(words: [String]) async throws {
         guard !isListening else { return }
         guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
-        let transcriber = try await Self.transcriber()
-        guard await AssetInventory.status(forModules: [transcriber]) == .installed else { throw Problem.needsDownload }
+        let (transcriber, locale) = try await Self.transcriber()
+        try await Self.requireModel(transcriber, locale: locale)
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         if !words.isEmpty {
             let context = AnalysisContext()
@@ -574,6 +598,14 @@ final class VoiceModel {
     enum Target: Equatable {
         case tab(project: String, tab: UUID)
         case ask(Ask)
+
+        /// The terminal tab it goes to; nil for a question from an agent outside any tab.
+        var tab: UUID? {
+            switch self {
+            case .tab(_, let tab): tab
+            case .ask(let ask): ask.tab
+            }
+        }
     }
 
     weak var app: AppModel?
@@ -628,6 +660,12 @@ final class VoiceModel {
     private var told: [UUID: String] = [:]
     /// Asked the operator before macOS downloads the speech model.
     var asksForDownload = false
+    /// The speech model's download while it runs (shown in the popup); nil otherwise.
+    private(set) var modelDownload: Progress?
+    /// A download is under way (its progress may not be known yet).
+    private var downloadingModel = false
+    /// Where to listen once the speech model is downloaded.
+    private var afterDownload: Target?
     private var keyMonitor: Any?
     private var voicesObserver: Any?
 
@@ -887,15 +925,39 @@ final class VoiceModel {
     }
 
     private func receive(_ line: String, from project: String) {
-        guard let message = VoiceMessage(line: line) else { return }
-        guard !message.isStale(now: Date()) else { return }
+        guard let message = VoiceMessage(line: line) else {
+            app?.debugLog("Voice: a line from the watcher is no message (\(line.utf8.count) bytes), dropped",
+                          category: .voice, source: project)
+            return
+        }
+        let source = logSource(project: project, tab: message.tab)
+        let now = Date()
+        guard !message.isStale(now: now) else {
+            // The time is the sandbox's clock: one behind the Mac's makes every say look old.
+            app?.debugLog("Voice: \(Self.describe(message)) dropped as stale: sent \(Int(now.timeIntervalSince(message.time))) s "
+                          + "ago by the sandbox's clock (a say keeps \(Int(VoiceMessage.staleAfter)) s)",
+                          category: .voice, source: source)
+            return
+        }
         // Everything an agent says or asks goes to the conversation. It is read aloud only with voice
         // reply on and its popup open; a say never opens the popup, a question does (silently).
         let shown = panelOpen(for: message.tab)
+        app?.debugLog("Voice: \(Self.describe(message)) received, \(Int(now.timeIntervalSince(message.time))) s old; "
+                      + (message.tab == nil ? "no tab" : shown ? "popup open" : "popup closed")
+                      + ", voice reply \(voiceReply ? "on" : "off")\(muted ? ", muted" : "")",
+                      category: .voice, source: source)
         switch message.kind {
         case .say(let text):
             record(.init(speaker: .agent, text: text, tab: message.tab), in: project)
-            guard shown else { return }
+            guard shown else {
+                app?.debugLog("Voice: say \(message.id) recorded, not read aloud: its popup is closed",
+                              category: .voice, source: source)
+                return
+            }
+            if !aloud {
+                app?.debugLog("Voice: say \(message.id) not read aloud: voice reply \(voiceReply ? "on" : "off")\(muted ? ", muted" : "")",
+                              category: .voice, source: source)
+            }
             Task {
                 // Read out first, so the microphone does not hear it.
                 if aloud, await !speakWithoutListening(utterance(text, project: project, tab: message.tab)) { return }
@@ -930,6 +992,8 @@ final class VoiceModel {
     /// cut off that way.
     @discardableResult
     private func speakWithoutListening(_ utterance: SpeechQueue.Utterance) async -> Bool {
+        let source = logSource(project: utterance.project, tab: utterance.tab)
+        app?.debugLog("Voice: speaking \(utterance.text.count) characters", category: .voice, source: source)
         let wasListening = listening
         if listening {
             disarm()
@@ -969,8 +1033,9 @@ final class VoiceModel {
         // With the microphone on, through the shared engine, whose echo cancellation takes the
         // speech out of what the microphone hears (`VoiceAudio`).
         speech.throughEngine = watchingForStop
-        _ = await queue.speak(utterance)
+        let outcome = await queue.speak(utterance)
         speech.throughEngine = false
+        app?.debugLog("Voice: speech \(outcome)\(cutOff ? ", cut off by a spoken stop" : "")", category: .voice, source: source)
         speaking -= 1
         // A dictation the operator started meanwhile took the listener over (`listen`).
         if watches, watchingForStop {
@@ -1086,6 +1151,12 @@ final class VoiceModel {
     /// hands-free on.
     private func listenHandsFree(_ target: Target) {
         guard handsFree, !listenTurnedOff, !listening, stopping == nil, NSApp.isActive else { return }
+        // Only into the tab in front: the microphone is not held for one the operator left (PAD-120).
+        if let tab = target.tab, tab != focused?.tab {
+            app?.debugLog("Voice: hands-free does not listen into a tab not in front", category: .voice,
+                          source: logSource(project: focused?.project ?? "", tab: tab))
+            return
+        }
         if let open = recording {
             guard open != target, DictationText.prompt(draft) == nil else {
                 listen(open)
@@ -1126,6 +1197,17 @@ final class VoiceModel {
     }
 
     /// The Log's source for a project and, when there is one, its agent tab ("app · agent 2").
+    /// A message for the verbose log: its kind and id, never its text.
+    private static func describe(_ message: VoiceMessage) -> String {
+        let kind = switch message.kind {
+        case .say: "say"
+        case .ask: "question"
+        case .cancel: "cancel"
+        case .words: "words"
+        }
+        return "\(kind) \(message.id)"
+    }
+
     func logSource(project: String, tab: UUID?) -> String {
         guard let tab, let title = app?.terminals[project]?.title(of: tab) else { return project }
         return "\(project) · \(title)"
@@ -1135,6 +1217,10 @@ final class VoiceModel {
 
     /// The agent tab in front of the operator; its agent hears once that voice is on.
     func focus(project: Project, tab: UUID?) {
+        // The microphone follows the front tab: a dictation into another one lets it go (PAD-120).
+        if let open = recording, open.tab != (isChosen(project) ? tab : nil) {
+            Task { await closeDictation(open, because: "another tab came to the front") }
+        }
         guard let tab, isChosen(project) else {
             if focused?.project == project.name { focused = nil }
             return
@@ -1188,7 +1274,15 @@ final class VoiceModel {
     /// The microphone's click: opens the dictation and listens, pauses it, or listens again (what
     /// is heard then is added to the draft). Another dictation already open keeps it.
     func toggleListening(_ target: Target) {
-        guard recording == nil || recording == target else { return }
+        // Another tab's dictation lets the microphone go, and this one takes it (PAD-120).
+        if let open = recording, open != target {
+            Task {
+                await closeDictation(open, because: "the microphone was taken in another tab")
+                guard recording == nil else { return }
+                toggleListening(target)
+            }
+            return
+        }
         // A click decides: no coming back on by itself, and hands-free counts as usual.
         resuming?.cancel()
         holdUntilSpeech = false
@@ -1340,9 +1434,15 @@ final class VoiceModel {
                 try await listener.start(words: words)
                 app.appendLog("Listening: microphone \(listener.describeInput())", category: .voice,
                               source: project)
-            } catch SpeechListener.Problem.needsDownload {
+            } catch SpeechListener.Problem.needsDownload where !downloadingModel {
                 listening = false
+                afterDownload = target
                 asksForDownload = true
+            } catch SpeechListener.Problem.needsDownload, SpeechListener.Problem.downloading {
+                listening = false
+                afterDownload = target
+                app.appendLog("The speech model is still downloading; listening starts when it is done",
+                              category: .voice, source: project)
             } catch {
                 listening = false
                 app.appendLog("Could not listen: \(error)", category: .voice, source: project, isError: true)
@@ -1382,14 +1482,32 @@ final class VoiceModel {
     /// Closes the dictation without sending anything.
     func cancelRecording() {
         guard let target = recording else { return }
+        Task { await closeDictation(target) }
+    }
+
+    /// Closes `target`'s dictation without sending it: the microphone stops and its text is dropped.
+    /// `because`: another tab took over, which the log says when text was lost.
+    private func closeDictation(_ target: Target, because reason: String? = nil) async {
+        guard recording == target else { return }
         resuming?.cancel()
         holdUntilSpeech = false
         disarm()
-        Task {
-            await stopListening()
-            guard recording == target else { return }
-            recording = nil
-            draft = ""
+        await stopListening()
+        guard recording == target else { return }
+        if let reason {
+            let project = Self.project(of: target)
+            let unsent = DictationText.prompt(draft) != nil
+            app?.appendLog("Dictation closed: \(reason)" + (unsent ? "; what it heard was not sent" : ""),
+                           category: .voice, source: logSource(project: project, tab: target.tab))
+        }
+        recording = nil
+        draft = ""
+    }
+
+    private static func project(of target: Target) -> String {
+        switch target {
+        case .tab(let project, _): project
+        case .ask(let ask): ask.project
         }
     }
 
@@ -1433,13 +1551,28 @@ final class VoiceModel {
         return second.isEmpty ? first : first + " " + second
     }
 
+    /// Downloads the speech model once (a second ask while it runs only waits), then listens where
+    /// the operator asked to.
     func downloadSpeechModel() {
+        guard !downloadingModel else { return }
+        downloadingModel = true
         Task {
+            let locale = await SpeechListener.modelLocale()?.identifier ?? Locale.current.identifier
+            app?.appendLog("Downloading the speech model (\(locale))", category: .voice)
             do {
-                try await SpeechListener.download()
+                try await SpeechListener.download { modelDownload = $0 }
+                app?.appendLog("Speech model downloaded (\(locale))", category: .voice)
+                downloadingModel = false
+                modelDownload = nil
+                if let target = afterDownload, !listening, recording == nil || recording == target {
+                    listen(target, byOperator: true)
+                }
             } catch {
+                downloadingModel = false
+                modelDownload = nil
                 app?.appendLog("Could not download the speech model: \(error)", category: .voice, isError: true)
             }
+            afterDownload = nil
         }
     }
 
@@ -1465,7 +1598,8 @@ final class VoiceModel {
         guard !isRepeat else { return true }
         showPanel(focused.tab)
         // The open dictation, else the tab's question, else the tab's prompt: what its popup's Listen does.
-        if let recording {
+        // A dictation into another tab is not this one: Listen here takes the microphone over.
+        if let recording, recording.tab == focused.tab {
             toggleListening(recording)
         } else if let ask = asks.first(where: { $0.project == focused.project && $0.tab == focused.tab }) {
             toggleListening(.ask(ask))
@@ -1553,6 +1687,15 @@ struct VoiceControls: View {
         VStack(alignment: .leading, spacing: 8) {
             if !entries.isEmpty {
                 VoiceConversationView(entries: entries)
+            }
+            if let download = voice.modelDownload {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Downloading the speech model", systemImage: "arrow.down.circle")
+                        .foregroundStyle(.secondary)
+                    ProgressView(download)
+                }
+                .font(.caption)
+                .controlSize(.small)
             }
             if let hearing = voice.heardWhileSpeaking {
                 Label(hearing.isEmpty ? "Listening for \"stop\" while it speaks" : "Hearing: " + hearing,

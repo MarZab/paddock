@@ -118,4 +118,58 @@ struct ExtraFoldersTests {
         #expect(ExtraFolders.otherProject("/src/lib", in: projects, except: "app") == "lib")
         #expect(ExtraFolders.otherProject("/src/docs", in: projects, except: "app") == nil)
     }
+
+    /// What the operator pastes into the field (PAD-124).
+    @Test(arguments: [
+        ("/Users/op/src/lib", "/Users/op/src/lib"),
+        ("  /Users/op/src/lib/ \n", "/Users/op/src/lib"),
+        ("\"/Users/op/My Folder\"", "/Users/op/My Folder"),
+        ("'/Users/op/My Folder'", "/Users/op/My Folder"),
+        ("/Users/op/My\\ Folder", "/Users/op/My Folder"),
+        ("file:///Users/op/My%20Folder/", "/Users/op/My Folder"),
+        ("~", "/Users/op"),
+        ("~/src/lib", "/Users/op/src/lib"),
+        ("/", "/"),
+    ])
+    func pastedTextBecomesAFullPath(input: String, path: String) {
+        #expect(ExtraFolders.path(fromInput: input, home: "/Users/op") == path)
+    }
+
+    @Test(arguments: ["", "   ", "src/lib", "~other/src", "https://example.com/x", "file://host/x", "\"\""])
+    func textThatIsNoFullPathIsNone(input: String) {
+        #expect(ExtraFolders.path(fromInput: input, home: "/Users/op") == nil)
+    }
+
+    /// New Project checks a draft's folders the same way, before the project exists.
+    @Test func aDraftIsCheckedLikeASavedProject() throws {
+        let home = try Home()
+        defer { home.cleanup() }
+        let lib = home.home + "/src/lib"
+        #expect(try ExtraFolders.check(lib, projectFolder: home.project.folder, extraFolders: [], policy: home.policy) == lib)
+        #expect(throws: ExtraFolderProblem.overlapsProject) {
+            try ExtraFolders.check(home.home + "/src/app/sub", projectFolder: home.project.folder, extraFolders: [], policy: home.policy)
+        }
+        #expect(throws: ExtraFolderProblem.overlapsExtra(lib)) {
+            try ExtraFolders.check(lib, projectFolder: home.project.folder, extraFolders: [lib], policy: home.policy)
+        }
+        #expect(throws: ExtraFolderProblem.folder(.home)) {
+            try ExtraFolders.check(home.home, projectFolder: home.project.folder, extraFolders: [], policy: home.policy)
+        }
+    }
+
+    /// An operator's extra folder may be inside ~/Library/Logs, and is always mounted read-only (PAD-125).
+    @Test func aLogsFolderIsAnExtraFolderOnlyReadOnly() throws {
+        let home = try Home()
+        defer { home.cleanup() }
+        let logs = home.home + "/Library/Logs/Paddock"
+        try FileManager.default.createDirectory(atPath: logs, withIntermediateDirectories: true)
+        #expect(try ExtraFolders.check(logs, for: home.project, policy: home.policy) == logs)
+        var project = home.project
+        project.extraFolders = [Project.ExtraFolder(path: logs, readOnly: false)]
+        // Writable in the project file or not, it is mounted read-only.
+        #expect(try ExtraFolders.checkAll(project, policy: home.policy) == [Project.ExtraFolder(path: logs, readOnly: true)])
+        #expect(!ExtraFolders.readOnly(false, path: home.home + "/src/lib", policy: home.policy))
+        // Never as the project folder.
+        #expect(throws: FolderPolicyViolation.insideSensitiveEntry("Library")) { try home.policy.check(logs) }
+    }
 }
