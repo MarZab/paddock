@@ -4,6 +4,7 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 
 ## Unreleased
 
+- PAD-134 A create no longer reports an error because sbx lists its own sbx-kit-builder sandbox.
 - PAD-133 After a recreate, the Claude sessions and sbxenv.yaml items no longer stay.
 - PAD-132 A project's title bar has Recreate whenever there is a sandbox.
 - PAD-131 A project's Info is a page of cards that wrap with the window.

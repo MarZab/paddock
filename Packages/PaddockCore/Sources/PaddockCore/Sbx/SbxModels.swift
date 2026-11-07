@@ -46,6 +46,22 @@ public struct SbxSandbox: Sendable, Equatable, Codable, Identifiable {
     public var isRunning: Bool { status == "running" }
 }
 
+extension SbxSandbox {
+    /// `workspaces` is missing on sbx's own `sbx-kit-builder` (PAD-134): it counts as none, so one
+    /// such entry does not fail the whole list.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name)
+        id = try c.decode(String.self, forKey: .id)
+        agent = try c.decode(String.self, forKey: .agent)
+        status = try c.decode(String.self, forKey: .status)
+        lastUsedAt = try c.decodeIfPresent(Date.self, forKey: .lastUsedAt)
+        workspaces = try c.decodeIfPresent([String].self, forKey: .workspaces) ?? []
+        mounts = try c.decodeIfPresent([String].self, forKey: .mounts)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt)
+    }
+}
+
 /// One entry of `sbx ports N --json`.
 public struct SbxPort: Sendable, Equatable, Codable {
     public let hostIP: String
