@@ -1,13 +1,14 @@
 #!/bin/bash
 #MISE description="Capture sbx and llmman CLI output on the operator's Mac, for fixtures (the M0 capture)"
 #USAGE arg "<phase>" help="readonly first, then lifecycle, models; v3 for sbx >= 0.51 kits and sbx env (PAD-73.1), kits for Paddock's own kits (PAD-73.2)" {
-#USAGE   choices "readonly" "lifecycle" "models" "v3" "kits"
+#USAGE   choices "readonly" "lifecycle" "models" "v3" "kits" "mounts"
 #USAGE }
 #USAGE arg "[parts]" help="kits only: a comma-separated choice of status, voice, browser, gateway, claude, opencode (all when left out)"
 # M0 CLI contract spike. Run on the operator's Mac, from the repo root.
 #
 #   mise run capture:cli readonly    # safe: versions, status, lists, --help texts, llmman GETs
 #   mise run capture:cli lifecycle   # creates throwaway sbx sandboxes (claude, builder), then removes them
+#   mise run capture:cli mounts      # can a folder be added to an existing sandbox without a recreate? (throwaway sandboxes)
 #   mise run capture:cli models      # enables sbx --model (asks), runs a tiny local model, probes llmman from inside
 #
 # Output goes to .tmp/captures/ (gitignored, outside the Swift package); throwaway projects to .tmp/capture-projects/.
@@ -259,6 +260,61 @@ phase_lifecycle() {
   kill "$ev" 2>/dev/null; wait "$ev" 2>/dev/null
   [ -s "$FIX/sbx-events-lifecycle.stderr" ] || rm -f "$FIX/sbx-events-lifecycle.stderr"
   cap sbx-ls-after-rm json sbx ls --json
+}
+
+# ---------------------------------------------------------------- mounts
+
+# Whether a folder can be added to a sandbox that exists (sbx 0.51's secret help speaks of "mounts
+# added to a running sandbox later"; no command says how). Each try is followed by sbx ls and a
+# look from inside, so the captures show what each did. Throwaway sandboxes, removed at the end.
+phase_mounts() {
+  local dir="$TESTDIR/mounts" cli="$RUN_ID-mnt" env="$RUN_ID-mntenv"
+  log "will create sandboxes $cli and $env in $dir, try to add a folder to each, then remove them"
+  confirm "Proceed?" || return 0
+  mkdir -p "$dir/project" "$dir/extra-a" "$dir/extra-b" "$dir/env/project" "$dir/env/extra"
+  echo "project" > "$dir/project/README.md"
+  echo "extra a" > "$dir/extra-a/marker.txt"
+  echo "extra b" > "$dir/extra-b/marker.txt"
+  echo "env extra" > "$dir/env/extra/marker.txt"
+  trap 'sbx rm --force "$RUN_ID-mnt" >/dev/null 2>&1; sbx rm --force "$RUN_ID-mntenv" >/dev/null 2>&1' EXIT
+  cap mounts-sbx-version json sbx version --json
+
+  # what the sandbox sees of both extra folders
+  look() {
+    cap "mounts-$1-ls" json sbx ls --json
+    cap "mounts-$1-inside" txt sbx exec "$2" /bin/sh -c \
+      "for f in '$dir/extra-a' '$dir/extra-b' '$dir/env/extra'; do echo \"## \$f\"; ls -la \"\$f\" 2>&1; cat \"\$f/marker.txt\" 2>&1; done"
+  }
+
+  log "1. the CLI: create with one extra folder, then name the sandbox again with two"
+  cap mounts-create txt sbx create --name "$cli" shell "$dir/project" "$dir/extra-a:ro"
+  look created "$cli"
+  cap mounts-run-again txt sbx run --name "$cli" --detach shell "$dir/project" "$dir/extra-a:ro" "$dir/extra-b:ro"
+  look after-run "$cli"
+  cap mounts-create-again txt sbx create --name "$cli" shell "$dir/project" "$dir/extra-a:ro" "$dir/extra-b:ro"
+  look after-create "$cli"
+
+  log "2. sbx env: create from a file, add a workspace to it, plan, and apply"
+  cat > "$dir/env/project/sbxenv.yaml" <<YAML
+schemaVersion: "1"
+name: $env
+agent: shell
+workspace: .
+YAML
+  cap mounts-env-create txt sbx env create "$dir/env/project/sbxenv.yaml" --skip-host-commands --force
+  look env-created "$env"
+  cat >> "$dir/env/project/sbxenv.yaml" <<YAML
+additionalWorkspaces:
+  - { path: ../extra, readOnly: true }
+YAML
+  cap mounts-env-plan txt sbx env plan "$dir/env/project/sbxenv.yaml"
+  cap mounts-env-plan-json json sbx env plan "$dir/env/project/sbxenv.yaml" --json
+  cap mounts-env-apply txt sbx env create "$dir/env/project/sbxenv.yaml" --skip-host-commands --force
+  look env-applied "$env"
+
+  log "remove"
+  cap mounts-rm json sbx rm --force --json "$cli" "$env"
+  trap - EXIT
 }
 
 # ---------------------------------------------------------------- models
@@ -632,6 +688,7 @@ case "${1:-}" in
   models) phase_models ;;
   v3) phase_v3 ;;
   kits) M0_ONLY="${2:-}" phase_kits || exit 1 ;;
-  *) echo "usage: $0 readonly|lifecycle|models|v3|kits [status,voice,browser,gateway,claude,opencode]"; exit 2 ;;
+  mounts) phase_mounts ;;
+  *) echo "usage: $0 readonly|lifecycle|models|v3|kits [status,voice,browser,gateway,claude,opencode]|mounts"; exit 2 ;;
 esac
 log "done. Fixtures in $FIX"
