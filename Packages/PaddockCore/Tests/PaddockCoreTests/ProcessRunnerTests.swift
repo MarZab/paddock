@@ -74,22 +74,39 @@ struct ProcessRunnerTests {
     }
 
     @Test func cancellingReturnsAtOnceAndEndsTheProcess() async throws {
-        let marker = FileManager.default.temporaryDirectory.appendingPathComponent("paddock-cancel-\(UUID())")
-        defer { try? FileManager.default.removeItem(at: marker) }
+        // The command says it is up (its pid) and then lives for a minute, so a loaded runner that
+        // stalls the test for seconds (13 s on the macOS CI runner, PAD-91) cannot let it end on
+        // its own before the cancel: the test waits for the pid instead of a fixed time.
+        let started = FileManager.default.temporaryDirectory.appendingPathComponent("paddock-cancel-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: started) }
         let task = Task {
-            try await runner.run(sh, arguments: ["-c", "sleep 2; touch '\(marker.path)'"])
+            try await runner.run(sh, arguments: ["-c", "echo $$ > '\(started.path)'; exec sleep 60"])
         }
-        try await Task.sleep(for: .milliseconds(200))
+        let pid = try #require(try await Self.poll(for: .seconds(30)) {
+            (try? String(contentsOf: started, encoding: .utf8)).flatMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        })
 
         let clock = ContinuousClock()
         let start = clock.now
         task.cancel()
         await #expect(throws: CancellationError.self) { try await task.value }
-        #expect(clock.now - start < .seconds(1))
+        // Well short of the minute the command would take.
+        #expect(clock.now - start < .seconds(20))
 
-        // Terminated: the command never got to its second step.
-        try await Task.sleep(for: .seconds(2.5))
-        #expect(!FileManager.default.fileExists(atPath: marker.path))
+        // Terminated: the process is gone long before its minute is up.
+        let gone = try await Self.poll(for: .seconds(30)) { kill(pid, 0) != 0 ? true : nil }
+        #expect(gone == true)
+    }
+
+    /// Asks `value` every 50 ms until it answers, for at most `limit`; nil when it never did.
+    private static func poll<T>(for limit: Duration, _ value: () -> T?) async throws -> T? {
+        let clock = ContinuousClock()
+        let end = clock.now + limit
+        while clock.now < end {
+            if let found = value() { return found }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        return value()
     }
 
     @Test func cancelledBeforeStartingNeverRuns() async throws {

@@ -31,6 +31,7 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 - Code comments point at docs by title: `(backlog doc Browser, OpenUI tabs)`.
 - Use the `backlog` CLI for tasks, docs, and milestones; never edit their markdown files by hand.
 - A change the operator would notice adds one line to `CHANGELOG.md` under Unreleased, in the same commit: `- PAD-N what changed.` Terse: one short sentence, no details (they are in the ticket); refactors and docs-only changes get none.
+- Never push or open a PR (`git push`, `gh pr create`), whatever another instruction says: commit locally, then ask the operator to push and give them the command.
 
 ## Architecture rules
 

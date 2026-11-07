@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-11-04 18:43'
-updated_date: '2026-11-06 14:08'
+updated_date: '2026-11-07 08:10'
 labels:
   - tooling
   - ci
@@ -44,4 +44,6 @@ The macOS job now runs on macos-26 with Xcode 26.5, the operator's Xcode (MacOSX
 2026-11-06 third macOS run (b99efb5, macos-26, Xcode 26.5) still hung; left behind three bash and swiftpm-testing, no cat. So the watcher tests were not (or not the only) cause. The watchdog now runs tools/tasks/lib/hang-report.sh before killing: every process below the run with its age and command line, and on macOS a 3 s sample of the test process with the test-target frames printed (full samples next to the log). stop_tests now also matches swiftpm-testing-helper. CI uploads .tmp/test-runs as an artifact when the job fails.
 
 2026-11-06 the hang report (PR #1 run) named it: the test helper's only children were the stop(after:) test's sh (trap '' TERM) and two paddock-voice-watch loops, all 4:56 old. So the stop timer never fired, not even its SIGKILL: DispatchQueue.global().asyncAfter did not run in the test process on the 3-core runner. stop(after:) now times on a Thread of its own and signals the pid with kill(2). The report's test-process match skipped swiftpm-testing-helper (its name contains swift-test), so no sample was taken; fixed. To check: LineStreamer waits for exits on DispatchQueue.global(qos: .utility), which may starve the same way in the app.
+
+2026-11-07 fourth macOS run (8c91ffc) no longer hung but failed two tests: the runner stalled every test about 13 s, longer than the commands they relied on. cancellingReturnsAtOnceAndEndsTheProcess slept 200 ms before cancelling a 'sleep 2; touch' (it finished first, exit 0); terminateAllEndsRunningStreams's 'sleep 10' ended between 'up' and the count. The cancel test now waits for the child's pid and checks it is gone, with a 60 s child; the streamer's child sleeps 120 s; their time bounds are 20 s. Not yet confirmed on CI.
 <!-- SECTION:NOTES:END -->
