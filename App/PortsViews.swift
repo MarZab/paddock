@@ -109,7 +109,10 @@ struct ProjectPortsSections: View {
     var body: some View {
         // sbx's global rules are on the Network page and in the rules table below.
         let rows = model.portRows().filter { $0.sandbox == project.name }
-        Section {
+        InfoCard("Ports", systemImage: "point.3.connected.trianglepath.dotted") {
+            if rows.isEmpty {
+                Text("None published or allowed").foregroundStyle(.secondary)
+            }
             ForEach(rows) { row in
                 HStack {
                     Text(row.kind == .published
@@ -122,18 +125,15 @@ struct ProjectPortsSections: View {
                     Spacer()
                     PortActions(model: model, row: row)
                 }
-                .listRowBackground(row.state.differs ? Color.orange.opacity(0.12) : nil)
+                .padding(.horizontal, 4)
+                .background(row.state.differs ? Color.orange.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 4))
             }
-        } header: {
-            HStack {
-                Text("Ports")
-                Spacer()
-                Button("Add...", systemImage: "plus") { adding = true }
-                    .buttonStyle(.borderless)
-                    .popover(isPresented: $adding, arrowEdge: .bottom) {
-                        NewPortPopover(model: model, project: project) { adding = false }
-                    }
-            }
+        } actions: {
+            Button("Add...", systemImage: "plus") { adding = true }
+                .help("Publish a sandbox port on this Mac, or let the sandbox reach a port on this Mac")
+                .popover(isPresented: $adding, arrowEdge: .bottom) {
+                    NewPortPopover(model: model, project: project) { adding = false }
+                }
         }
     }
 }

@@ -3,6 +3,7 @@ import PaddockCore
 
 /// Claude's sessions kept on this Mac (PAD-127, backlog doc UI, Claude sessions).
 extension AppModel {
+
     /// What the project's sessions folder holds now; nil when it has none yet.
     func claudeSessionsSummary(of project: Project) -> ClaudeSessions.Summary? {
         ClaudeSessions.summary(folder: ClaudeSessions.folder(project: project.name, paths: paths))

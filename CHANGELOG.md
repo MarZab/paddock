@@ -5,6 +5,8 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 ## Unreleased
 
 - PAD-133 After a recreate, the Claude sessions and sbxenv.yaml items no longer stay.
+- PAD-132 A project's title bar has Recreate whenever there is a sandbox.
+- PAD-131 A project's Info is a page of cards that wrap with the window.
 - PAD-130 Claude's sessions can be kept on this Mac for projects with an sbxenv.yaml too.
 - PAD-127 Claude's sessions can be kept on this Mac across recreates, and cleared in Info.
 - PAD-125 An extra folder may be inside ~/Library/Logs, always read-only, with a warning.
