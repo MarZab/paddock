@@ -1,8 +1,10 @@
 # Changelog
 
-One line per change, newest first. Details are in the ticket (`backlog task view PAD-N`).
+One line per change, newest first, grouped by the day of the version (yymmdd, as in the app's yymmdd.N). Details are in the ticket (`backlog task view PAD-N`).
 
 ## Unreleased
+
+## 261107
 
 - PAD-134 A create no longer reports an error because sbx lists its own sbx-kit-builder sandbox.
 - PAD-133 After a recreate, the Claude sessions and sbxenv.yaml items no longer stay.
@@ -18,6 +20,9 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 - PAD-120 The microphone follows the tab in front; another tab no longer holds it.
 - PAD-119 Verbose Log (System menu) says what became of each voice message.
 - PAD-118 The speech model download shows its progress and starts listening when done.
+
+## 261106
+
 - PAD-33 Project cards and the toolbar name waiting approval requests in their tooltip.
 - PAD-104 The version (yymmdd.N, from git) shows next to the status button.
 - PAD-103 Recreate items say what changed, and are gone when nothing did.
