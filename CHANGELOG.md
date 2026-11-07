@@ -4,6 +4,7 @@ One line per change, newest first. Details are in the ticket (`backlog task view
 
 ## Unreleased
 
+- PAD-118 The speech model download shows its progress and starts listening when done.
 - PAD-33 Project cards and the toolbar name waiting approval requests in their tooltip.
 - PAD-104 The version (yymmdd.N, from git) shows next to the status button.
 - PAD-103 Recreate items say what changed, and are gone when nothing did.

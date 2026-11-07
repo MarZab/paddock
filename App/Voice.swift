@@ -341,17 +341,25 @@ private func convertAudio(_ buffer: AVAudioPCMBuffer, with converter: AVAudioCon
 final class SpeechListener {
     enum Problem: Error, CustomStringConvertible {
         case microphoneDenied
-        case unsupportedLanguage
+        case unsupportedLanguage(Locale)
         /// The language's model is not on this Mac; macOS downloads it once the operator agrees.
         case needsDownload
+        /// macOS is downloading the language's model.
+        case downloading
+        /// macOS offered nothing to download, yet the model is still not installed.
+        case nothingToDownload(Locale, status: String)
         case noAudioFormat
         case noConversion(String)
 
         var description: String {
             switch self {
             case .microphoneDenied: "Paddock may not use the microphone (System Settings, Privacy & Security, Microphone)"
-            case .unsupportedLanguage: "Speech recognition does not support this Mac's language"
+            case .unsupportedLanguage(let locale):
+                "Speech recognition does not support this Mac's language (\(locale.identifier))"
             case .needsDownload: "The speech model for this language is not downloaded yet"
+            case .downloading: "The speech model for this language is still downloading"
+            case .nothingToDownload(let locale, let status):
+                "macOS has nothing to download for the speech model (\(locale.identifier)), yet it is not installed (\(status))"
             case .noAudioFormat: "Speech recognition found no audio format it can use"
             case .noConversion(let formats): "Cannot convert the microphone's audio for speech recognition: \(formats)"
             }
@@ -385,33 +393,49 @@ final class SpeechListener {
         self.audio = audio
     }
 
-    private static func transcriber() async throws -> SpeechTranscriber {
+    private static func transcriber() async throws -> (SpeechTranscriber, Locale) {
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: Locale.current) else {
-            throw Problem.unsupportedLanguage
+            throw Problem.unsupportedLanguage(Locale.current)
         }
-        return SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [.volatileResults],
-                                 attributeOptions: [])
+        let transcriber = SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [.volatileResults],
+                                            attributeOptions: [])
+        return (transcriber, locale)
     }
 
-    /// Whether the language's model still has to be downloaded.
-    static func needsDownload() async -> Bool {
-        guard let transcriber = try? await transcriber() else { return false }
-        return await AssetInventory.status(forModules: [transcriber]) != .installed
+    /// Throws unless the language's model is installed: each status of its own, so a model being
+    /// downloaded is not offered for download again.
+    private static func requireModel(_ transcriber: SpeechTranscriber, locale: Locale) async throws {
+        switch await AssetInventory.status(forModules: [transcriber]) {
+        case .installed: return
+        case .downloading: throw Problem.downloading
+        case .supported: throw Problem.needsDownload
+        case .unsupported: throw Problem.unsupportedLanguage(locale)
+        @unknown default: throw Problem.needsDownload
+        }
+    }
+
+    /// The locale whose model `download` fetches.
+    static func modelLocale() async -> Locale? {
+        try? await transcriber().1
     }
 
     /// Downloads the language's model through macOS (`AssetInventory`), after the operator agreed.
-    static func download() async throws {
-        let transcriber = try await transcriber()
+    /// `onStart` gets the download's progress.
+    static func download(onStart: (Progress) -> Void) async throws {
+        let (transcriber, locale) = try await transcriber()
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+            onStart(request.progress)
             try await request.downloadAndInstall()
         }
+        let status = await AssetInventory.status(forModules: [transcriber])
+        guard status == .installed else { throw Problem.nothingToDownload(locale, status: "\(status)") }
     }
 
     func start(words: [String]) async throws {
         guard !isListening else { return }
         guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
-        let transcriber = try await Self.transcriber()
-        guard await AssetInventory.status(forModules: [transcriber]) == .installed else { throw Problem.needsDownload }
+        let (transcriber, locale) = try await Self.transcriber()
+        try await Self.requireModel(transcriber, locale: locale)
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         if !words.isEmpty {
             let context = AnalysisContext()
@@ -628,6 +652,12 @@ final class VoiceModel {
     private var told: [UUID: String] = [:]
     /// Asked the operator before macOS downloads the speech model.
     var asksForDownload = false
+    /// The speech model's download while it runs (shown in the popup); nil otherwise.
+    private(set) var modelDownload: Progress?
+    /// A download is under way (its progress may not be known yet).
+    private var downloadingModel = false
+    /// Where to listen once the speech model is downloaded.
+    private var afterDownload: Target?
     private var keyMonitor: Any?
     private var voicesObserver: Any?
 
@@ -1340,9 +1370,15 @@ final class VoiceModel {
                 try await listener.start(words: words)
                 app.appendLog("Listening: microphone \(listener.describeInput())", category: .voice,
                               source: project)
-            } catch SpeechListener.Problem.needsDownload {
+            } catch SpeechListener.Problem.needsDownload where !downloadingModel {
                 listening = false
+                afterDownload = target
                 asksForDownload = true
+            } catch SpeechListener.Problem.needsDownload, SpeechListener.Problem.downloading {
+                listening = false
+                afterDownload = target
+                app.appendLog("The speech model is still downloading; listening starts when it is done",
+                              category: .voice, source: project)
             } catch {
                 listening = false
                 app.appendLog("Could not listen: \(error)", category: .voice, source: project, isError: true)
@@ -1433,13 +1469,28 @@ final class VoiceModel {
         return second.isEmpty ? first : first + " " + second
     }
 
+    /// Downloads the speech model once (a second ask while it runs only waits), then listens where
+    /// the operator asked to.
     func downloadSpeechModel() {
+        guard !downloadingModel else { return }
+        downloadingModel = true
         Task {
+            let locale = await SpeechListener.modelLocale()?.identifier ?? Locale.current.identifier
+            app?.appendLog("Downloading the speech model (\(locale))", category: .voice)
             do {
-                try await SpeechListener.download()
+                try await SpeechListener.download { modelDownload = $0 }
+                app?.appendLog("Speech model downloaded (\(locale))", category: .voice)
+                downloadingModel = false
+                modelDownload = nil
+                if let target = afterDownload, !listening, recording == nil || recording == target {
+                    listen(target, byOperator: true)
+                }
             } catch {
+                downloadingModel = false
+                modelDownload = nil
                 app?.appendLog("Could not download the speech model: \(error)", category: .voice, isError: true)
             }
+            afterDownload = nil
         }
     }
 
@@ -1553,6 +1604,15 @@ struct VoiceControls: View {
         VStack(alignment: .leading, spacing: 8) {
             if !entries.isEmpty {
                 VoiceConversationView(entries: entries)
+            }
+            if let download = voice.modelDownload {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Downloading the speech model", systemImage: "arrow.down.circle")
+                        .foregroundStyle(.secondary)
+                    ProgressView(download)
+                }
+                .font(.caption)
+                .controlSize(.small)
             }
             if let hearing = voice.heardWhileSpeaking {
                 Label(hearing.isEmpty ? "Listening for \"stop\" while it speaks" : "Hearing: " + hearing,
