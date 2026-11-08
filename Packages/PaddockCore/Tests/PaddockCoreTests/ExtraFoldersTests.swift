@@ -172,4 +172,27 @@ struct ExtraFoldersTests {
         // Never as the project folder.
         #expect(throws: FolderPolicyViolation.insideSensitiveEntry("Library")) { try home.policy.check(logs) }
     }
+
+    /// The Read-only checkbox: an ordinary folder goes both ways.
+    @Test func anOrdinaryFolderCanBeSwitchedEitherWay() throws {
+        let home = try Home()
+        defer { home.cleanup() }
+        let lib = home.home + "/src/lib"
+        #expect(ExtraFolders.allows(readOnly: false, path: lib, policy: home.policy))
+        #expect(ExtraFolders.allows(readOnly: true, path: lib, policy: home.policy))
+    }
+
+    /// Inside ~/Library/Logs it stays read-only, also when reached through a link (PAD-125).
+    @Test func aLogsFolderCannotBeSwitchedToWritable() throws {
+        let home = try Home()
+        defer { home.cleanup() }
+        let logs = home.home + "/Library/Logs/Paddock"
+        try FileManager.default.createDirectory(atPath: logs, withIntermediateDirectories: true)
+        let link = home.home + "/src/logs-link"
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: logs)
+        for path in [logs, link] {
+            #expect(!ExtraFolders.allows(readOnly: false, path: path, policy: home.policy))
+            #expect(ExtraFolders.allows(readOnly: true, path: path, policy: home.policy))
+        }
+    }
 }

@@ -4,6 +4,8 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-136 An extra folder can be made writable again; it no longer reports a false ~/Library/Logs error.
+
 ## 261107
 
 - PAD-134 A create no longer reports an error because sbx lists its own sbx-kit-builder sandbox.

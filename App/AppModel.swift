@@ -1678,7 +1678,7 @@ final class AppModel {
         guard withSaved(project, { self.setExtraFolder(path, readOnly: readOnly, in: $0) }) else { return }
         guard var updated = projects.project(named: project.name),
               let index = updated.extraFolders.firstIndex(where: { $0.path == path }) else { return }
-        guard ExtraFolders.readOnly(readOnly, path: path, policy: folderPolicy) else {
+        guard ExtraFolders.allows(readOnly: readOnly, path: path, policy: folderPolicy) else {
             fail("\((path as NSString).abbreviatingWithTildeInPath) stays read-only: it is inside ~/Library/Logs", in: project.name)
             return
         }
