@@ -68,11 +68,39 @@ struct FolderPolicyTests {
     }
 
     @Test(arguments: FolderPolicy.sensitiveEntries)
-    func rejectsFoldersWithSensitiveEntries(entry: String) throws {
+    func acceptsAProjectsOwnFolderWithASensitiveName(entry: String) throws {
         let fs = try Sandbox()
         defer { fs.cleanup() }
         try fs.mkdir(fs.project + "/" + entry)
+        try fs.policy.check(fs.project)
+        #expect(fs.policy.sensitiveNames(in: fs.project) == [entry])
+    }
+
+    @Test func aFolderWithoutSensitiveNamesNeedsNoConfirmation() throws {
+        let fs = try Sandbox()
+        defer { fs.cleanup() }
+        try fs.mkdir(fs.project + "/fixtures/.ssh")
+        #expect(fs.policy.sensitiveNames(in: fs.project).isEmpty)
+    }
+
+    @Test(arguments: FolderPolicy.sensitiveEntries)
+    func rejectsAChildLinkingToASensitiveFolderOfHome(entry: String) throws {
+        let fs = try Sandbox()
+        defer { fs.cleanup() }
+        try fs.mkdir(fs.home + "/" + entry)
+        let link = fs.project + "/" + entry
+        try fs.mkdir((link as NSString).deletingLastPathComponent)
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: fs.home + "/" + entry)
         #expect(throws: FolderPolicyViolation.containsSensitiveEntry(entry)) { try fs.policy.check(fs.project) }
+    }
+
+    @Test func rejectsAFolderHoldingASensitiveFolderOfHome() throws {
+        let fs = try Sandbox()
+        defer { fs.cleanup() }
+        // A config folder elsewhere, so `~/.config` is judged by `.config/gh` and not as Paddock's.
+        let policy = FolderPolicy(home: fs.home, paddockConfigDirectory: fs.root + "/paddock-config")
+        try fs.mkdir(fs.home + "/.config/gh")
+        #expect(throws: FolderPolicyViolation.containsSensitiveEntry(".config/gh")) { try policy.check(fs.home + "/.config") }
     }
 
     @Test(arguments: FolderPolicy.sensitiveEntries)

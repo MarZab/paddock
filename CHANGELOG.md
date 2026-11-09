@@ -4,6 +4,7 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-137 A project with its own .azure, .ssh or Library folder can be created after a confirmation.
 - PAD-136 An extra folder can be made writable again; it no longer reports a false ~/Library/Logs error.
 
 ## 261107
