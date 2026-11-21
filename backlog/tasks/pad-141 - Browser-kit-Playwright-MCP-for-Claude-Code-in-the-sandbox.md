@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-21 16:10'
-updated_date: '2026-11-21 16:58'
+updated_date: '2026-11-21 17:02'
 labels:
   - browser
   - kits
@@ -48,4 +48,6 @@ Pinned @playwright/mcp 0.0.83: npm shows it and @playwright/cli 0.1.22 both on p
 Checked on Linux: an MCP browser registers in ~/.cache/ms-playwright/b with the client name as title (claude-code) and appears in `playwright-cli list --all --json` under servers, not browsers (which the watcher read), and in the dashboard (it listed claude-code with its page). A second client connects to its endpoint in about 8 ms and reads its pages; disconnecting leaves it running.
 
 Watcher: MCP browsers come from list --all servers (not playwright-cli sessions, not --playwright-internal), are reported as mcp-<title> with pages read over a kept connection (playwright-core resolved next to the real CLI), page and navigation events read the tabs again, no notes for them. Run against a live shared MCP server on Linux: it printed {"name":"mcp-c","tabs":[...]} and a page another client opened appeared without waiting for the 5 s poll. Tests and lint pass (633 tests).
+
+PAD-142 replaced the stdio server per Claude Code session (AC 2) with one shared HTTP server per sandbox, registered with --transport http.
 <!-- SECTION:NOTES:END -->

@@ -44,11 +44,11 @@ struct BrowserWebPolicyTests {
 struct BrowserActivityTests {
     @Test func theKitInstallsTheWrapperAndTheWatcherAndFixesHTTPSAndFiles() throws {
         let spec = BrowserKit.spec
-        // both go in as base64, so no shell changes them
+        // all go in as base64, so no shell changes them
         let encoded = spec.components(separatedBy: "printf '%s' '").dropFirst().compactMap { $0.components(separatedBy: "'").first }
         #expect(encoded.compactMap { Data(base64Encoded: $0) }
             == [Data(BrowserActivity.wrapper.utf8), Data(BrowserActivity.watcher.utf8), Data(BrowserShow.script.utf8),
-                Data(BrowserKit.openUIReference.utf8)])
+                Data(BrowserKit.mcpLauncher.utf8), Data(BrowserKit.openUIReference.utf8)])
         #expect(spec.contains("/usr/local/bin/paddock"))
         #expect(spec.contains("ln -sf \"$real\" \(BrowserActivity.realCLI)"))
         #expect(spec.contains("/usr/local/bin/paddock-browser-watch"))

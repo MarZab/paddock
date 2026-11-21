@@ -264,19 +264,20 @@ struct KitsTests {
         #expect(!spec.contains("\t"))
     }
 
-    /// Playwright MCP in the sandbox (PAD-141): installed next to playwright-cli and registered with
-    /// Claude Code on every start, stdio only.
-    @Test func theBrowserKitRegistersPlaywrightMCPWithClaudeCode() throws {
+    /// Playwright MCP in the sandbox (PAD-141, PAD-142): installed next to playwright-cli, one server
+    /// per sandbox started on every start, and Claude Code registered with it over HTTP.
+    @Test func theBrowserKitRunsOneSharedPlaywrightMCP() throws {
         let spec = BrowserKit.spec
         #expect(spec.contains("\"\(BrowserKit.package)@\(BrowserKit.version)\" \"\(BrowserKit.mcpPackage)@\(BrowserKit.mcpVersion)\""))
         // the pair built on the same Playwright, so one Chromium build serves both
         #expect(BrowserKit.version == "0.1.22" && BrowserKit.mcpVersion == "0.0.83")
         let script = BrowserKit.registerMCPScript
         #expect(script.contains("command -v claude >/dev/null || exit 0"))
-        #expect(script.hasSuffix("claude mcp add --scope user playwright -- playwright-mcp --headless --isolated"))
-        // no port, no file access outside the workspace, no ignored certificates
-        #expect(!script.contains("--port") && !script.contains("--host") && !script.contains("unrestricted") && !script.contains("ignore-https"))
-        // the YAML holds the script as written, as a startup step run as the agent's user
+        #expect(script.hasSuffix("claude mcp add --scope user --transport http playwright http://localhost:38324/mcp"))
+        // localhost in the sandbox only: sbx publishes only the dashboard's port
+        #expect(spec.components(separatedBy: "com.docker.sandbox/port@1").count == 2)
+        #expect(!spec.contains("container: \(BrowserKit.mcpPort)"))
+        // the YAML holds both steps as written, run as the agent's user, the server first
         guard case .object(let root) = try YAMLCoding.value(fromYAML: Data(spec.utf8)),
               case .array(let capabilities)? = root["capabilities"] else {
             Issue.record("the kit is not a YAML object with capabilities")
@@ -287,12 +288,34 @@ struct KitsTests {
                   case .object(let config)? = object["config"], case .array(let steps)? = config["startup"] else { return [] }
             return steps
         }
-        let register = startup.first {
-            guard case .object(let step) = $0 else { return false }
-            return step["command"] == .array([.string("sh"), .string("-c"), .string(script)]) && step["user"] == .string("1000")
+        func index(of command: JSONValue) -> Int? {
+            startup.firstIndex {
+                guard case .object(let step) = $0 else { return false }
+                return step["command"] == command && step["user"] == .string("1000")
+            }
         }
-        #expect(register != nil)
-        #expect(spec.contains("mcp__\(BrowserKit.mcpServerName)__*"))
+        let start = index(of: .array([.string(BrowserKit.mcpLauncherPath), .string("start")]))
+        let register = index(of: .array([.string("sh"), .string("-c"), .string(script)]))
+        #expect(start != nil && register != nil && (start ?? 0) < (register ?? 0))
+        #expect(spec.contains("mcp__\(BrowserKit.mcpServerName)__*") && spec.contains("paddock-browser-mcp restart"))
+        #expect(spec.contains(Data(BrowserKit.mcpLauncher.utf8).base64EncodedString()))
+    }
+
+    /// The launcher's server: a kept profile, the extensions folder, localhost, full Chromium, and none
+    /// of its caller's PLAYWRIGHT_MCP_ settings (no unrestricted file access); stopped with its browser.
+    @Test func theMCPLauncherKeepsTheProfileAndLoadsExtensions() {
+        let launcher = BrowserKit.mcpLauncher
+        #expect(launcher.hasPrefix(NodeScript.header))
+        #expect(launcher.contains("const PROFILE = '/home/agent/.cache/paddock-browser/profile';"))
+        #expect(launcher.contains("const EXTENSIONS = '/home/agent/.config/paddock-browser/extensions';"))
+        #expect(launcher.contains("fs.existsSync(path.join(EXTENSIONS, n, 'manifest.json'))"))
+        #expect(launcher.contains("`--disable-extensions-except=${found.join(',')}`, `--load-extension=${found.join(',')}`"))
+        #expect(launcher.contains("server: { host: 'localhost', port: PORT }") && launcher.contains("const PORT = 38324;"))
+        #expect(launcher.contains("sharedBrowserContext: true"))
+        #expect(launcher.contains("if (!key.startsWith('PLAYWRIGHT_MCP_')) env[key] = value;"))
+        #expect(launcher.contains("PLAYWRIGHT_MCP_BROWSER: 'chromium'"))
+        #expect(!launcher.contains("unrestricted") && !launcher.contains("ignoreHTTPSErrors") && !launcher.contains("0.0.0.0"))
+        #expect(launcher.contains("detached: true") && launcher.contains("process.kill(-pid, 'SIGTERM')"))
     }
 
     @Test func theDashboardIsTheLoopbackPortSbxPublishes() throws {

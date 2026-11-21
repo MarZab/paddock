@@ -4,6 +4,7 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-142 The browser kit's Playwright MCP browser keeps its logins and loads Chromium extensions.
 - PAD-141 Claude Code in a sandbox with the browser kit gets Playwright MCP, and its pages show in the Playwright tab.
 - PAD-139 Publishing a port can set the port on the Mac too.
 - PAD-137 A project with its own .azure, .ssh or Library folder can be created after a confirmation.

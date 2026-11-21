@@ -26,15 +26,127 @@ public enum BrowserKit {
     public static let mcpPackage = "@playwright/mcp"
     /// The MCP server's name in Claude Code (its tools are `mcp__playwright__*`).
     public static let mcpServerName = "playwright"
-    /// Registers Playwright MCP with Claude Code in the sandbox (user scope, in `~/.claude.json`),
-    /// on every start, so a changed command replaces the old one. stdio only: no port, nothing on
-    /// the Mac. Headless (no display in the sandbox); `--isolated`, since several agents may share
-    /// the sandbox and a kept profile allows one browser at a time; file access stays limited to
-    /// the workspace (no `--allow-unrestricted-file-access`). Without Claude Code it does nothing.
-    public static let registerMCPScript =
+    /// One Playwright MCP server per sandbox, shared by every agent (PAD-142): a kept profile (logins,
+    /// extensions) allows one browser at a time, so agents cannot each start their own. HTTP on
+    /// `localhost` inside the sandbox only: no `ports` entry, so sbx publishes nothing on the Mac,
+    /// and Playwright MCP's Host check accepts only `localhost:PORT`.
+    public static let mcpPort = 38324
+    public static var mcpURL: String { "http://localhost:\(mcpPort)/mcp" }
+    /// The real playwright-mcp, for the launcher (the npm bin link may move).
+    public static let realMCP = "/usr/local/lib/paddock-browser/playwright-mcp"
+    /// The launcher (`paddock-browser-mcp start|restart|stop|status`).
+    public static let mcpLauncherPath = "/usr/local/bin/paddock-browser-mcp"
+    /// The kept profile, in the sandbox's home: it lasts across sandbox restarts, not a recreate.
+    public static let mcpProfile = "/home/agent/.cache/paddock-browser/profile"
+    /// Unpacked Chromium extensions, one folder each with its `manifest.json`.
+    public static let mcpExtensions = "/home/agent/.config/paddock-browser/extensions"
+    /// Registers the shared server with Claude Code in the sandbox (user scope, in `~/.claude.json`),
+    /// on every start, so a changed registration replaces the old one. Without Claude Code it does
+    /// nothing.
+    public static var registerMCPScript: String {
         "export HOME=/home/agent PATH=\"/home/agent/.local/bin:$PATH\"; command -v claude >/dev/null || exit 0; "
-        + "claude mcp remove --scope user \(mcpServerName) >/dev/null 2>&1; "
-        + "claude mcp add --scope user \(mcpServerName) -- playwright-mcp --headless --isolated"
+            + "claude mcp remove --scope user \(mcpServerName) >/dev/null 2>&1; "
+            + "claude mcp add --scope user --transport http \(mcpServerName) \(mcpURL)"
+    }
+
+    /// Starts and stops the shared server (Node, like the watcher, so its config is valid JSON).
+    /// Its environment is its own: no `PLAYWRIGHT_MCP_*` from whoever runs it (no unrestricted file
+    /// access), Playwright's full Chromium (`chromium`: Chrome Headless Shell loads no extensions;
+    /// checked), and the same sockets folder and output folder as playwright-cli. The server leads
+    /// its own process group, so `stop` ends the browser with it (killing only the server left its
+    /// Chrome running, holding the profile; checked).
+    public static var mcpLauncher: String {
+        NodeScript.wrap(#"""
+            // Written by Paddock's browser kit: the sandbox's one Playwright MCP server (PAD-142).
+            'use strict';
+            const fs = require('fs');
+            const path = require('path');
+            const { spawn } = require('child_process');
+
+            const HOME = '/home/agent';
+            const REAL = '\#(realMCP)';
+            const PROFILE = '\#(mcpProfile)';
+            const EXTENSIONS = '\#(mcpExtensions)';
+            const STATE = '/tmp/paddock-browser';
+            const CONFIG = path.join(STATE, 'mcp-config.json');
+            const PID = path.join(STATE, 'mcp.pid');
+            const LOG = path.join(STATE, 'mcp.log');
+            const PORT = \#(mcpPort);
+            const NAME = /^[A-Za-z0-9._-]{1,64}$/;
+
+            function extensions() {
+              try {
+                return fs.readdirSync(EXTENSIONS).filter((n) => NAME.test(n) && fs.existsSync(path.join(EXTENSIONS, n, 'manifest.json')))
+                  .sort().map((n) => path.join(EXTENSIONS, n));
+              } catch { return []; }
+            }
+            function running() {
+              try {
+                const pid = Number(fs.readFileSync(PID, 'utf8'));
+                if (!Number.isInteger(pid) || pid < 2) return 0;
+                process.kill(pid, 0);
+                return pid;
+              } catch { return 0; }
+            }
+            function config(found) {
+              const args = found.length ? [`--disable-extensions-except=${found.join(',')}`, `--load-extension=${found.join(',')}`] : [];
+              return {
+                browser: { browserName: 'chromium', userDataDir: PROFILE, launchOptions: { headless: true, args } },
+                server: { host: 'localhost', port: PORT },
+                sharedBrowserContext: true,
+                outputDir: '/tmp/playwright-cli',
+              };
+            }
+            function environment() {
+              const env = {};
+              for (const [key, value] of Object.entries(process.env)) if (!key.startsWith('PLAYWRIGHT_MCP_')) env[key] = value;
+              return Object.assign(env, {
+                HOME,
+                PLAYWRIGHT_MCP_BROWSER: 'chromium',
+                PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/ms-playwright',
+                PWTEST_SOCKETS_DIR: '\#(socketsDirectory)',
+              });
+            }
+            function names(found) { return found.length ? found.map((e) => path.basename(e)).join(', ') : 'none'; }
+            async function stop() {
+              const pid = running();
+              if (pid) {
+                try { process.kill(-pid, 'SIGTERM'); } catch { /* gone */ }
+                for (let i = 0; i < 50 && running(); i++) await new Promise((r) => setTimeout(r, 100));
+                try { process.kill(-pid, 'SIGKILL'); } catch { /* gone */ }
+              }
+              fs.rmSync(PID, { force: true });
+            }
+            function start() {
+              if (running()) { console.log(`Playwright MCP runs on http://localhost:${PORT}/mcp`); return; }
+              const found = extensions();
+              fs.mkdirSync(STATE, { recursive: true });
+              fs.mkdirSync(PROFILE, { recursive: true });
+              fs.mkdirSync(EXTENSIONS, { recursive: true });
+              fs.writeFileSync(CONFIG, JSON.stringify(config(found), null, 2) + '\n');
+              const out = fs.openSync(LOG, 'a');
+              const child = spawn(REAL, ['--config', CONFIG], { cwd: HOME, env: environment(), detached: true, stdio: ['ignore', out, out] });
+              fs.writeFileSync(PID, String(child.pid));
+              child.unref();
+              console.log(`Playwright MCP started on http://localhost:${PORT}/mcp; extensions: ${names(found)}`);
+            }
+
+            const command = process.argv[2] || 'status';
+            (async () => {
+              if (command === 'start') start();
+              else if (command === 'restart') { await stop(); start(); }
+              else if (command === 'stop') { await stop(); console.log('Playwright MCP stopped'); }
+              else if (command === 'status') {
+                console.log(running() ? `Playwright MCP runs on http://localhost:${PORT}/mcp` : 'Playwright MCP is not running (paddock-browser-mcp start)');
+                console.log(`Profile: ${PROFILE}`);
+                console.log(`Extensions in ${EXTENSIONS} (unpacked, one folder each; restart after a change): ${names(extensions())}`);
+              } else {
+                console.error('usage: paddock-browser-mcp start|restart|stop|status');
+                process.exit(2);
+              }
+            })();
+            """#)
+    }
     /// The dashboard's port inside the sandbox; sbx publishes it on `127.0.0.1` (backlog doc Browser).
     /// Not 9323: that is `npx playwright show-report`'s default, and a report server there took the
     /// dashboard's place.
@@ -54,6 +166,7 @@ public enum BrowserKit {
         let watcher = Data(BrowserActivity.watcher.utf8).base64EncodedString()
         let show = Data(BrowserShow.script.utf8).base64EncodedString()
         let reference = Data(openUIReference.utf8).base64EncodedString()
+        let launcher = Data(mcpLauncher.utf8).base64EncodedString()
         return #"""
         # syntax=docker/sandbox-kit:3
         # Written by Paddock. Changes are overwritten when Paddock creates a sandbox.
@@ -108,6 +221,7 @@ public enum BrowserKit {
                     real="$(readlink -f "$(command -v playwright-cli)")"
                     mkdir -p "$(dirname \#(BrowserActivity.realCLI))"
                     ln -sf "$real" \#(BrowserActivity.realCLI)
+                    ln -sf "$(readlink -f "$(command -v playwright-mcp)")" \#(realMCP)
                     export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/opt/ms-playwright}"
                     mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
                     \#(BrowserActivity.realCLI) install-browser chromium
@@ -125,12 +239,14 @@ public enum BrowserKit {
                     chmod 755 /usr/local/bin/paddock-browser-watch
                     printf '%s' '\#(show)' | base64 -d > /usr/local/bin/paddock
                     chmod 755 /usr/local/bin/paddock
+                    printf '%s' '\#(launcher)' | base64 -d > \#(mcpLauncherPath)
+                    chmod 755 \#(mcpLauncherPath)
                     mkdir -p "$(dirname \#(openUIReferencePath))"
                     printf '%s' '\#(reference)' | base64 -d > \#(openUIReferencePath)
                   user: "0"
                   # A hook sees only the environment it names: npm's global bin is on the image's PATH.
                   env: [PATH, HOME, HTTP_PROXY, HTTPS_PROXY, NO_PROXY]
-                  description: Install playwright-cli \#(version) (npm \#(package)), Playwright MCP \#(mcpVersion), their Chromium build, certutil, and Paddock's wrapper, watcher, and paddock
+                  description: Install playwright-cli \#(version) (npm \#(package)), Playwright MCP \#(mcpVersion), their Chromium build, certutil, and Paddock's wrapper, watcher, paddock, and MCP launcher
                 - command: |
                     set -eu
                     cd /home/agent
@@ -157,7 +273,10 @@ public enum BrowserKit {
                       certutil -d "sql:$db" -A -t "C,," -n sbx-proxy -i "$ca"; fi
                   user: "1000"
                   description: Trust sbx's proxy CA in Chromium's certificate store
-                # Playwright MCP for Claude Code (stdio, in the sandbox only).
+                # The sandbox's one Playwright MCP server (localhost only), and Claude Code's entry for it.
+                - command: [\#(mcpLauncherPath), start]
+                  user: "1000"
+                  description: Start Playwright MCP on localhost:\#(mcpPort) (kept profile, extensions)
                 - command:
                     - sh
                     - -c
@@ -233,9 +352,14 @@ public enum BrowserKit {
                   over); `Paddock:` lines in the output say what they did. `playwright-cli --help` has more.
                 - `playwright-cli -s=checkout-7f3a show --annotate` asks them to mark up your own session's
                   page, like `paddock annotate`.
-                - In Claude Code the same browser also comes as MCP tools (`mcp__\#(mcpServerName)__*`,
-                  headless, a fresh profile each time). The operator sees those pages live too, in the
-                  same Playwright tab; tell them the page you mean.
+                - In Claude Code a browser also comes as MCP tools (`mcp__\#(mcpServerName)__*`). It is
+                  one browser for every agent in this sandbox, and it keeps its profile (logins, cookies)
+                  across sandbox restarts: open a tab of your own, leave other tabs alone, and never type
+                  passwords or keys into it (ask the operator to log in). The operator sees its pages
+                  live in the same Playwright tab; tell them the page you mean.
+                - Chromium extensions for it: put each unpacked extension (a folder with its
+                  `manifest.json`) in `\#(mcpExtensions)`, then run `paddock-browser-mcp restart`
+                  (it closes the browser: say so first). `paddock-browser-mcp status` lists them.
 
                 ### Good to know
                 - Pages on localhost work (the browser runs next to you); other sites may be blocked by
@@ -243,7 +367,7 @@ public enum BrowserKit {
                 - `npx playwright test` is headless; show its report afterwards. If the project pins its
                   own `@playwright/test`, run `npx playwright install chromium` in it; do not change its
                   Playwright version.
-                - Port \#(dashboardPort) is taken. Other agents may share this sandbox: use only the
+                - Ports \#(dashboardPort) and \#(mcpPort) are taken. Other agents may share this sandbox: use only the
                   session names and tab ids you were given.
                 - If Paddock gets in your way or lacks something you needed, tell the operator what you
                   tried and what would have helped. They are building it and want to know.
