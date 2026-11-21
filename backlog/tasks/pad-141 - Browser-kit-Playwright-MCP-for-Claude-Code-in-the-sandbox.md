@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-21 16:10'
-updated_date: '2026-11-21 16:13'
+updated_date: '2026-11-21 16:58'
 labels:
   - browser
   - kits
@@ -28,6 +28,7 @@ Agents drive the browser only through playwright-cli in a shell. Claude Code als
 - [x] #4 The agent instructions say when to use the MCP tools and that the operator does not see their pages (playwright-cli sessions for anything they should watch)
 - [x] #5 KitsTests cover the pin and the registration; the Browser doc describes it
 - [ ] #6 Checked live on the Mac: Claude Code lists the server and opens a page with it; whether its pages appear in the dashboard is written in the Browser doc
+- [x] #7 Pages of Playwright MCP browsers appear in Paddock: the watcher reports them as sessions (from `list --all --json` servers, pages read by connecting to each), so the Playwright tab opens and lists them
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,4 +44,8 @@ Agents drive the browser only through playwright-cli in a shell. Claude Code als
 
 <!-- SECTION:NOTES:BEGIN -->
 Pinned @playwright/mcp 0.0.83: npm shows it and @playwright/cli 0.1.22 both on playwright 1.64.0-alpha-1790635538000 (0.0.86 is on 1.66). Installed 0.0.83 on Linux: the stdio server answers initialize (Playwright 1.64.0-alpha-1790635538000) and lists 25 tools. The registration commands, run twice in a throwaway HOME, leave one mcpServers.playwright entry (stdio, playwright-mcp --headless --isolated). mise run test (632 tests) and mise run lint pass. Left for the Mac (AC 6): a real sandbox start, Claude Code listing and using the server, and whether its pages show in the dashboard. Extensions (asked in passing): Chromium can load unpacked ones through a config file with launchOptions args, but they need a kept profile, not --isolated; not part of this ticket.
+
+Checked on Linux: an MCP browser registers in ~/.cache/ms-playwright/b with the client name as title (claude-code) and appears in `playwright-cli list --all --json` under servers, not browsers (which the watcher read), and in the dashboard (it listed claude-code with its page). A second client connects to its endpoint in about 8 ms and reads its pages; disconnecting leaves it running.
+
+Watcher: MCP browsers come from list --all servers (not playwright-cli sessions, not --playwright-internal), are reported as mcp-<title> with pages read over a kept connection (playwright-core resolved next to the real CLI), page and navigation events read the tabs again, no notes for them. Run against a live shared MCP server on Linux: it printed {"name":"mcp-c","tabs":[...]} and a page another client opened appeared without waiting for the 5 s poll. Tests and lint pass (633 tests).
 <!-- SECTION:NOTES:END -->

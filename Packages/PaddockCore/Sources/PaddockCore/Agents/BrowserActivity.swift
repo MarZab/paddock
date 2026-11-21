@@ -204,7 +204,8 @@ public enum BrowserActivity {
                   } catch { /* best effort */ }
                   fs.rmSync(path.join(SHOWS, f.id + '.json'), { force: true });
                 }
-              } else {
+              } else if (!mcpNames.has(name)) {
+                // An MCP agent reads no playwright-cli output, so its browser gets no notes.
                 note(name, `the operator closed a tab (${url}) in the dashboard`);
               }
             }
@@ -241,7 +242,90 @@ public enum BrowserActivity {
 
         async function sessionsList() {
           const list = await run(['list', '--all', '--json'], '/');
-          try { return JSON.parse(list || '{}').browsers || []; } catch { return []; }
+          try {
+            const parsed = JSON.parse(list || '{}');
+            return { browsers: Array.isArray(parsed.browsers) ? parsed.browsers : [], servers: Array.isArray(parsed.servers) ? parsed.servers : [] };
+          } catch { return { browsers: [], servers: [] }; }
+        }
+
+        // Playwright MCP's browsers (PAD-141) are no playwright-cli sessions: `list --all` names them
+        // with every other bound browser under `servers` (title: the MCP client's name). Their pages
+        // come from a connection to each, through the same playwright-core as the real CLI; it stays
+        // open (closing it would only disconnect) and changes in it read the tabs again.
+        // Every name given to an MCP browser while this watcher runs (no notes for them, even once gone).
+        const mcpNames = new Set();
+        let playwright;
+        function playwrightCore() {
+          if (playwright === undefined) {
+            try {
+              playwright = require(require.resolve('playwright-core', { paths: [path.dirname(fs.realpathSync(REAL))] }));
+            } catch { playwright = null; }
+          }
+          return playwright;
+        }
+        let soon = null;
+        function readTabsSoon() {
+          if (soon) return;
+          soon = setTimeout(() => { soon = null; readTabs(); }, 300);
+        }
+        function watchContext(context) {
+          const watchPage = (page) => {
+            page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) readTabsSoon(); });
+            page.on('close', readTabsSoon);
+          };
+          context.pages().forEach(watchPage);
+          context.on('page', (page) => { watchPage(page); readTabsSoon(); });
+        }
+        const connections = new Map();
+        function connectTo(server) {
+          const guid = server.browser.guid;
+          if (!connections.has(guid)) {
+            const pw = playwrightCore();
+            const type = pw && ['chromium', 'firefox', 'webkit'].includes(server.browser.browserName) ? pw[server.browser.browserName] : null;
+            const connecting = type
+              ? type.connect(server.endpoint, { timeout: 5000 }).then((browser) => {
+                browser.on('disconnected', () => { connections.delete(guid); readTabsSoon(); });
+                const known = new Set();
+                const watchAll = () => {
+                  for (const context of browser.contexts()) if (!known.has(context)) { known.add(context); watchContext(context); }
+                };
+                watchAll();
+                return { browser, watchAll };
+              }, () => { connections.delete(guid); return null; })
+              : Promise.resolve(null);
+            connections.set(guid, connecting);
+          }
+          return connections.get(guid);
+        }
+        function within(promise, ms, fallback) {
+          return Promise.race([promise.catch(() => fallback), new Promise((resolve) => setTimeout(() => resolve(fallback), ms))]);
+        }
+        function mcpName(title, taken) {
+          const base = ('mcp-' + String(title || 'browser').toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '')).slice(0, 56);
+          let name = base;
+          for (let n = 2; taken.has(name); n++) name = `${base}-${n}`;
+          return name;
+        }
+        async function mcpSessions(servers, taken) {
+          const sessions = [];
+          const own = servers.filter((s) => s && typeof s === 'object' && s.browser && typeof s.browser.guid === 'string'
+            && typeof s.endpoint === 'string' && typeof s.title === 'string'
+            && !s.title.startsWith('--playwright-internal') && !taken.has(s.title))
+            .sort((a, b) => (a.browser.guid < b.browser.guid ? -1 : 1)).slice(0, 8);
+          for (const server of own) {
+            const connected = await within(connectTo(server), 6000, null);
+            if (!connected) continue;
+            connected.watchAll();
+            const tabs = [];
+            for (const context of connected.browser.contexts()) {
+              for (const page of context.pages()) tabs.push({ title: await within(page.title(), 2000, ''), url: page.url(), current: false });
+            }
+            const name = mcpName(server.title, taken);
+            taken.add(name);
+            mcpNames.add(name);
+            sessions.push({ name, tabs });
+          }
+          return sessions;
         }
         async function tabsOf(name, folder) {
           const text = await run([`-s=${name}`, 'tab-list', '--json'], folder);
@@ -261,7 +345,7 @@ public enum BrowserActivity {
         async function readTabs() {
           if (reading) { again = true; return; }
           reading = true;
-          const browsers = await sessionsList();
+          const { browsers, servers } = await sessionsList();
           const sessions = [];
           const seen = new Set();
           for (const b of browsers) {
@@ -271,6 +355,8 @@ public enum BrowserActivity {
             const tabs = await tabsOf(b.name, folderOf(b.workspace));
             sessions.push({ name: b.name, tabs });
           }
+          // playwright-cli's own sessions are bound browsers too, under their names: never twice.
+          sessions.push(...await mcpSessions(servers, seen));
           closedByOperator(sessions);
           const snapshot = JSON.stringify({ type: 'tabs', sessions });
           if (snapshot !== last) { last = snapshot; process.stdout.write(snapshot + '\n'); }

@@ -128,6 +128,28 @@ struct BrowserActivityTests {
         #expect(BrowserActivity.watcher.contains("['list', '--all', '--json']"))
     }
 
+    /// Playwright MCP's browsers are listed under `servers`, not `browsers` (checked with
+    /// playwright-cli 0.1.22 and @playwright/mcp 0.0.83): the watcher reads their pages over a
+    /// connection and reports each as a session of its own (PAD-141).
+    @Test func playwrightMCPBrowsersAreReportedAsSessions() {
+        let watcher = BrowserActivity.watcher
+        #expect(watcher.contains("servers: Array.isArray(parsed.servers) ? parsed.servers : []"))
+        #expect(watcher.contains("sessions.push(...await mcpSessions(servers, seen));"))
+        // through the real CLI's own playwright-core, never a path a registry file names
+        #expect(watcher.contains("require.resolve('playwright-core', { paths: [path.dirname(fs.realpathSync(REAL))] })"))
+        #expect(!watcher.contains("playwrightLib"))
+        // names the Mac accepts, never one of playwright-cli's sessions, and no notes for them
+        #expect(watcher.contains("('mcp-' + String(title || 'browser').toLowerCase().replace(/[^a-z0-9._-]+/g, '-')"))
+        #expect(watcher.contains("!s.title.startsWith('--playwright-internal') && !taken.has(s.title)"))
+        #expect(watcher.contains("} else if (!mcpNames.has(name)) {"))
+        // what the watcher prints for one (as run against a live MCP browser) opens the Playwright tab's pages
+        var browser = BrowserSessions()
+        let line = #"{"type":"tabs","sessions":[{"name":"mcp-claude-code","tabs":[{"title":"Checkout page","url":"http://localhost:8765/","current":false},{"title":"Checkout page","url":"http://localhost:8765/?two","current":false}]}]}"#
+        #expect(browser.apply(line: line) != .none)
+        #expect(browser.pages.map(\.session) == ["mcp-claude-code", "mcp-claude-code"])
+        #expect(browser.pages.map(\.url) == ["http://localhost:8765/", "http://localhost:8765/?two"])
+    }
+
     @Test func eachViewSelectsItsOwnPage() throws {
         let script = try #require(BrowserActivity.selectScript(session: "counter", index: 1))
         #expect(script.contains(#"})("counter", 1);"#))

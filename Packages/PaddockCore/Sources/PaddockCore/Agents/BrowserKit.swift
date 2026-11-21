@@ -234,8 +234,8 @@ public enum BrowserKit {
                 - `playwright-cli -s=checkout-7f3a show --annotate` asks them to mark up your own session's
                   page, like `paddock annotate`.
                 - In Claude Code the same browser also comes as MCP tools (`mcp__\#(mcpServerName)__*`,
-                  headless, a fresh profile each time). Use them for quick checks of your own; the
-                  operator does not see those pages, so use playwright-cli for anything they should watch.
+                  headless, a fresh profile each time). The operator sees those pages live too, in the
+                  same Playwright tab; tell them the page you mean.
 
                 ### Good to know
                 - Pages on localhost work (the browser runs next to you); other sites may be blocked by
