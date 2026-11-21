@@ -62,7 +62,7 @@ public struct PosixPseudoTerminal: PseudoTerminalSpawning {
         guard master >= 0 else { throw PseudoTerminalError(call: "posix_openpt", code: errno) }
         // The size goes on a slave descriptor the parent holds until the child has opened its own: set
         // on the master alone, macOS can lose it before the first open, and the child reads 0 0 (PAD-112).
-        let slave = open(String(cString: name), O_RDWR | O_NOCTTY)
+        let slave = open(name, O_RDWR | O_NOCTTY)
         defer { if slave >= 0 { close(slave) } }
         Self.setSize(slave >= 0 ? slave : master, size)
 

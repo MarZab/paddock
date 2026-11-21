@@ -7,7 +7,7 @@ public enum FolderPolicyViolation: Error, Equatable, CustomStringConvertible {
     case home
     /// The folder contains the home directory (for example `/Users`).
     case containsHome
-    /// The folder has a direct child such as `.ssh` or `Library`.
+    /// The folder holds a sensitive folder of the home directory, or a direct child linking to one.
     case containsSensitiveEntry(String)
     /// The folder is, or is inside, a sensitive folder of the home directory (`~/.ssh/keys`, say).
     case insideSensitiveEntry(String)
@@ -20,7 +20,7 @@ public enum FolderPolicyViolation: Error, Equatable, CustomStringConvertible {
         case .root: "the root folder cannot be a project"
         case .home: "the home folder cannot be a project"
         case .containsHome: "the folder contains the home folder"
-        case .containsSensitiveEntry(let name): "the folder contains \(name)"
+        case .containsSensitiveEntry(let name): "the folder contains ~/\(name)"
         case .insideSensitiveEntry(let name): "the folder is inside ~/\(name)"
         case .overlapsPaddockConfig: "the folder overlaps Paddock's config folder"
         }
@@ -30,8 +30,9 @@ public enum FolderPolicyViolation: Error, Equatable, CustomStringConvertible {
 /// Decides whether a folder may be a project. sbx itself allows mounting any path,
 /// so this is the only guard (see backlog doc Security rules).
 public struct FolderPolicy: Sendable {
-    /// Direct children that mark a folder as holding credentials or personal data.
-    /// Also refused when the folder is inside one of them under the home directory (PAD-83).
+    /// Folders of the home directory that hold credentials or personal data. A folder may not be,
+    /// be inside, or contain one of them (PAD-83). The same names elsewhere mean nothing: a project
+    /// may have its own `.azure` or `Library`.
     public static let sensitiveEntries = [
         ".ssh", ".aws", ".gnupg", "Library",
         ".kube", ".docker", ".azure", ".config/gh", ".config/gcloud",
@@ -80,10 +81,32 @@ public struct FolderPolicy: Sendable {
                 if allowingLogs, isInsideLogs(path) { continue }
                 throw .insideSensitiveEntry(entry)
             }
+            // `~/.config` holds `~/.config/gh`.
+            if root.hasPrefix(lowered + "/") { throw .containsSensitiveEntry(entry) }
         }
-        for entry in Self.sensitiveEntries
-        where FileManager.default.fileExists(atPath: (path as NSString).appendingPathComponent(entry)) {
+        // A project's own `.azure` is fine; a `.ssh` in it that links to `~/.ssh` is not.
+        for entry in Self.sensitiveEntries where linksToSensitiveInHome((path as NSString).appendingPathComponent(entry)) {
             throw .containsSensitiveEntry(entry)
+        }
+    }
+
+    /// The sensitive names `folder` has as direct children. They are the project's own, so they
+    /// pass `check`, and the operator confirms them when creating the project (New Project sheet).
+    public func sensitiveNames(in folder: String) -> [String] {
+        let path = Self.canonical(folder)
+        return Self.sensitiveEntries.filter {
+            FileManager.default.fileExists(atPath: (path as NSString).appendingPathComponent($0))
+        }
+    }
+
+    /// Whether `candidate` is a link that resolves to, or inside, a sensitive folder of the home directory.
+    private func linksToSensitiveInHome(_ candidate: String) -> Bool {
+        let resolved = Self.canonical(candidate)
+        guard resolved != candidate else { return false }
+        let lowered = resolved.lowercased()
+        return Self.sensitiveEntries.contains { entry in
+            let root = (home + "/" + entry).lowercased()
+            return lowered == root || lowered.hasPrefix(root + "/")
         }
     }
 

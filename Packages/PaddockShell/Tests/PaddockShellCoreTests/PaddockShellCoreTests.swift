@@ -198,6 +198,14 @@ struct SandboxShellSessionTests {
     /// Short, so the tests do not wait for the real schedule.
     static let resends: [Duration] = [.milliseconds(100), .milliseconds(300)]
 
+    /// Waits until `condition` holds, for at most 15 s: fixed waits fail on a stalled CI runner (PAD-140).
+    static func eventually(_ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(15)
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
     @Test func aSizeChangedWhileStartingIsSentAgainOnceTheProgramIsUp() async throws {
         // sbx can miss a SIGWINCH while it starts; the program then drew for the start size.
         let spawner = FakeSpawner()
@@ -209,10 +217,9 @@ struct SandboxShellSessionTests {
         let final = TerminalSize(cols: 132, rows: 40)
         await session.resize(final)
         process.emit("drawn\n")
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(process.sizes == [final, final])
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(process.sizes == [final, final, TerminalSize(cols: 132, rows: 39), final])
+        let expected = [final, final, TerminalSize(cols: 132, rows: 39), final]
+        try await Self.eventually { process.sizes.count >= expected.count }
+        #expect(process.sizes == expected)
     }
 
     @Test func theStartSizeIsSentAgainAndNudgedOnceTheProgramIsUp() async throws {
@@ -228,8 +235,9 @@ struct SandboxShellSessionTests {
         try await Task.sleep(for: .milliseconds(200))
         #expect(process.sizes.isEmpty)  // nothing before the program's first output
         process.emit("drawn\n")
-        try await Task.sleep(for: .milliseconds(500))
-        #expect(process.sizes == [size, TerminalSize(cols: 132, rows: 39), size])
+        let expected = [size, TerminalSize(cols: 132, rows: 39), size]
+        try await Self.eventually { process.sizes.count >= expected.count }
+        #expect(process.sizes == expected)
     }
 
     @Test func anEarlierRunsResendsDoNothing() async throws {

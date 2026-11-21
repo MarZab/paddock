@@ -150,6 +150,8 @@ struct NewPortPopover: View {
     let done: () -> Void
     @State private var direction = Direction.publish
     @State private var port = ""
+    /// The Mac's side of a published port; empty lets Paddock pick it from `ports.publishRange`.
+    @State private var hostPort = ""
 
     init(model: AppModel, project: Project, done: @escaping () -> Void) {
         self.model = model
@@ -166,20 +168,39 @@ struct NewPortPopover: View {
             .labelsHidden()
             .fixedSize()
             .help(direction == .publish ? "Sandbox port to this Mac" : "Mac port to the sandbox")
-            TextField("Port", text: $port)
+            TextField(direction == .publish ? "Sandbox" : "Port", text: $port)
                 .frame(width: 70)
                 .onSubmit(add)
+                .help(direction == .publish ? "The port in the sandbox" : "The port on this Mac")
+            if direction == .publish {
+                Image(systemName: "arrow.right").foregroundStyle(.secondary)
+                TextField("Mac", text: $hostPort, prompt: Text("auto"))
+                    .frame(width: 70)
+                    .onSubmit(add)
+                    .help("The port on this Mac, from ports.publishRange; empty picks a free one")
+            }
             Button("Add", action: add)
                 .keyboardShortcut(.defaultAction)
-                .disabled(Int(port) == nil)
+                .disabled(!valid)
         }
         .padding(12)
     }
 
+    /// The chosen host port: nil when empty, so Paddock picks one.
+    private var chosenHostPort: Int?? {
+        let text = hostPort.trimmingCharacters(in: .whitespaces)
+        if text.isEmpty { return .some(nil) }
+        return Int(text).map { .some($0) }
+    }
+
+    private var valid: Bool {
+        Int(port) != nil && (direction == .allow || chosenHostPort != nil)
+    }
+
     private func add() {
-        guard let number = Int(port) else { return }
+        guard valid, let number = Int(port) else { return }
         switch direction {
-        case .publish: model.publish(sandboxPort: number, on: project)
+        case .publish: model.publish(sandboxPort: number, hostPort: chosenHostPort ?? nil, on: project)
         case .allow: model.addHostService(number, to: project)
         }
         done()

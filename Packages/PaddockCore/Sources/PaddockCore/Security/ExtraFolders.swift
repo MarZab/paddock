@@ -106,6 +106,12 @@ public enum ExtraFolders {
         requested || policy.isInsideLogs(path)
     }
 
+    /// Whether the operator may switch a folder to `readOnly`: anything but writable inside
+    /// `~/Library/Logs`, which `readOnly(_:path:policy:)` would mount read-only anyway.
+    public static func allows(readOnly requested: Bool, path: String, policy: FolderPolicy) -> Bool {
+        readOnly(requested, path: path, policy: policy) == requested
+    }
+
     /// What `sbx create` takes after the project folder: `PATH`, or `PATH:ro`.
     public static func argument(_ folder: Project.ExtraFolder) -> String {
         folder.readOnly ? folder.path + ":ro" : folder.path

@@ -1056,6 +1056,8 @@ struct NewProjectSheet: View {
     @State private var error: String?
     /// Write `sbxenv.yaml` and a kit for the project into its folder (`SandboxFiles`).
     @State private var writesFiles = false
+    /// The folder's sensitive names the operator is asked about before Create (`FolderPolicy.sensitiveNames`).
+    @State private var sensitiveToConfirm: [String] = []
 
     init(created: @escaping (String) -> Void) {
         self.created = created
@@ -1168,13 +1170,21 @@ struct NewProjectSheet: View {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Create") { create() }
+                Button("Create") { confirmOrCreate() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(draft.map { !ProjectList.isValidSandboxName($0.name) } ?? true)
             }
             .padding(12)
         }
         .frame(width: 560, height: 640)
+        .confirmationDialog("Create a project with these folders?",
+                            isPresented: Binding(get: { !sensitiveToConfirm.isEmpty }, set: { if !$0 { sensitiveToConfirm = [] } }),
+                            titleVisibility: .visible) {
+            Button("Create Anyway") { create() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This folder has \(sensitiveToConfirm.joined(separator: ", ")), which often hold credentials. They are mounted with the project, and the agent can read them.")
+        }
         .task {
             model.loadFiles()
             await model.loadInstalledModels()
@@ -1218,6 +1228,15 @@ struct NewProjectSheet: View {
         draft = next
         configProblem = problem.map { "sbxenv.yaml does not read; its name and agent were not used: \($0.description)" }
         error = nil
+    }
+
+    /// A folder the policy refuses goes straight to `create`, which shows why; only one it
+    /// accepts is worth confirming.
+    private func confirmOrCreate() {
+        guard let draft else { return }
+        let policy = model.folderPolicy
+        let names = (try? policy.check(draft.folder)) == nil ? [] : policy.sensitiveNames(in: draft.folder)
+        if names.isEmpty { create() } else { sensitiveToConfirm = names }
     }
 
     private func create() {
