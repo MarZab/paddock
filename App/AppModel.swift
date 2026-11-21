@@ -807,10 +807,12 @@ final class AppModel {
     /// What sbx publishes, by sandbox read so far.
     private var publishedPorts: [String: [SbxPort]] { snapshots.mapValues(\.ports) }
 
-    func publish(sandboxPort: Int, on project: Project) {
+    /// Publishes `sandboxPort` on `hostPort` when the operator chose one, else on the one Paddock picks.
+    func publish(sandboxPort: Int, hostPort: Int? = nil, on project: Project) {
         let mapping: Project.PortMapping
         do {
-            mapping = try Ports.mapping(for: sandboxPort, sandbox: project.name, published: publishedPorts, app: appConfig)
+            mapping = try Ports.mapping(for: sandboxPort, hostPort: hostPort, sandbox: project.name,
+                                        published: publishedPorts, app: appConfig)
         } catch {
             lastError = "Could not publish port \(sandboxPort): \(error.description)"
             return

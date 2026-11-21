@@ -50,10 +50,18 @@ public enum Ports {
     /// Picks the host port for publishing `sandboxPort` from `sandbox`: the same number when it
     /// is in the range and free, otherwise the lowest free port. `published` is what sbx
     /// publishes, by sandbox (`sbx ports N --json`), the only record of published ports.
-    public static func mapping(for sandboxPort: Int, sandbox: String, published: [String: [SbxPort]],
+    /// With `hostPort`, the operator chose it: it must pass `check` and be free in `sandbox` too.
+    public static func mapping(for sandboxPort: Int, hostPort: Int? = nil, sandbox: String, published: [String: [SbxPort]],
                                app: AppConfig) throws(PortsError) -> Project.PortMapping {
         guard (1...65535).contains(sandboxPort) else { throw .invalidPort(sandboxPort) }
-        guard !(published[sandbox] ?? []).contains(where: { $0.sandboxPort == sandboxPort }) else { throw .sandboxPortPublished(sandboxPort) }
+        let own = published[sandbox] ?? []
+        guard !own.contains(where: { $0.sandboxPort == sandboxPort }) else { throw .sandboxPortPublished(sandboxPort) }
+        if let hostPort {
+            let chosen = Project.PortMapping(sandboxPort: sandboxPort, hostPort: hostPort)
+            try check(chosen, sandbox: sandbox, published: published, app: app)
+            guard !own.contains(where: { $0.hostPort == hostPort }) else { throw .hostPortTaken(hostPort, by: sandbox) }
+            return chosen
+        }
         let used = Set(published.values.flatMap { $0.map(\.hostPort) })
         let range = app.ports.publishRange
         let free = { (port: Int) in range.contains(port) && !used.contains(port) && !isReserved(port, app: app) }

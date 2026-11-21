@@ -26,6 +26,19 @@ struct PortsTests {
         }
     }
 
+    @Test func publishesOnAChosenHostPort() throws {
+        let published = ["paddock-other": [port(18010, 1)], "paddock-app": [port(18020, 4000)]]
+        func mapping(_ sandbox: Int, _ host: Int) throws(PortsError) -> Project.PortMapping {
+            try Ports.mapping(for: sandbox, hostPort: host, sandbox: "paddock-app", published: published, app: app)
+        }
+        #expect(try mapping(3000, 18500) == .init(sandboxPort: 3000, hostPort: 18500))
+        #expect(throws: PortsError.outsidePublishRange(3000, 18000...18999)) { try mapping(3000, 3000) }
+        #expect(throws: PortsError.hostPortTaken(18010, by: "paddock-other")) { try mapping(3000, 18010) }
+        #expect(throws: PortsError.hostPortTaken(18020, by: "paddock-app")) { try mapping(3000, 18020) }
+        #expect(throws: PortsError.sandboxPortPublished(4000)) { try mapping(4000, 18500) }
+        #expect(throws: PortsError.invalidPort(70000)) { try mapping(3000, 70000) }
+    }
+
     @Test func checksTypedMappings() throws {
         let published = ["paddock-other": [port(18010, 1)]]
         func check(_ host: Int, _ sandbox: Int = 3000) throws(PortsError) {
