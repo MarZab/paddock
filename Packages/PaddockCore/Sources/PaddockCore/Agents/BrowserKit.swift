@@ -19,6 +19,22 @@ public enum BrowserKit {
     /// Chromium build next to the Playwright kit's.
     public static let version = "0.1.22"
     public static let package = "@playwright/cli"
+    /// `@playwright/mcp`, released with playwright-cli: 0.0.83 is built on the same Playwright
+    /// (1.64.0-alpha-1790635538000) as playwright-cli 0.1.22, so it uses the Chromium build the kit
+    /// already installs. Raise the two together.
+    public static let mcpVersion = "0.0.83"
+    public static let mcpPackage = "@playwright/mcp"
+    /// The MCP server's name in Claude Code (its tools are `mcp__playwright__*`).
+    public static let mcpServerName = "playwright"
+    /// Registers Playwright MCP with Claude Code in the sandbox (user scope, in `~/.claude.json`),
+    /// on every start, so a changed command replaces the old one. stdio only: no port, nothing on
+    /// the Mac. Headless (no display in the sandbox); `--isolated`, since several agents may share
+    /// the sandbox and a kept profile allows one browser at a time; file access stays limited to
+    /// the workspace (no `--allow-unrestricted-file-access`). Without Claude Code it does nothing.
+    public static let registerMCPScript =
+        "export HOME=/home/agent PATH=\"/home/agent/.local/bin:$PATH\"; command -v claude >/dev/null || exit 0; "
+        + "claude mcp remove --scope user \(mcpServerName) >/dev/null 2>&1; "
+        + "claude mcp add --scope user \(mcpServerName) -- playwright-mcp --headless --isolated"
     /// The dashboard's port inside the sandbox; sbx publishes it on `127.0.0.1` (backlog doc Browser).
     /// Not 9323: that is `npx playwright show-report`'s default, and a report server there took the
     /// dashboard's place.
@@ -87,7 +103,7 @@ public enum BrowserKit {
                       npm config set proxy "$HTTP_PROXY"
                       npm config set https-proxy "$HTTP_PROXY"
                     fi
-                    npm install --global --no-fund --no-audit --loglevel=error "\#(package)@\#(version)"
+                    npm install --global --no-fund --no-audit --loglevel=error "\#(package)@\#(version)" "\#(mcpPackage)@\#(mcpVersion)"
                     # The real playwright-cli, for the wrapper and the watcher.
                     real="$(readlink -f "$(command -v playwright-cli)")"
                     mkdir -p "$(dirname \#(BrowserActivity.realCLI))"
@@ -114,7 +130,7 @@ public enum BrowserKit {
                   user: "0"
                   # A hook sees only the environment it names: npm's global bin is on the image's PATH.
                   env: [PATH, HOME, HTTP_PROXY, HTTPS_PROXY, NO_PROXY]
-                  description: Install playwright-cli \#(version) (npm \#(package)), its Chromium build, certutil, and Paddock's wrapper, watcher, and paddock
+                  description: Install playwright-cli \#(version) (npm \#(package)), Playwright MCP \#(mcpVersion), their Chromium build, certutil, and Paddock's wrapper, watcher, and paddock
                 - command: |
                     set -eu
                     cd /home/agent
@@ -141,6 +157,13 @@ public enum BrowserKit {
                       certutil -d "sql:$db" -A -t "C,," -n sbx-proxy -i "$ca"; fi
                   user: "1000"
                   description: Trust sbx's proxy CA in Chromium's certificate store
+                # Playwright MCP for Claude Code (stdio, in the sandbox only).
+                - command:
+                    - sh
+                    - -c
+                    - '\#(registerMCPScript)'
+                  user: "1000"
+                  description: Register Playwright MCP with Claude Code
                 # The dashboard, on every start; 0.0.0.0 so sbx's published port reaches it.
                 - command:
                     - sh
@@ -210,6 +233,9 @@ public enum BrowserKit {
                   over); `Paddock:` lines in the output say what they did. `playwright-cli --help` has more.
                 - `playwright-cli -s=checkout-7f3a show --annotate` asks them to mark up your own session's
                   page, like `paddock annotate`.
+                - In Claude Code the same browser also comes as MCP tools (`mcp__\#(mcpServerName)__*`,
+                  headless, a fresh profile each time). Use them for quick checks of your own; the
+                  operator does not see those pages, so use playwright-cli for anything they should watch.
 
                 ### Good to know
                 - Pages on localhost work (the browser runs next to you); other sites may be blocked by

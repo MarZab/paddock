@@ -264,6 +264,37 @@ struct KitsTests {
         #expect(!spec.contains("\t"))
     }
 
+    /// Playwright MCP in the sandbox (PAD-141): installed next to playwright-cli and registered with
+    /// Claude Code on every start, stdio only.
+    @Test func theBrowserKitRegistersPlaywrightMCPWithClaudeCode() throws {
+        let spec = BrowserKit.spec
+        #expect(spec.contains("\"\(BrowserKit.package)@\(BrowserKit.version)\" \"\(BrowserKit.mcpPackage)@\(BrowserKit.mcpVersion)\""))
+        // the pair built on the same Playwright, so one Chromium build serves both
+        #expect(BrowserKit.version == "0.1.22" && BrowserKit.mcpVersion == "0.0.83")
+        let script = BrowserKit.registerMCPScript
+        #expect(script.contains("command -v claude >/dev/null || exit 0"))
+        #expect(script.hasSuffix("claude mcp add --scope user playwright -- playwright-mcp --headless --isolated"))
+        // no port, no file access outside the workspace, no ignored certificates
+        #expect(!script.contains("--port") && !script.contains("--host") && !script.contains("unrestricted") && !script.contains("ignore-https"))
+        // the YAML holds the script as written, as a startup step run as the agent's user
+        guard case .object(let root) = try YAMLCoding.value(fromYAML: Data(spec.utf8)),
+              case .array(let capabilities)? = root["capabilities"] else {
+            Issue.record("the kit is not a YAML object with capabilities")
+            return
+        }
+        let startup: [JSONValue] = capabilities.flatMap { capability -> [JSONValue] in
+            guard case .object(let object) = capability, object["type"] == .string("com.docker.sandbox/lifecycle@1"),
+                  case .object(let config)? = object["config"], case .array(let steps)? = config["startup"] else { return [] }
+            return steps
+        }
+        let register = startup.first {
+            guard case .object(let step) = $0 else { return false }
+            return step["command"] == .array([.string("sh"), .string("-c"), .string(script)]) && step["user"] == .string("1000")
+        }
+        #expect(register != nil)
+        #expect(spec.contains("mcp__\(BrowserKit.mcpServerName)__*"))
+    }
+
     @Test func theDashboardIsTheLoopbackPortSbxPublishes() throws {
         let ports = [SbxPort(hostIP: "127.0.0.1", hostPort: 18001, sandboxPort: 3000),
                      SbxPort(hostIP: "0.0.0.0", hostPort: 50001, sandboxPort: BrowserKit.dashboardPort),
