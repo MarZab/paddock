@@ -19,43 +19,37 @@ struct ContentView: View {
     @Environment(AppModel.self) private var model
     @State private var selection: SidebarSelection? = .overview
     @State private var blockingHost = false
+    /// How each project group shows, by section id; every group starts open (PAD-145).
+    @State private var folds: [String: ProjectGroups.Fold] = [:]
 
     var body: some View {
         @Bindable var model = model
         VStack(spacing: 0) {
             NavigationSplitView {
                 List(selection: $selection) {
-                    Section {
-                        ForEach(model.allProjects) { project in
-                            ProjectRow(project: project, badge: model.badge(of: project),
-                                       help: model.badgeHelp(of: project))
-                                .tag(SidebarSelection.project(project.name))
-                            // Its agents, each with its own state, in tab order (PAD-63).
-                            let now = Date()
-                            ForEach(model.agentRows(of: project, now: now)) { row in
-                                if let tab = row.tab {
-                                    AgentRow(row: row, now: now).tag(SidebarSelection.agent(project.name, tab))
-                                } else {
-                                    // In no open tab: nothing to show, so not selectable (no tag).
-                                    AgentRow(row: row, now: now)
-                                }
+                    let sections = ProjectGroups.sections(model.allProjects)
+                    // No project has a group: the one Projects section, as before groups.
+                    let ungrouped = sections.count == 1 && sections.first?.group == nil
+                    ForEach(sections) { section in
+                        let fold: ProjectGroups.Fold = ungrouped ? .open : folds[section.id, default: .open]
+                        Section {
+                            ForEach(fold.shown(section.projects, isRunning: isRunning)) { project in
+                                projectRows(project)
+                            }
+                        } header: {
+                            if ungrouped {
+                                projectsHeader
+                            } else {
+                                GroupHeader(title: section.group ?? ProjectGroups.otherTitle, fold: fold,
+                                            running: section.projects.count(where: isRunning),
+                                            total: section.projects.count,
+                                            problemCount: section.id == sections.first?.id ? problemCount : 0,
+                                            toggle: { folds[section.id] = fold.next },
+                                            showOverview: { selection = .overview })
                             }
                         }
-                    } header: {
-                        // The heading opens the projects overview, like the breadcrumb.
-                        Button { selection = .overview } label: {
-                            HStack(spacing: 4) {
-                                Text("Projects")
-                                if problemCount > 0 {
-                                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                                        .help("\(problemCount) problem(s); open Projects to see them")
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, 8)
                     }
-                    Section("System") {
+                    Section {
                         Label("Models", systemImage: "cpu").tag(SidebarSelection.models)
                         NetworkSidebarLabel().tag(SidebarSelection.network)
                         Label("Filesystem", systemImage: "folder.badge.gearshape").tag(SidebarSelection.filesystem)
@@ -64,6 +58,13 @@ struct ContentView: View {
                         Label("Templates", systemImage: "shippingbox").tag(SidebarSelection.templates)
                             .help("sbx's images, what uses them, and removing them")
                         LogSidebarLabel().tag(SidebarSelection.log)
+                    } header: {
+                        // A line keeps System apart from the projects' groups (PAD-145).
+                        VStack(alignment: .leading, spacing: 8) {
+                            Divider()
+                            Text("System")
+                        }
+                        .padding(.top, 8)
                     }
                 }
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220)
@@ -156,6 +157,38 @@ struct ContentView: View {
         .sheet(isPresented: $model.showsNewProject) {
             NewProjectSheet { name in selection = .project(name) }
         }
+    }
+
+    private func isRunning(_ project: Project) -> Bool { model.state(of: project) == .running }
+
+    /// A project's row and, under it, its agents, each with its own state, in tab order (PAD-63).
+    @ViewBuilder private func projectRows(_ project: Project) -> some View {
+        ProjectRow(project: project, badge: model.badge(of: project), help: model.badgeHelp(of: project))
+            .tag(SidebarSelection.project(project.name))
+        let now = Date()
+        ForEach(model.agentRows(of: project, now: now)) { row in
+            if let tab = row.tab {
+                AgentRow(row: row, now: now).tag(SidebarSelection.agent(project.name, tab))
+            } else {
+                // In no open tab: nothing to show, so not selectable (no tag).
+                AgentRow(row: row, now: now)
+            }
+        }
+    }
+
+    /// The heading while no project has a group: it opens the projects overview, like the breadcrumb.
+    private var projectsHeader: some View {
+        Button { selection = .overview } label: {
+            HStack(spacing: 4) {
+                Text("Projects")
+                if problemCount > 0 {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        .help("\(problemCount) problem(s); open Projects to see them")
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 8)
     }
 
     private var isProjectPage: Bool {
@@ -311,6 +344,59 @@ extension ToolbarContent {
             sharedBackgroundVisibility(.hidden)
         } else {
             self
+        }
+    }
+}
+
+/// A project group's heading (PAD-145): clicking its title goes from open (every project) to
+/// folded (the running ones) to closed (no rows) and back. On the right, in every fold: running of all its
+/// projects, running in green.
+/// The projects overview is in its context menu, and behind the problems mark of the first group.
+private struct GroupHeader: View {
+    let title: String
+    let fold: ProjectGroups.Fold
+    let running: Int
+    let total: Int
+    let problemCount: Int
+    let toggle: () -> Void
+    let showOverview: () -> Void
+    /// How much further in from the header's trailing edge a row's badge sits.
+    private static let badgeInset: CGFloat = 16
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Button(action: toggle) {
+                Text(title).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(help)
+            if problemCount > 0 {
+                Button(action: showOverview) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
+                .help("\(problemCount) problem(s); open Projects to see them")
+            }
+            // Small and regular, where a row's badge sits (the Network item's count): a header
+            // takes no `.badge`, so its font and distance from the edge are set by hand.
+            // Running (green, like a running project's mark; muted when none) out of all its projects.
+            Text("\(Text("\(running)").foregroundStyle(running > 0 ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary)))/\(total)")
+                .font(.caption).fontWeight(.regular).monospacedDigit()
+                .foregroundStyle(.secondary)
+                .padding(.trailing, Self.badgeInset)
+                .help("\(running) of \(total) running")
+        }
+        .padding(.top, 8)
+        .contextMenu {
+            Button("Show All Projects", action: showOverview)
+        }
+    }
+
+    private var help: String {
+        switch fold {
+        case .open: "Click to show only the running projects"
+        case .running: "Only the running projects show; click to close the group"
+        case .closed: "Click to show every project of the group"
         }
     }
 }
