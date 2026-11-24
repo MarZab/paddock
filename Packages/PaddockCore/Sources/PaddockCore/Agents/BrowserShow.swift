@@ -33,20 +33,6 @@ public enum BrowserShow {
         isShowID(id) ? ["exec", sandbox, "paddock", "--operator", id, event.rawValue] : nil
     }
 
-    /// What an interactive tab reports to the sandbox (`OpenUIMessage`): an action, or the
-    /// renderer's problems.
-    public enum UIEvent: String, Sendable {
-        case action, problems
-    }
-
-    /// `sbx exec` command that hands an interactive tab's action or problems to the sandbox, where
-    /// `paddock wait` prints them. `json` comes checked from `OpenUIMessage`. Nil for an id
-    /// `paddock` would not make.
-    public static func uiEventCommand(sandbox: String, id: String, _ event: UIEvent, json: String) -> [String]? {
-        guard isShowID(id), json.utf8.count <= OpenUIMessage.maxActionBytes else { return nil }
-        return ["exec", sandbox, "paddock", "--operator", id, event.rawValue, json]
-    }
-
     /// The operator's Refresh or Back on a tab rendered in the sandbox.
     public enum Navigation: String, Sendable {
         case reload, back
@@ -103,7 +89,7 @@ public enum BrowserShow {
           paddock wait ID          prints what they did: opened, closed, an answer (JSON), a saved screenshot
           paddock feedback ID      their screenshots and annotations, with comments and file paths
 
-        Every command prints the tab's id (tab-k3f9) or needs it:
+        Every command prints the tab's id (tab-a3f9) or needs it:
           paddock status ID | reload ID | back ID | close ID | goto ID URL-or-FILE | note ID TEXT`;
 
         function fail(message) { process.stderr.write(`paddock: ${message}\n`); process.exit(1); }
@@ -451,23 +437,6 @@ public enum BrowserShow {
               happened(current, `the operator's tab sent: ${line}`);
               save(current);
             });
-          } else if (event === 'action' || event === 'problems') {
-            // From Paddock, checked there: an action as JSON (a button or a submitted form), or what the
-            // renderer could not draw.
-            let value;
-            try { value = JSON.parse(process.argv[5] || ''); } catch { fail('not JSON'); }
-            if ((process.argv[5] || '').length > 65536) fail('too large');
-            if (event === 'action') {
-              record.actions = (record.actions || []).concat([value]);
-              happened(record, `the operator acted: ${JSON.stringify(value)}`);
-            } else {
-              const list = Array.isArray(value) ? value : [];
-              const text = list.length
-                ? `the renderer could not draw parts of it: ${list.map((p) => `${p.code}${p.statementId ? ' in ' + p.statementId : ''}: ${p.message}${p.hint ? ' (expected ' + p.hint + ')' : ''}`).join('; ')}`
-                : 'the renderer draws all of it now';
-              if (record.lastProblems !== text) { record.lastProblems = text; happened(record, `the operator's screen says ${text}`); }
-            }
-            save(record);
           } else if (event === 'screenshot' || event === 'recording') {
             // The operator saved one from this tab; Paddock put it in the sandbox at the path given.
             const file = process.argv[5] || '';
@@ -574,8 +543,8 @@ public enum BrowserShow {
             const news = record ? (record.history || []).slice(seen).filter((line) => line.includes('the operator')) : [];
             if (news.length) {
               for (const line of news) {
-                // An action prints as its JSON, ready to parse; anything else as the line.
-                const action = / the operator(?:'s tab sent| acted): (\{.*\})$/.exec(line);
+                // What an interactive tab sent prints as its JSON, ready to parse; anything else as the line.
+                const action = / the operator's tab sent: (\{.*\})$/.exec(line);
                 console.log(action ? action[1] : line);
               }
               // Seen now: later commands do not print it again.

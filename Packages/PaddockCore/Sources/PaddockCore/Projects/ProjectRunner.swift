@@ -573,14 +573,6 @@ public struct ProjectRunner: Sendable {
         return BrowserCapture.folder + "/" + name
     }
 
-    /// An interactive tab's action or the renderer's problems, handed to the sandbox for the agent
-    /// (`paddock wait`). `json` comes checked from `OpenUIMessage`.
-    public func sendUIEvent(_ event: BrowserShow.UIEvent, json: String, show id: String, of project: Project) async throws {
-        try owned(project)
-        guard let command = BrowserShow.uiEventCommand(sandbox: project.name, id: id, event, json: json) else { return }
-        try await sbx.perform(command)
-    }
-
     // MARK: - A2UI tabs (backlog doc Browser, interactive tabs; every command from A2UICommands)
 
     /// An A2UI tab's message log from byte `offset` on (for `A2UITab.take`).

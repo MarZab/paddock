@@ -1,11 +1,11 @@
 ---
 id: PAD-146
 title: 'Interactive tabs: A2UI v1.0 rendered natively, replacing OpenUI'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-24 20:26'
-updated_date: '2026-11-24 20:27'
+updated_date: '2026-11-24 22:49'
 labels: []
 dependencies: []
 references:
@@ -33,6 +33,18 @@ Decided with the operator (2026-11-24):
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Interactive tabs render A2UI v1.0 basic-catalog surfaces natively in SwiftUI; OpenUI is gone from the app, the sandbox guide and the docs
-- [ ] #2 Every subtask is Done
+- [x] #1 Interactive tabs render A2UI v1.0 basic-catalog surfaces natively in SwiftUI; OpenUI is gone from the app, the sandbox guide and the docs
+- [x] #2 Every subtask is Done
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-24: .1, .2 and .5 Done; .3 and .4 code complete in the Linux sandbox and committed, In Progress until the Mac builds them (PaddockA2UI and the app need SwiftUI): mise run generate, build in Xcode once (Trust & Enable for A2UI's A2UISchemaGeneratorPlugin), mise run test (runs PaddockA2UI on Darwin), mise run capture:a2ui (pluralize examples); then .6 live.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Interactive tabs are A2UI v1.0, drawn natively by A2UI's own Swift renderer (PaddockA2UI, a2ui 0.12.0) with the basic catalog, replacing OpenUI and its vendored React bundle. PaddockCore checks what crosses (A2UIPolicy, A2UIInbox, A2UIMedia, A2UICommands; Linux-tested on fixtures from A2UI's corpus and its Swift core); media and links go through the sandbox, what the operator types goes back on stdin. Subtasks .1 to .6 done; PAD-149 added Markdown tables to Text. Built, tested and used on the Mac.
+<!-- SECTION:FINAL_SUMMARY:END -->

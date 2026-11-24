@@ -70,4 +70,4 @@ Every change has a ticket in `backlog/tasks` and every commit message starts wit
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Third-party code keeps its own license: the vendored OpenUI renderer in `App/OpenUI/vendor` (its `LICENSE` is next to it) and the Swift packages in `Package.resolved`.
+MIT, see [LICENSE](LICENSE). Third-party code keeps its own license: the Swift packages in each `Package.resolved` (A2UI, which draws interactive tabs, is Apache-2.0), and the A2UI messages in `Packages/PaddockCore/Tests/PaddockCoreTests/Fixtures/a2ui` (Apache-2.0, its `LICENSE` is next to them).

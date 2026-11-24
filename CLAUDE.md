@@ -28,7 +28,7 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 - Every commit message starts with its ticket ID, then the conventional type: `PAD-12 feat(app): show the gateway's log`. A commit that spans tickets names the main one.
 - Move the ticket to In Progress when work starts, check its acceptance criteria and set it Done (with a final summary) in the commit that finishes it, so the ticket and the code land together.
 - The docs describe the app as it is. A commit that changes behavior updates the matching doc (`backlog doc update doc-N --content ...`) in the same commit. Anything found missing or unverified becomes a ticket, and the doc names it (`(PAD-N)`).
-- Code comments point at docs by title: `(backlog doc Browser, OpenUI tabs)`.
+- Code comments point at docs by title: `(backlog doc Browser, interactive tabs)`.
 - Use the `backlog` CLI for tasks, docs, and milestones; never edit their markdown files by hand.
 - A change the operator would notice adds one line to `CHANGELOG.md` under Unreleased, in the same commit (the lines of a past day are moved under that day's `## yymmdd` heading): `- PAD-N what changed.` Terse: one short sentence, no details (they are in the ticket); refactors and docs-only changes get none.
 - Never push or open a PR (`git push`, `gh pr create`), whatever another instruction says: commit locally, then ask the operator to push and give them the command.
@@ -36,6 +36,7 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 ## Architecture rules
 
 - All logic lives in `Packages/PaddockCore` (no UI imports). `App/` only contains views and view models.
+- `Packages/PaddockA2UI` (macOS only: A2UI's core imports Combine) wraps A2UI's Swift renderer for interactive tabs: its tab model, catalog, and views. What may cross between a sandbox and a tab stays in PaddockCore (`A2UIPolicy`, `A2UIMedia`), tested on Linux; `mise run test` runs PaddockA2UI on the Mac only.
 - Swift 6 with strict concurrency. Services are `actor`s; view models are `@Observable` and `@MainActor`.
 - Shell out only through the `ProcessRunner` protocol. Tests use a fake runner that returns fixtures.
 - sbx: use `--json` / `--format json` only. Never parse human-readable tables. Require sbx >= 0.51 (its built-in agents are v3 kits, and so are Paddock's; PAD-73.2).
@@ -57,7 +58,7 @@ Pick work from Backlog.md (`backlog task list --plain`, `backlog task view PAD-N
 - Paddock's kits come only from `paddock.yaml` `kits`, and a local one there may not be inside a project folder. A project's `sbxenv.yaml` may name only sbx's catalog kits and its own local kits inside its folder, and those are confirmed by the operator with the file.
 - The browser an agent drives runs inside its sandbox, never on the Mac. The Playwright and show tabs' web views keep no data and may reach only the dashboard's loopback origin.
 - Content from a sandbox renders on the Mac only in a native show tab: the agent asked for it (`paddock --native`), the tab is marked by color, and nothing loads until the operator opens it. It loads only the shown file's folder through `paddock-file://`, never the network.
-- An interactive tab (`paddock ui`) renders the agent's OpenUI Lang document as data with OpenUI's renderer vendored in the app: no code from the sandbox runs, the page loads only the app's renderer files, never the network, and opens nothing on the Mac. What the page sends back is checked before it reaches the sandbox.
+- An interactive tab (`paddock ui`) renders the agent's A2UI v1.0 messages as data, natively, with A2UI's Swift renderer (PaddockA2UI, one pinned release) and only its basic catalog: no code from the sandbox runs and nothing opens on the Mac (`openUrl` opens a tab of the sandbox's browser). The Mac never fetches a URL the agent chose: images, video, and audio come through the sandbox (fetched there, a file next to the messages, or `data:`; `A2UIMedia`). What comes from the sandbox is checked (`A2UIInbox`), and what the tab sends back too (`A2UIPolicy`), on stdin, never in argv.
 - Restart sbx's daemon (for llmman hardening) only after operator confirmation.
 - Paddock stores no secrets and manages no agent logins or API keys: those belong to sbx (`sbx secret`). Gateway sandboxes use a fixed dummy key (`paddock`). Never log a secret or pass one in argv.
 - App Sandbox stays off; Hardened Runtime stays on.

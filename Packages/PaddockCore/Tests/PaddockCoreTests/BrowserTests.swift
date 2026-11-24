@@ -48,7 +48,7 @@ struct BrowserActivityTests {
         let encoded = spec.components(separatedBy: "printf '%s' '").dropFirst().compactMap { $0.components(separatedBy: "'").first }
         #expect(encoded.compactMap { Data(base64Encoded: $0) }
             == [Data(BrowserActivity.wrapper.utf8), Data(BrowserActivity.watcher.utf8), Data(BrowserShow.script.utf8),
-                Data(BrowserKit.mcpLauncher.utf8), Data(BrowserKit.openUIReference.utf8)])
+                Data(BrowserKit.mcpLauncher.utf8), Data(BrowserKit.a2uiReference.utf8)])
         #expect(spec.contains("/usr/local/bin/paddock"))
         #expect(spec.contains("ln -sf \"$real\" \(BrowserActivity.realCLI)"))
         #expect(spec.contains("/usr/local/bin/paddock-browser-watch"))
@@ -370,7 +370,7 @@ struct AgentFeedbackTests {
         // annotate a shown tab by its id, with absolute paths in the answer
         #expect(script.contains("case 'annotate': annotate(args[1]); break;"))
         #expect(script.contains("cli([`-s=${SESSION}`, 'show', '--annotate'])"))
-        #expect(BrowserKit.spec.contains("paddock annotate tab-k3f9") && BrowserKit.spec.contains("ask what they mean"))
+        #expect(BrowserKit.spec.contains("paddock annotate tab-a3f9") && BrowserKit.spec.contains("ask what they mean"))
     }
 
     @Test func aTabWaitingForAnAnnotationAsksForAttention() {
@@ -382,65 +382,38 @@ struct AgentFeedbackTests {
     }
 }
 
-/// Interactive tabs: OpenUI's renderer in Paddock (backlog doc Browser, OpenUI tabs).
-@Suite("OpenUI")
-struct OpenUITests {
-    @Test func thePageLoadsOnlyTheAppsRendererFiles() throws {
-        #expect(OpenUIPolicy.homeURL?.absoluteString == "paddock-ui://renderer/index.html")
-        #expect(OpenUIPolicy.file(for: try #require(URL(string: "paddock-ui://renderer/vendor/openui-bundle.min.js"))) == "vendor/openui-bundle.min.js")
-        for other in ["paddock-ui://renderer/../secret", "paddock-ui://renderer/vendor/LICENSE", "paddock-ui://other/index.html",
-                      "https://example.com/index.html", "paddock-file://tab-a1b2/index.html"] {
-            #expect(OpenUIPolicy.file(for: try #require(URL(string: other))) == nil, "\(other)")
-        }
-        let rules = try #require(try JSONSerialization.jsonObject(with: Data(OpenUIPolicy.contentRules.utf8)) as? [[String: [String: String]]])
-        #expect(rules.first?["action"]?["type"] == "block")
-        #expect(rules.filter { $0["action"]?["type"] == "ignore-previous-rules" }.compactMap { $0["trigger"]?["url-filter"] }
-            == ["^paddock-ui://renderer/", "^data:", "^blob:"])
-    }
-
-    /// The document is data: it goes in as a JSON string, never as script.
-    @Test func theDocumentGoesInAsAString() throws {
-        let document = "root = Card([CardHeader(\"Hi\")])\n\"); alert(1); (\""
-        let script = try #require(OpenUIPolicy.renderScript(document: document, state: #"{"deploy":{"env":{"value":"prod"}}}"#))
-        #expect(script.hasPrefix("window.paddockRender(\"root = Card(") && script.hasSuffix(#", {"deploy":{"env":{"value":"prod"}}});"#))
-        #expect(script.contains(#"\"); alert(1); (\""#))
-        #expect(OpenUIPolicy.renderScript(document: "root = Card([])", state: "not json")?.hasSuffix(", null);") == true)
-        #expect(OpenUIPolicy.renderScript(document: String(repeating: "x", count: OpenUIPolicy.maxDocumentBytes + 1), state: nil) == nil)
-    }
-
-    @Test func whatThePageSendsIsChecked() {
-        let action = #"{"kind":"action","action":{"type":"continue_conversation","message":"Deploy","form":"deploy","values":{"env":"staging"}}}"#
-        #expect(OpenUIMessage(action) == .action(#"{"form":"deploy","message":"Deploy","type":"continue_conversation","values":{"env":"staging"}}"#))
-        #expect(OpenUIMessage(#"{"kind":"ready"}"#) == .ready)
-        #expect(OpenUIMessage(#"{"kind":"state","state":{"deploy":{"env":{"value":"prod"}}}}"#) == .state(#"{"deploy":{"env":{"value":"prod"}}}"#))
-        guard case .problems(let json)? = OpenUIMessage(#"{"kind":"problems","problems":[{"code":"missing-required","message":"x","extra":5}]}"#) else {
-            Issue.record("problems"); return
-        }
-        #expect(json == #"[{"code":"missing-required","message":"x"}]"#)  // only text fields
-        for bad in ["not json", #"{"kind":"action","action":{"message":"no type"}}"#, #"{"kind":"other"}"#,
-                    #"{"kind":"action","action":{"type":"x","message":"\#(String(repeating: "y", count: 70000))"}}"#] {
-            #expect(OpenUIMessage(bad) == nil)
-        }
-    }
-
-    @Test func interactiveTabsReachTheSandbox() {
-        #expect(BrowserShow.uiEventCommand(sandbox: "paddock-app", id: "tab-a1b2", .action, json: #"{"type":"x"}"#)
-            == ["exec", "paddock-app", "paddock", "--operator", "tab-a1b2", "action", #"{"type":"x"}"#])
-        #expect(BrowserShow.uiEventCommand(sandbox: "paddock-app", id: "nope", .action, json: "{}") == nil)
+/// Interactive tabs: A2UI, drawn natively by the app (backlog doc Browser, interactive tabs;
+/// the rules and the sandbox's commands are in A2UIPolicyTests and A2UIHelperTests).
+@Suite("Interactive tabs")
+struct InteractiveTabTests {
+    @Test func aUITabIsInteractive() {
         var browser = BrowserSessions()
-        _ = browser.apply(line: #"{"type":"shows","shows":[{"id":"tab-a1b2","mode":"ui","path":"/tmp/paddock-tabs/ui/tab-a1b2.oui","title":"Deploy"}]}"#)
+        _ = browser.apply(line: #"{"type":"shows","shows":[{"id":"tab-a1b2","mode":"ui","path":"/tmp/paddock-tabs/ui/tab-a1b2.jsonl","title":"Deploy"}]}"#)
         #expect(browser.shows.first?.isInteractive == true && browser.shows.first?.isNative == false)
-        // the sandbox side: paddock ui, the read path, and wait printing actions as JSON
-        let script = BrowserShow.script
-        #expect(script.contains("case 'ui': {") && script.contains("if (record.mode === 'ui') {"))
-        #expect(script.contains("event === 'action' || event === 'problems'"))
     }
 
-    @Test func theAgentGetsTheLanguageAndHowToUseIt() {
-        #expect(BrowserKit.openUIReference.hasPrefix("# OpenUI Lang reference (for paddock ui)"))
-        #expect(BrowserKit.openUIReference.contains("## Component Signatures"))
-        #expect(BrowserKit.spec.contains("paddock ui question.oui") && BrowserKit.spec.contains(BrowserKit.openUIReferencePath))
-        #expect(BrowserKit.spec.contains("Never ask for passwords or keys."))
+    @Test func theAgentGetsTheReferenceAndHowToUseIt() {
+        let reference = BrowserKit.a2uiReference
+        #expect(reference.hasPrefix("# A2UI reference (for paddock ui)"))
+        // Paddock's rules, then A2UI's own schemas for the basic catalog.
+        #expect(reference.contains(A2UIPolicy.basicCatalogID))
+        #expect(reference.contains("Never ask for passwords, keys, or tokens"))
+        #expect(reference.contains("<!-- Generated by tools/tasks/vendor/a2ui.sh from a2ui-agent-sdk at A2UI v0.12.0+swift. -->"))
+        #expect(reference.contains("---BEGIN A2UI JSON SCHEMA---") && reference.contains("### Catalog Schema:"))
+        let spec = BrowserKit.spec
+        #expect(spec.contains("paddock ui question.jsonl") && spec.contains(BrowserKit.a2uiReferencePath))
+        #expect(spec.contains("Never ask for passwords or keys."))
+        #expect(!spec.contains("OpenUI") && !spec.contains(".oui") && !spec.contains("tab-k3f9"))
+    }
+
+    /// The small example in the reference is real: A2UI's core rendered it and sent this answer
+    /// (checked with tools/tasks/lib/a2ui-capture.swift).
+    @Test func theReferencesExampleIsValidA2UI() throws {
+        let reference = BrowserKit.a2uiReference
+        let block = try #require(reference.components(separatedBy: "## A small one\n\n```\n").dropFirst().first?.components(separatedBy: "```").first)
+        var inbox = A2UIInbox()
+        let intake = inbox.take(Data(block.utf8))
+        #expect(intake.refusals == [] && intake.messages.count == 3)
     }
 }
 

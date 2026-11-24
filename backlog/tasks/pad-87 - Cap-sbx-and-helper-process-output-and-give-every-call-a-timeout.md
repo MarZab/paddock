@@ -4,7 +4,7 @@ title: Cap sbx and helper process output and give every call a timeout
 status: In Progress
 assignee: []
 created_date: '2026-11-04 18:43'
-updated_date: '2026-11-04 18:54'
+updated_date: '2026-11-24 21:13'
 labels:
   - security
   - reliability
@@ -33,4 +33,6 @@ Review 2026-11-04. FoundationProcessRunner reads stdout and stderr with readToEn
 
 <!-- SECTION:NOTES:BEGIN -->
 FoundationProcessRunner(maxOutputBytes: 64 MB, timeout: 15 min) with ProcessLimitError; tests in ProcessRunnerTests. NOT compiled. Open: AC3 (environment allowlist) and AC2 (Mac-side size checks on show/OpenUI data: ProjectRunner already checks show reads) not done; the allowlist risks breaking DOCKER_HOST/proxy variables and needs the Mac.
+
+PAD-146.5 removed OpenUIPolicy (and its maxDocumentBytes): interactive tabs are A2UI now, capped by A2UIPolicy (512 KB a message, 8 MB a tab, 256 KB back) and A2UIMedia.maxBytes (40 MB, within FoundationProcessRunner's 64 MB as base64).
 <!-- SECTION:NOTES:END -->

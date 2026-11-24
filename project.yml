@@ -23,13 +23,8 @@ targets:
     sources:
       - path: App
         excludes:
-          - "OpenUI/**"
           # the icon's source, rendered into Assets.xcassets by `mise run icon`; not shipped
           - "AppIcon.svg"
-      # OpenUI's renderer and Paddock's host page, copied as a folder (OpenUIPolicy.files)
-      - path: App/OpenUI
-        type: folder
-        buildPhase: resources
     dependencies:
       - package: PaddockCore
       # through its public API only, like any other app embedding the shell

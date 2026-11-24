@@ -165,7 +165,7 @@ public enum BrowserKit {
         let wrapper = Data(BrowserActivity.wrapper.utf8).base64EncodedString()
         let watcher = Data(BrowserActivity.watcher.utf8).base64EncodedString()
         let show = Data(BrowserShow.script.utf8).base64EncodedString()
-        let reference = Data(openUIReference.utf8).base64EncodedString()
+        let reference = Data(a2uiReference.utf8).base64EncodedString()
         let launcher = Data(mcpLauncher.utf8).base64EncodedString()
         return #"""
         # syntax=docker/sandbox-kit:3
@@ -241,8 +241,8 @@ public enum BrowserKit {
                     chmod 755 /usr/local/bin/paddock
                     printf '%s' '\#(launcher)' | base64 -d > \#(mcpLauncherPath)
                     chmod 755 \#(mcpLauncherPath)
-                    mkdir -p "$(dirname \#(openUIReferencePath))"
-                    printf '%s' '\#(reference)' | base64 -d > \#(openUIReferencePath)
+                    mkdir -p "$(dirname \#(a2uiReferencePath))"
+                    printf '%s' '\#(reference)' | base64 -d > \#(a2uiReferencePath)
                   user: "0"
                   # A hook sees only the environment it names: npm's global bin is on the image's PATH.
                   env: [PATH, HOME, HTTP_PROXY, HTTPS_PROXY, NO_PROXY]
@@ -305,38 +305,35 @@ public enum BrowserKit {
                 | You built or changed something they should see | `paddock open http://localhost:3000 --title "Checkout"` |
                 | A document, plan, or report they should read | `paddock open plan.md --native` (on their screen, sharp text) |
                 | Playwright's test report | `paddock open playwright-report/index.html --native` |
-                | You need a decision, an approval, or values | `paddock ui question.oui --title "Deploy target"` |
-                | You want them to point at something on a page | `paddock annotate tab-k3f9` |
+                | You need a decision, an approval, or values | `paddock ui question.jsonl --title "Deploy target"` |
+                | You want them to point at something on a page | `paddock annotate tab-a3f9` |
                 | You need to test or poke at a page yourself | `playwright-cli -s=checkout open http://localhost:3000` |
 
                 ### The loop
-                1. Show it: `paddock open ...` or `paddock ui ...` prints the tab's id, such as `tab-k3f9`.
+                1. Show it: `paddock open ...` or `paddock ui ...` prints the tab's id, such as `tab-a3f9`.
                    Keep it; every other command needs it.
                 2. Tell the operator in one line what to look at (new tabs never take their focus).
-                3. Wait for them: `paddock wait tab-k3f9` prints what they did: opened or closed it, an
-                   answer from a ui tab (one JSON line with the form's values), or a saved screenshot.
+                3. Wait for them: `paddock wait tab-a3f9` prints what they did: opened or closed it, what
+                   a ui tab sent (one JSON line each: a pressed button with its values), or a saved screenshot.
                    Run it again for the next thing.
-                4. Act on it. `paddock feedback tab-k3f9` prints their screenshots and annotations with
-                   comments and file paths; `paddock status tab-k3f9` the whole history.
+                4. Act on it. `paddock feedback tab-a3f9` prints their screenshots and annotations with
+                   comments and file paths; `paddock status tab-a3f9` the whole history.
 
                 ### paddock, in detail
                 - `open URL-or-FILE [--title T] [--note N]`: a live page (a URL, or a file opened as
                   `file:`, no server needed). `--native` opens a file on their screen instead, once they
                   click it: for documents to read or copy from.
-                - `ui FILE` (or `ui -` with the document on stdin): an interactive tab from an OpenUI Lang
-                  document: forms, choices, tables, charts, buttons. Read
-                  \#(openUIReferencePath) before your first one. A small one:
-                  ```
-                  root = Card([header, form])
-                  header = CardHeader("Deploy", "Choose how to roll out")
-                  form = Form("deploy", buttons, [env])
-                  env = FormControl("Environment", Select("env", [SelectItem("staging", "Staging"), SelectItem("prod", "Production")], "Select...", {required: true}))
-                  buttons = Buttons([Button("Deploy", @ToAssistant("Deploy", {step: "deploy"}), "primary")])
-                  ```
-                  Its answer: `{"type":"continue_conversation","message":"Deploy","context":{"step":"deploy"},"form":"deploy","values":{"env":"staging"}}`.
-                  If part of it cannot be drawn, `paddock wait` says what (with the component's
-                  signature); fix the file and run `paddock goto tab-k3f9 question.oui`. The tab is
-                  offline (no images or internet links). Never ask for passwords or keys.
+                - `ui FILE` (or `ui -` for stdin): an interactive tab the operator answers: forms, choices,
+                  dates, sliders, tabs, images, video, buttons. You describe it in A2UI v1.0 messages, one
+                  JSON object per line; Paddock draws it natively on their Mac. Read
+                  \#(a2uiReferencePath) before your first one. `paddock ui tab-a3f9 more.jsonl` sends
+                  more messages to it (new values, more components).
+                  `paddock wait tab-a3f9` prints what the tab sent, one JSON line each: a pressed button
+                  as `{"version":"1.0","action":{"name":"deploy","context":{"env":["staging"]},...}}` with
+                  the values you bound in its context, an `error` when A2UI could not use a message (fix
+                  it and send it again), `{"paddock":"refused",...}` for a line Paddock did not draw.
+                  Images and video load through this sandbox (https, a path next to the file, or
+                  `data:`); links open in this sandbox's browser. Never ask for passwords or keys.
                 - `annotate ID`: the operator marks up a live page; it waits, then prints their comment
                   and the annotated screenshot's path. If it fails, run `paddock feedback ID`: they may
                   have saved their markup anyway.
@@ -375,11 +372,11 @@ public enum BrowserKit {
         """#
     }
 
-    /// The OpenUI Lang reference the kit installs for agents (`tools/tasks/vendor/openui.sh`).
-    public static let openUIReferencePath = "/usr/local/share/paddock/openui.md"
+    /// The A2UI reference the kit installs for agents (`tools/tasks/vendor/a2ui.sh`).
+    public static let a2uiReferencePath = "/usr/local/share/paddock/a2ui.md"
 
-    public static var openUIReference: String {
-        guard let url = Bundle.module.url(forResource: "openui-reference", withExtension: "md"),
+    public static var a2uiReference: String {
+        guard let url = Bundle.module.url(forResource: "a2ui-reference", withExtension: "md"),
               let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
         return text
     }
