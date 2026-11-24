@@ -44,7 +44,8 @@ of yours. Their clicks and form values come back to you through `paddock wait`.
   so its network rules apply), a path relative to the messages file (`shots/home.png`), or a
   `data:` URL. Each file at most 40 MB. Nothing else loads; the tab says why.
 - `openUrl` (a Button's `functionCall`) opens an http(s) page as a tab of this sandbox's browser,
-  which the operator sees in Paddock. Nothing opens on their Mac.
+  which the operator sees in Paddock. Nothing opens on their Mac. It needs Paddock's browser kit;
+  without it the tab tells the operator it could not open the page.
 
 ## Rules
 

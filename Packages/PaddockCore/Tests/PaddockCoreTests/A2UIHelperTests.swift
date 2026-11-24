@@ -153,4 +153,22 @@ struct A2UIHelperTests {
         let log = try #require(A2UICommands.decodeMessages(try paddock(["--messages", id, "0"]).data))
         #expect(String(decoding: log, as: UTF8.self).split(separator: "\n").count == 2)
     }
+
+    /// PAD-147: paddock is the base kit's, in every sandbox; live pages need the browser kit's
+    /// playwright-cli, and say so without it. Interactive and native tabs work without it.
+    @Test func livePagesNeedTheBrowserKitAndFilesDoNot() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        try write("plan.md", "# Plan\n")
+        for page in [["open", "http://localhost:3000"], ["open", "plan.md"], ["http://localhost:3000"]] {
+            let refused = try paddock(page)
+            #expect(refused.status != 0 && refused.err.contains("needs Paddock's browser kit"), "\(page): \(refused.err)")
+        }
+        let native = try paddock(["open", "plan.md", "--native"])
+        #expect(native.status == 0, "\(native.err)")
+        let id = try tabID(native)
+        #expect(try paddock(["goto", id, "plan.md"]).status == 0)
+        // no page was opened, so no tab record was left behind by the refusals
+        let records = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("tabs/shows").path)
+        #expect(records == ["\(id).json"])
+    }
 }

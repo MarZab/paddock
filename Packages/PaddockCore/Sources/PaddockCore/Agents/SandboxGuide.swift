@@ -1,6 +1,6 @@
 import Foundation
 
-/// The agent-context of Paddock's `status` kit: how the sandbox is defined, what Paddock refuses
+/// Part of the agent-context of Paddock's base kit (`BaseKit`; in the status kit before PAD-147): how the sandbox is defined, what Paddock refuses
 /// in a project's files, and the build-output guidance (PAD-71). It lives in a kit Paddock ships,
 /// so the files Paddock writes for a project (`SandboxFiles`) name nothing of Paddock's.
 enum SandboxGuide {

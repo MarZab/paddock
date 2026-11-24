@@ -3,7 +3,7 @@ id: doc-1
 title: Overview
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-24 21:12'
+updated_date: '2026-11-24 21:52'
 ---
 ## Goal
 
@@ -66,7 +66,7 @@ paddock/
                               PaddockOverlay, SandboxFiles, ProjectKitFile, SbxKitDescriptor
       Projects/               ProjectStore, NewProject, ProjectRunner, SandboxSync, Ports, PortsTable,
                               RulesTable, HostRules, ApprovalRequests, ActivityTimeline, ExternalShell
-      Agents/                 AgentLaunch, ClaudeGateway, KitFile, NodeKit, BrowserKit, BrowserActivity, VoiceKit,
+      Agents/                 AgentLaunch, ClaudeGateway, KitFile, NodeKit, BaseKit, BrowserKit, BrowserMCPKit, BrowserActivity, VoiceKit,
                               BrowserShow, BrowserCapture, BrowserWebPolicy, NativeShowPolicy, A2UIPolicy, A2UIMedia
       Voice/                  VoiceMessage, SpokenText, VoiceKeywords (and VoiceChoice, BracketedPaste), SpeechQueue
       Security/               FolderPolicy, ExtraFolders

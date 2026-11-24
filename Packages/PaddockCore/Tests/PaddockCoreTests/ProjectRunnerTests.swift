@@ -65,7 +65,10 @@ struct ProjectRunnerTests {
         #expect(!create.contains("localhost:5432") && !create.contains("github.com:443"))
         #expect(calls.contains(["policy", "allow", "network", "--sandbox", "paddock-app", "localhost:17480", "--method", "GET,POST", "--path", "/v1/**"]))
         #expect(calls.last == ["policy", "ls", "paddock-app", "--json"])  // the rule is checked after adding it
-        #expect(create.contains("ANTHROPIC_AUTH_TOKEN=paddock") && !create.contains("--kit"))
+        #expect(create.contains("ANTHROPIC_AUTH_TOKEN=paddock"))
+        // no kit chosen: only the base kit, which every sandbox gets, and the Node it needs (PAD-147)
+        #expect(create.filter { $0 == "--kit" }.count == 2)
+        #expect(create.contains(setup.paths.kits + "/paddock-base") && create.contains(setup.paths.kits + "/paddock-node"))
     }
 
     @Test func anOpenCodeProjectGetsItsConfigFileAtCreateAndBeforeEachSession() async throws {

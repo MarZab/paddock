@@ -205,7 +205,10 @@ public enum BrowserShow {
           if (url && url[1].trim() === 'about:blank' && wanted !== 'about:blank') return 'it stayed on about:blank';
           return null;
         }
+        // Live pages are the browser kit's (PAD-147); this script is Paddock's base kit's.
+        const NO_BROWSER = "a live page needs Paddock's browser kit (playwright-cli), which this sandbox does not have: ask the operator to add it in Paddock and recreate the sandbox, or show a file with --native";
         function cli(args) {
+          if (!fs.existsSync(REAL)) fail(NO_BROWSER);
           return execFileSync(REAL, args, {
             cwd: '/', encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
             // The same sockets folder as the dashboard, whatever USER and TMPDIR say (PWTEST_SOCKETS_DIR).

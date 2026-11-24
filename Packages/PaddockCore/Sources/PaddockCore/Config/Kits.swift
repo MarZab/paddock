@@ -47,7 +47,9 @@ public struct Kit: Sendable, Equatable {
 /// Paddock's own kits that the operator can choose.
 public enum BuiltinKit: String, Sendable, Equatable, CaseIterable {
     case node
+    case base
     case browser
+    case browserMCP = "browser-mcp"
     case status
     case voice
 }
@@ -97,6 +99,15 @@ public enum KitSelection {
     /// recreate item). `setup` went in PAD-73.3: Paddock writes a project's files itself.
     /// `opencode` went in PAD-73.2: sbx 0.51's own opencode kit ships OpenCode 2.
     public static let removed: Set<String> = ["setup", "opencode"]
+
+    /// The revision of the kit choice a project records (`Project.kitChoice`) when the operator
+    /// chooses its kits. A choice from an older revision (none recorded) gets `addedToOlderChoices`.
+    public static let choiceRevision = 1
+
+    /// Kits a choice from before `choiceRevision` gets: the base kit (PAD-147), whose parts the
+    /// status and browser kits carried then. A choice made since is taken as it is, so the base
+    /// kit is optional for it.
+    public static let addedToOlderChoices: Set<String> = ["base"]
 
     /// The kits a project gets when its file names none (files from before kits): what Paddock
     /// always added then, which was only the opencode kit, now gone. Nothing.
@@ -194,9 +205,16 @@ extension AppConfig {
     /// and sbx's Playwright kit, which the browser kit builds on (backlog doc Kits). Any other kit is
     /// a `[kits.NAME]` section, added by hand or from the kit field in the New Project sheet.
     public static let defaultKits: [String: Kit] = [
+        // Recommended, and kept for projects that chose their kits before it (KitSelection.addedToOlderChoices).
+        "base": Kit(source: .builtin(.base),
+                    summary: "What the agent should know about its sandbox, and the tabs it shows the operator files and questions in",
+                    recommended: true, needs: ["node"]),
         "browser": Kit(source: .builtin(.browser),
                        summary: "A browser the agent drives with playwright-cli, shown live in the project's browser tab",
-                       needs: ["playwright", "node"]),
+                       needs: ["base", "playwright", "node"]),
+        "browser-mcp": Kit(source: .builtin(.browserMCP),
+                           summary: "Playwright MCP for Claude Code: one shared browser that keeps its logins across restarts",
+                           agents: [.claudeCode], needs: ["browser"]),
         "status": Kit(source: .builtin(.status),
                       summary: "Shows whether the agent is working, waiting on you, or idle, on its tab and in the sidebar",
                       recommended: true, needs: ["node"]),
@@ -399,7 +417,9 @@ public enum BuiltinKits {
     public static func directory(_ kit: BuiltinKit, in paths: PaddockPaths) -> String {
         switch kit {
         case .node: NodeKit.directory(in: paths)
+        case .base: BaseKit.directory(in: paths)
         case .browser: BrowserKit.directory(in: paths)
+        case .browserMCP: BrowserMCPKit.directory(in: paths)
         case .status: AgentStatusKit.directory(in: paths)
         case .voice: VoiceKit.directory(in: paths)
         }
@@ -409,7 +429,9 @@ public enum BuiltinKits {
         switch kit {
         // The dockerfile too, so a change to either shows the sandbox as needing a recreate.
         case .node: NodeKit.spec + NodeKit.dockerfile
+        case .base: BaseKit.spec
         case .browser: BrowserKit.spec
+        case .browserMCP: BrowserMCPKit.spec
         case .status: AgentStatusKit.spec
         case .voice: VoiceKit.spec
         }
@@ -420,7 +442,9 @@ public enum BuiltinKits {
     public static func install(_ kit: BuiltinKit, in paths: PaddockPaths) throws -> String {
         switch kit {
         case .node: try NodeKit.install(in: paths)
+        case .base: try BaseKit.install(in: paths)
         case .browser: try BrowserKit.install(in: paths)
+        case .browserMCP: try BrowserMCPKit.install(in: paths)
         case .status: try AgentStatusKit.install(in: paths)
         case .voice: try VoiceKit.install(in: paths)
         }

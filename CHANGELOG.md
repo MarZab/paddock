@@ -4,6 +4,7 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-147 Paddock's small base kit (tabs, wait, the sandbox guide) is a kit of its own, on by default; the browser kit is only the browser, and Playwright MCP is its own kit.
 - PAD-146 Interactive tabs (paddock ui) draw A2UI natively, with images, video, and audio through the sandbox, instead of OpenUI.
 
 ## 261122

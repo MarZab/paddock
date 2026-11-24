@@ -45,13 +45,18 @@ struct BrowserActivityTests {
     @Test func theKitInstallsTheWrapperAndTheWatcherAndFixesHTTPSAndFiles() throws {
         let spec = BrowserKit.spec
         // all go in as base64, so no shell changes them
-        let encoded = spec.components(separatedBy: "printf '%s' '").dropFirst().compactMap { $0.components(separatedBy: "'").first }
-        #expect(encoded.compactMap { Data(base64Encoded: $0) }
-            == [Data(BrowserActivity.wrapper.utf8), Data(BrowserActivity.watcher.utf8), Data(BrowserShow.script.utf8),
-                Data(BrowserKit.mcpLauncher.utf8), Data(BrowserKit.a2uiReference.utf8)])
-        #expect(spec.contains("/usr/local/bin/paddock"))
+        func encoded(_ spec: String) -> [Data] {
+            spec.components(separatedBy: "printf '%s' '").dropFirst().compactMap { $0.components(separatedBy: "'").first }
+                .compactMap { Data(base64Encoded: $0) }
+        }
+        // PAD-147: the browser kit installs only its wrapper; paddock, the watcher, and the A2UI
+        // reference are the base kit's, the MCP launcher the browser-mcp kit's.
+        #expect(encoded(spec) == [Data(BrowserActivity.wrapper.utf8)])
+        #expect(encoded(BaseKit.spec) == [Data(BrowserShow.script.utf8), Data(BrowserActivity.watcher.utf8), Data(BaseKit.a2uiReference.utf8)])
+        #expect(encoded(BrowserMCPKit.spec) == [Data(BrowserKit.mcpLauncher.utf8)])
+        #expect(BaseKit.spec.contains("/usr/local/bin/paddock"))
         #expect(spec.contains("ln -sf \"$real\" \(BrowserActivity.realCLI)"))
-        #expect(spec.contains("/usr/local/bin/paddock-browser-watch"))
+        #expect(BaseKit.spec.contains("/usr/local/bin/paddock-browser-watch") && !spec.contains("paddock-browser-watch"))
         // the dashboard starts from the real playwright-cli, so it is never activity, and with no
         // pgrep check first (it matched its own sh -c, so the dashboard never started)
         #expect(spec.contains("- \"\(BrowserKit.startDashboardScript)\""))
@@ -62,8 +67,9 @@ struct BrowserActivityTests {
         #expect(!spec.contains("ignoreHTTPSErrors"))
         #expect(spec.contains("default: /tmp/playwright-cli\n    env: PLAYWRIGHT_MCP_OUTPUT_DIR"))
         // the agent is told how to use both tools, and to tell the operator what Paddock lacks
-        #expect(spec.contains("paddock open http://localhost:3000") && spec.contains("--native"))
-        #expect(spec.contains("If Paddock gets in your way or lacks something you needed, tell the operator"))
+        #expect(BaseKit.spec.contains("paddock open http://localhost:3000") && BaseKit.spec.contains("--native"))
+        #expect(spec.contains("paddock open URL-or-FILE") && spec.contains("playwright-cli -s=checkout open URL"))
+        #expect(BaseKit.spec.contains("If Paddock gets in your way or lacks something you needed, tell the operator"))
         #expect(BrowserActivity.watchCommand(sandbox: "paddock-app")
                 == ["exec", "-i", "paddock-app", "sh", "-c", SandboxWatchers.replaceScript, "paddock-watch", "paddock-browser-watch", SandboxWatchers.owner])
         // pages the operator closes in the dashboard are noted for the agent; shown tabs are reported
@@ -204,7 +210,8 @@ struct BrowserShowTests {
         // and a new tab's URL is the one playwright-cli reports for that command
         #expect(script.contains("fs.openSync(path.join(SHOWS, id + '.json'), 'wx')") && script.contains("locked(() => {"))
         #expect(script.contains("/^- Page URL: (.*)$/m"))
-        #expect(BrowserKit.spec.contains("starts a new session and prints") && BrowserKit.spec.contains("session names and tab ids you were given"))
+        #expect(BrowserKit.spec.contains("starts a new session and prints") && BrowserKit.spec.contains("session names you were given"))
+        #expect(BaseKit.spec.contains("use only the tab ids you were given"))
         // a native file is read only from beside it
         #expect(script.contains("if (real !== record.path && !real.startsWith(base + '/')) fail("))
         #expect(!script.contains("\u{2014}"))
@@ -370,7 +377,7 @@ struct AgentFeedbackTests {
         // annotate a shown tab by its id, with absolute paths in the answer
         #expect(script.contains("case 'annotate': annotate(args[1]); break;"))
         #expect(script.contains("cli([`-s=${SESSION}`, 'show', '--annotate'])"))
-        #expect(BrowserKit.spec.contains("paddock annotate tab-a3f9") && BrowserKit.spec.contains("ask what they mean"))
+        #expect(BrowserKit.spec.contains("paddock annotate ID") && BaseKit.spec.contains("ask what they mean"))
     }
 
     @Test func aTabWaitingForAnAnnotationAsksForAttention() {
@@ -393,15 +400,15 @@ struct InteractiveTabTests {
     }
 
     @Test func theAgentGetsTheReferenceAndHowToUseIt() {
-        let reference = BrowserKit.a2uiReference
+        let reference = BaseKit.a2uiReference
         #expect(reference.hasPrefix("# A2UI reference (for paddock ui)"))
         // Paddock's rules, then A2UI's own schemas for the basic catalog.
         #expect(reference.contains(A2UIPolicy.basicCatalogID))
         #expect(reference.contains("Never ask for passwords, keys, or tokens"))
         #expect(reference.contains("<!-- Generated by tools/tasks/vendor/a2ui.sh from a2ui-agent-sdk at A2UI v0.12.0+swift. -->"))
         #expect(reference.contains("---BEGIN A2UI JSON SCHEMA---") && reference.contains("### Catalog Schema:"))
-        let spec = BrowserKit.spec
-        #expect(spec.contains("paddock ui question.jsonl") && spec.contains(BrowserKit.a2uiReferencePath))
+        let spec = BaseKit.spec
+        #expect(spec.contains("paddock ui question.jsonl") && spec.contains(BaseKit.a2uiReferencePath))
         #expect(spec.contains("Never ask for passwords or keys."))
         #expect(!spec.contains("OpenUI") && !spec.contains(".oui") && !spec.contains("tab-k3f9"))
     }
@@ -409,7 +416,7 @@ struct InteractiveTabTests {
     /// The small example in the reference is real: A2UI's core rendered it and sent this answer
     /// (checked with tools/tasks/lib/a2ui-capture.swift).
     @Test func theReferencesExampleIsValidA2UI() throws {
-        let reference = BrowserKit.a2uiReference
+        let reference = BaseKit.a2uiReference
         let block = try #require(reference.components(separatedBy: "## A small one\n\n```\n").dropFirst().first?.components(separatedBy: "```").first)
         var inbox = A2UIInbox()
         let intake = inbox.take(Data(block.utf8))
@@ -441,7 +448,7 @@ struct AnnotationTests {
         #expect(script.contains("read them with: paddock feedback ${id}"))
         // the quick start and the kit's pointer say when to use it
         #expect(script.contains("When to use it"))
-        #expect(BrowserKit.spec.contains(#"description: "Before you show the operator anything or ask them something, read this"#))
-        #expect(BrowserKit.spec.contains("### Reach for it when") && BrowserKit.spec.contains("### The loop"))
+        #expect(BaseKit.spec.contains(#"description: "Read this before you show the operator anything or ask them something"#))
+        #expect(BaseKit.spec.contains("### Reach for it when") && BaseKit.spec.contains("### The loop"))
     }
 }
