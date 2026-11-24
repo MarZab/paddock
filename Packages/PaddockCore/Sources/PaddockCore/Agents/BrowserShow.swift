@@ -99,7 +99,7 @@ public enum BrowserShow {
           paddock wait ID          prints what they did: opened, closed, an answer (JSON), a saved screenshot
           paddock feedback ID      their screenshots and annotations, with comments and file paths
 
-        Every command prints the tab's id (tab-k3f9) or needs it:
+        Every command prints the tab's id (tab-a3f9) or needs it:
           paddock status ID | reload ID | back ID | close ID | goto ID URL-or-FILE | note ID TEXT`;
 
         function fail(message) { process.stderr.write(`paddock: ${message}\n`); process.exit(1); }
@@ -241,7 +241,10 @@ public enum BrowserShow {
               Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
             }
           }
-          try { return work(); } finally { fs.rmSync(LOCK, { recursive: true, force: true }); }
+          // fail() exits at once: the lock goes then too, not 30 s later.
+          const release = () => fs.rmSync(LOCK, { recursive: true, force: true });
+          process.once('exit', release);
+          try { return work(); } finally { release(); process.removeListener('exit', release); }
         }
         // A new record under a random id, created exclusively, so two calls never share one; the id is
         // the handle the agent passes back (no one gets another's by counting).
@@ -455,7 +458,7 @@ public enum BrowserShow {
           if (!byOperator) console.log(`Tab ${id} shows ${record.url}.`);
         }
 
-        // Waits until the operator does something new with the tab (opens, closes, dismisses, reloads, or
+        // Waits until the operator has done something the agent has not seen with the tab (opens, closes, dismisses, reloads, or
         // saves a capture of it; for an interactive tab, an action), prints what, and exits; exit code 3
         // when the timeout passes first.
         function wait(id, seconds) {
@@ -468,7 +471,8 @@ public enum BrowserShow {
           };
           const first = load();
           if (!first) fail(`there is no tab ${id}`);
-          const seen = (first.history || []).length;
+          // From what the agent last saw, so what came before this call (an answer, say) is not lost.
+          const seen = Math.min(first.agentSeen || 0, (first.history || []).length);
           const limit = Date.now() + Math.max(1, Math.min(Number(seconds) || 600, 86400)) * 1000;
           for (;;) {
             const record = load();

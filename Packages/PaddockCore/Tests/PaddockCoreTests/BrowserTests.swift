@@ -370,7 +370,7 @@ struct AgentFeedbackTests {
         // annotate a shown tab by its id, with absolute paths in the answer
         #expect(script.contains("case 'annotate': annotate(args[1]); break;"))
         #expect(script.contains("cli([`-s=${SESSION}`, 'show', '--annotate'])"))
-        #expect(BrowserKit.spec.contains("paddock annotate tab-k3f9") && BrowserKit.spec.contains("ask what they mean"))
+        #expect(BrowserKit.spec.contains("paddock annotate tab-a3f9") && BrowserKit.spec.contains("ask what they mean"))
     }
 
     @Test func aTabWaitingForAnAnnotationAsksForAttention() {

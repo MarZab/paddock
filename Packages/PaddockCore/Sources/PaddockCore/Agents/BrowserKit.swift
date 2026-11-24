@@ -306,18 +306,18 @@ public enum BrowserKit {
                 | A document, plan, or report they should read | `paddock open plan.md --native` (on their screen, sharp text) |
                 | Playwright's test report | `paddock open playwright-report/index.html --native` |
                 | You need a decision, an approval, or values | `paddock ui question.oui --title "Deploy target"` |
-                | You want them to point at something on a page | `paddock annotate tab-k3f9` |
+                | You want them to point at something on a page | `paddock annotate tab-a3f9` |
                 | You need to test or poke at a page yourself | `playwright-cli -s=checkout open http://localhost:3000` |
 
                 ### The loop
-                1. Show it: `paddock open ...` or `paddock ui ...` prints the tab's id, such as `tab-k3f9`.
+                1. Show it: `paddock open ...` or `paddock ui ...` prints the tab's id, such as `tab-a3f9`.
                    Keep it; every other command needs it.
                 2. Tell the operator in one line what to look at (new tabs never take their focus).
-                3. Wait for them: `paddock wait tab-k3f9` prints what they did: opened or closed it, an
+                3. Wait for them: `paddock wait tab-a3f9` prints what they did: opened or closed it, an
                    answer from a ui tab (one JSON line with the form's values), or a saved screenshot.
                    Run it again for the next thing.
-                4. Act on it. `paddock feedback tab-k3f9` prints their screenshots and annotations with
-                   comments and file paths; `paddock status tab-k3f9` the whole history.
+                4. Act on it. `paddock feedback tab-a3f9` prints their screenshots and annotations with
+                   comments and file paths; `paddock status tab-a3f9` the whole history.
 
                 ### paddock, in detail
                 - `open URL-or-FILE [--title T] [--note N]`: a live page (a URL, or a file opened as
@@ -335,7 +335,7 @@ public enum BrowserKit {
                   ```
                   Its answer: `{"type":"continue_conversation","message":"Deploy","context":{"step":"deploy"},"form":"deploy","values":{"env":"staging"}}`.
                   If part of it cannot be drawn, `paddock wait` says what (with the component's
-                  signature); fix the file and run `paddock goto tab-k3f9 question.oui`. The tab is
+                  signature); fix the file and run `paddock goto tab-a3f9 question.oui`. The tab is
                   offline (no images or internet links). Never ask for passwords or keys.
                 - `annotate ID`: the operator marks up a live page; it waits, then prints their comment
                   and the annotated screenshot's path. If it fails, run `paddock feedback ID`: they may
