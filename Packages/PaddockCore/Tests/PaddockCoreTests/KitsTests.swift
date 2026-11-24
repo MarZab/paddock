@@ -18,7 +18,11 @@ struct KitsTests {
         #expect(unknown.isEmpty)
         #expect(config.kits == AppConfig.defaultKits)
         #expect(config.kits["opencode"] == nil && config.kits["status"]?.source == .builtin(.status))
-        #expect(config.kits["browser"]?.needs == ["playwright", "node"])
+        #expect(config.kits["browser"]?.needs == ["base", "playwright", "node"])
+        // PAD-147: the base kit is in every sandbox; Playwright MCP is its own kit, for Claude Code
+        #expect(config.kits["base"] == Kit(source: .builtin(.base), summary: config.kits["base"]?.summary ?? "", recommended: true, needs: ["node"]))
+        #expect(config.kits["browser-mcp"]?.needs == ["browser"] && config.kits["browser-mcp"]?.agents == [.claudeCode])
+        #expect(config.kits["browser-mcp"]?.recommended == false && config.kits["base"]?.recommended == true)
         // sbx's v3 kits, pinned by tag and digest (their tags move)
         for (name, kit) in config.kits {
             guard case .reference(let reference) = kit.source else { continue }
@@ -52,7 +56,7 @@ struct KitsTests {
     }
 
     @Test func onlyPaddocksKitsPlaywrightAndMiseAreDefaults() {
-        #expect(Set(AppConfig.defaultKits.keys) == ["browser", "playwright", "status", "voice", "mise", "node"])
+        #expect(Set(AppConfig.defaultKits.keys) == ["base", "browser", "browser-mcp", "playwright", "status", "voice", "mise", "node"])
     }
 
     @Test func unknownKitKeysAreReported() throws {
@@ -89,8 +93,8 @@ struct KitsTests {
 
     @Test func paddocksOwnKitsArePreselected() {
         let app = AppConfig()
-        #expect(KitSelection.preselected(agent: .openCode, app: app) == ["node", "status"])
-        #expect(KitSelection.preselected(agent: .claudeCode, app: app) == ["node", "status"])
+        #expect(KitSelection.preselected(agent: .openCode, app: app) == ["base", "node", "status"])
+        #expect(KitSelection.preselected(agent: .claudeCode, app: app) == ["base", "node", "status"])
     }
 
     @Test func theDraftFollowsTheAgentAndTheNeeds() throws {
@@ -98,23 +102,27 @@ struct KitsTests {
         var draft = ProjectDraft(folder: "/src/app", name: "paddock-app", agent: "opencode", provider: "agent-default",
                                  kits: ["task"])
         draft.agentChanged(app: app)
+        #expect(draft.kits == ["base", "node", "status", "task"])
+        // the base kit is optional: unselecting it unselects the browser kit, which needs it
+        draft.setKit("base", selected: false, app: app)
         #expect(draft.kits == ["node", "status", "task"])
         draft.setKit("browser", selected: true, app: app)
-        #expect(draft.kits == ["browser", "node", "playwright", "status", "task"])
-        // unselecting a kit unselects what builds on it
+        #expect(draft.kits == ["base", "browser", "node", "playwright", "status", "task"])
+        // unselecting a kit unselects what builds on it (the base kit stays: every sandbox has it)
         draft.setKit("playwright", selected: false, app: app)
-        #expect(draft.kits == ["node", "status", "task"])
+        #expect(draft.kits == ["base", "node", "status", "task"])
         draft.agent = "claude"
         draft.agentChanged(app: app)
-        #expect(draft.kits == ["node", "status", "task"])
+        #expect(draft.kits == ["base", "node", "status", "task"])
     }
 
     @Test func kitsComeAfterWhatTheyNeedAndTheGatewayNeedsNone() throws {
         let app = try load("kits:\n  vale:\n").config
-        let kits = try KitSelection.resolve(["vale", "browser", "playwright", "node"], agent: .claudeCode, usesGateway: true, app: app,
+        let kits = try KitSelection.resolve(["vale", "browser", "playwright", "node", "base"], agent: .claudeCode, usesGateway: true, app: app,
                                             paths: paths, projectFolders: [])
-        #expect(kits.map(\.name) == ["node", "playwright", "browser", "vale"])
-        #expect(kits[2].argument == "/Users/op/.config/paddock/kits/paddock-browser" && kits[2].builtin == .browser)
+        #expect(kits.map(\.name) == ["node", "base", "playwright", "browser", "vale"])
+        #expect(kits[3].argument == "/Users/op/.config/paddock/kits/paddock-browser" && kits[3].builtin == .browser)
+        #expect(kits[1].argument == "/Users/op/.config/paddock/kits/paddock-base" && kits[1].builtin == .base)
         #expect(kits[0].argument == "/Users/op/.config/paddock/kits/paddock-node")
         // no gateway kit for OpenCode, or without a local model
         #expect(try KitSelection.resolve(["status", "node"], agent: .openCode, usesGateway: true, app: app, paths: paths, projectFolders: [])
@@ -131,7 +139,7 @@ struct KitsTests {
         #expect(throws: KitError.notForAgent(kit: "oc", agent: "claude")) {
             try KitSelection.ordered(["oc"], agent: .claudeCode, app: openCodeOnly, projectFolders: [])
         }
-        #expect(throws: KitError.missingNeed(kit: "browser", needs: "playwright")) {
+        #expect(throws: KitError.missingNeed(kit: "browser", needs: "base")) {
             try KitSelection.ordered(["browser"], agent: .claudeCode, app: app, projectFolders: [])
         }
     }
@@ -212,13 +220,34 @@ struct KitsTests {
 
     @Test func projectFilesFromBeforeKitsGetWhatPaddockAlwaysAdded() throws {
         let app = AppConfig()
-        // they got Paddock's opencode kit, which is gone (PAD-73.2), as are setup's choosers
+        // they got Paddock's opencode kit, which is gone (PAD-73.2), as are setup's choosers; every
+        // project gets the base kit and what it needs (PAD-147)
         let old = Project(name: "paddock-app", folder: "/src/app", agent: "opencode")
-        #expect(old.chosenKits(app).isEmpty)
-        #expect(Project(name: "paddock-app", folder: "/src/app", agent: "claude", kits: ["setup", "status"]).chosenKits(app) == ["status", "node"])
-        #expect(Project(name: "paddock-app", folder: "/src/app", agent: "claude").chosenKits(app).isEmpty)
+        #expect(old.chosenKits(app) == ["base", "node"])
+        #expect(Project(name: "paddock-app", folder: "/src/app", agent: "claude", kits: ["setup", "status"]).chosenKits(app) == ["status", "base", "node"])
+        #expect(Project(name: "paddock-app", folder: "/src/app", agent: "claude").chosenKits(app) == ["base", "node"])
         let chosen = Project(name: "paddock-app", folder: "/src/app", agent: "opencode", kits: [])
-        #expect(chosen.chosenKits(app).isEmpty)
+        #expect(chosen.chosenKits(app) == ["base", "node"])
+        // a project that chose the browser kit before the split gets the base kit too
+        #expect(Project(name: "paddock-app", folder: "/src/app", agent: "claude", kits: ["browser", "playwright", "node"]).chosenKits(app)
+            == ["browser", "playwright", "node", "base"])
+        // a choice made since (kitChoice recorded) is taken as it is: the base kit is optional
+        var since = Project(name: "paddock-app", folder: "/src/app", agent: "claude", kits: ["status"])
+        since.kitChoice = KitSelection.choiceRevision
+        #expect(since.chosenKits(app) == ["status", "node"])
+        since.kits = ["base", "status"]
+        #expect(since.chosenKits(app) == ["base", "status", "node"])
+        // ...and the browser kit still brings it
+        since.kits = ["browser"]
+        #expect(Set(since.chosenKits(app)) == ["browser", "base", "playwright", "node"])
+        // kitChoice is kept in the project file; files from before it have none
+        let decoded = try ProjectDirectory.decode(file: "paddock-app.json", data: try ProjectDirectory.encode(since))
+        #expect(decoded.kitChoice == KitSelection.choiceRevision)
+        // paddock.yaml can still turn it off, and then nothing adds it
+        var off = app
+        off.kits["base"] = nil
+        off.kits["browser"]?.needs = ["playwright", "node"]
+        #expect(Project(name: "paddock-app", folder: "/src/app", agent: "claude").chosenKits(off).isEmpty)
 
         var saved = Project(name: "paddock-app", folder: "/src/app", kits: ["playwright"], sandboxKits: ["docker.io/sbx/playwright-kit@sha256:abc"])
         saved = try ProjectDirectory.decode(file: "paddock-app.json", data: try ProjectDirectory.encode(saved))
@@ -264,19 +293,23 @@ struct KitsTests {
         #expect(!spec.contains("\t"))
     }
 
-    /// Playwright MCP in the sandbox (PAD-141, PAD-142): installed next to playwright-cli, one server
-    /// per sandbox started on every start, and Claude Code registered with it over HTTP.
-    @Test func theBrowserKitRunsOneSharedPlaywrightMCP() throws {
-        let spec = BrowserKit.spec
-        #expect(spec.contains("\"\(BrowserKit.package)@\(BrowserKit.version)\" \"\(BrowserKit.mcpPackage)@\(BrowserKit.mcpVersion)\""))
+    /// Playwright MCP in the sandbox (PAD-141, PAD-142), its own kit on the browser kit since PAD-147:
+    /// installed there, one server per sandbox started on every start, and Claude Code registered with
+    /// it over HTTP. The browser kit no longer installs or starts it.
+    @Test func theBrowserMCPKitRunsOneSharedPlaywrightMCP() throws {
+        let spec = BrowserMCPKit.spec
+        #expect(spec.contains("\"\(BrowserKit.mcpPackage)@\(BrowserKit.mcpVersion)\""))
+        #expect(BrowserKit.spec.contains("\"\(BrowserKit.package)@\(BrowserKit.version)\"\n"))
+        #expect(!BrowserKit.spec.contains(BrowserKit.mcpPackage) && !BrowserKit.spec.contains(BrowserKit.mcpLauncherPath))
+        #expect(!BrowserKit.spec.contains("mcp__"))
         // the pair built on the same Playwright, so one Chromium build serves both
         #expect(BrowserKit.version == "0.1.22" && BrowserKit.mcpVersion == "0.0.83")
         let script = BrowserKit.registerMCPScript
         #expect(script.contains("command -v claude >/dev/null || exit 0"))
         #expect(script.hasSuffix("claude mcp add --scope user --transport http playwright http://localhost:38324/mcp"))
-        // localhost in the sandbox only: sbx publishes only the dashboard's port
-        #expect(spec.components(separatedBy: "com.docker.sandbox/port@1").count == 2)
-        #expect(!spec.contains("container: \(BrowserKit.mcpPort)"))
+        // localhost in the sandbox only: sbx publishes only the browser kit's dashboard port
+        #expect(BrowserKit.spec.components(separatedBy: "com.docker.sandbox/port@1").count == 2)
+        #expect(!spec.contains("com.docker.sandbox/port@1"))
         // the YAML holds both steps as written, run as the agent's user, the server first
         guard case .object(let root) = try YAMLCoding.value(fromYAML: Data(spec.utf8)),
               case .array(let capabilities)? = root["capabilities"] else {
@@ -299,6 +332,7 @@ struct KitsTests {
         #expect(start != nil && register != nil && (start ?? 0) < (register ?? 0))
         #expect(spec.contains("mcp__\(BrowserKit.mcpServerName)__*") && spec.contains("paddock-browser-mcp restart"))
         #expect(spec.contains(Data(BrowserKit.mcpLauncher.utf8).base64EncodedString()))
+        #expect(spec.contains("provides: [paddock-browser-mcp]") && spec.contains("allow: [registry.npmjs.org:443]"))
     }
 
     /// The launcher's server: a kept profile, the extensions folder, localhost, full Chromium, and none

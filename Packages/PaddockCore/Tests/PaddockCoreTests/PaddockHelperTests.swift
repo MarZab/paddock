@@ -73,8 +73,25 @@ struct PaddockHelperTests {
     }
 
     @Test func theGuideAndTheHelpShowAValidID() {
-        #expect(!BrowserKit.spec.contains("tab-k3f9") && BrowserKit.spec.contains("tab-a3f9"))
+        #expect(!BaseKit.spec.contains("tab-k3f9") && BaseKit.spec.contains("tab-a3f9") && !BrowserKit.spec.contains("tab-k3f9"))
         #expect(!BrowserShow.script.contains("tab-k3f9"))
         #expect(BrowserShow.isShowID("tab-a3f9") && !BrowserShow.isShowID("tab-k3f9"))
+    }
+
+    /// PAD-147: paddock is the base kit's; live pages need the browser kit's playwright-cli, and
+    /// say so without it. Native tabs work without it.
+    @Test func livePagesNeedTheBrowserKitAndFilesDoNot() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "# Plan\n".write(to: work.appendingPathComponent("plan.md"), atomically: true, encoding: .utf8)
+        for page in [["open", "http://localhost:3000"], ["open", "plan.md"], ["http://localhost:3000"]] {
+            let refused = try paddock(page)
+            #expect(refused.status != 0 && refused.err.contains("needs Paddock's browser kit"), "\(page): \(refused.err)")
+        }
+        let native = try paddock(["open", "plan.md", "--native"])
+        #expect(native.status == 0, "\(native.err)")
+        let id = try tabID(native)
+        #expect(try paddock(["goto", id, "plan.md"]).status == 0)
+        let records = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("tabs/shows").path)
+        #expect(records == ["\(id).json"])
     }
 }

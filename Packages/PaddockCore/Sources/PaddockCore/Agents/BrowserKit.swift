@@ -6,7 +6,9 @@ import Foundation
 /// `~/.agents/skills` (OpenCode). Any agent with a shell can drive it, so it is not tied to one.
 ///
 /// Every page the agent opens gets a browser tab in Paddock, with its activity (`BrowserActivity`:
-/// a wrapper under playwright-cli's name and a watcher Paddock follows). Those tabs show
+/// a wrapper under playwright-cli's name, and the watcher Paddock follows, which the base kit
+/// installs; `BaseKit`). `paddock`, the tab helper, is the base kit's too; Playwright MCP is its own
+/// kit on this one (`BrowserMCPKit`; PAD-147). Those tabs show
 /// playwright-cli's dashboard (`playwright-cli show`), which the kit starts on every sandbox start
 /// and sbx publishes on the Mac's loopback (a random host port), each tab selecting its own page;
 /// the operator can take over mouse and keyboard there (backlog doc Browser). Pages render in the
@@ -163,10 +165,6 @@ public enum BrowserKit {
 
     public static var spec: String {
         let wrapper = Data(BrowserActivity.wrapper.utf8).base64EncodedString()
-        let watcher = Data(BrowserActivity.watcher.utf8).base64EncodedString()
-        let show = Data(BrowserShow.script.utf8).base64EncodedString()
-        let reference = Data(openUIReference.utf8).base64EncodedString()
-        let launcher = Data(mcpLauncher.utf8).base64EncodedString()
         return #"""
         # syntax=docker/sandbox-kit:3
         # Written by Paddock. Changes are overwritten when Paddock creates a sandbox.
@@ -174,7 +172,7 @@ public enum BrowserKit {
         kind: mixin
         version: "\#(KitFile.version)"
         displayName: Browser (Paddock)
-        description: "Before you show the operator anything or ask them something, read this: paddock puts pages, files, and questions in tabs next to your terminal (and gets their answers back); playwright-cli is your browser."
+        description: "Read this before you open a page for the operator or test one: playwright-cli is your browser, and paddock open shows its pages in tabs next to your terminal."
         provides: [paddock-browser]
 
         args:
@@ -216,12 +214,11 @@ public enum BrowserKit {
                       npm config set proxy "$HTTP_PROXY"
                       npm config set https-proxy "$HTTP_PROXY"
                     fi
-                    npm install --global --no-fund --no-audit --loglevel=error "\#(package)@\#(version)" "\#(mcpPackage)@\#(mcpVersion)"
+                    npm install --global --no-fund --no-audit --loglevel=error "\#(package)@\#(version)"
                     # The real playwright-cli, for the wrapper and the watcher.
                     real="$(readlink -f "$(command -v playwright-cli)")"
                     mkdir -p "$(dirname \#(BrowserActivity.realCLI))"
                     ln -sf "$real" \#(BrowserActivity.realCLI)
-                    ln -sf "$(readlink -f "$(command -v playwright-mcp)")" \#(realMCP)
                     export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/opt/ms-playwright}"
                     mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
                     \#(BrowserActivity.realCLI) install-browser chromium
@@ -235,18 +232,10 @@ public enum BrowserKit {
                       printf '%s' '\#(wrapper)' | base64 -d > "$bin"
                       chmod 755 "$bin"
                     done
-                    printf '%s' '\#(watcher)' | base64 -d > /usr/local/bin/paddock-browser-watch
-                    chmod 755 /usr/local/bin/paddock-browser-watch
-                    printf '%s' '\#(show)' | base64 -d > /usr/local/bin/paddock
-                    chmod 755 /usr/local/bin/paddock
-                    printf '%s' '\#(launcher)' | base64 -d > \#(mcpLauncherPath)
-                    chmod 755 \#(mcpLauncherPath)
-                    mkdir -p "$(dirname \#(openUIReferencePath))"
-                    printf '%s' '\#(reference)' | base64 -d > \#(openUIReferencePath)
                   user: "0"
                   # A hook sees only the environment it names: npm's global bin is on the image's PATH.
                   env: [PATH, HOME, HTTP_PROXY, HTTPS_PROXY, NO_PROXY]
-                  description: Install playwright-cli \#(version) (npm \#(package)), Playwright MCP \#(mcpVersion), their Chromium build, certutil, and Paddock's wrapper, watcher, paddock, and MCP launcher
+                  description: Install playwright-cli \#(version) (npm \#(package)), its Chromium build, certutil, and Paddock's wrapper
                 - command: |
                     set -eu
                     cd /home/agent
@@ -273,16 +262,6 @@ public enum BrowserKit {
                       certutil -d "sql:$db" -A -t "C,," -n sbx-proxy -i "$ca"; fi
                   user: "1000"
                   description: Trust sbx's proxy CA in Chromium's certificate store
-                # The sandbox's one Playwright MCP server (localhost only), and Claude Code's entry for it.
-                - command: [\#(mcpLauncherPath), start]
-                  user: "1000"
-                  description: Start Playwright MCP on localhost:\#(mcpPort) (kept profile, extensions)
-                - command:
-                    - sh
-                    - -c
-                    - '\#(registerMCPScript)'
-                  user: "1000"
-                  description: Register Playwright MCP with Claude Code
                 # The dashboard, on every start; 0.0.0.0 so sbx's published port reaches it.
                 - command:
                     - sh
@@ -294,94 +273,34 @@ public enum BrowserKit {
           - type: com.docker.sandbox/agent-context@1
             config:
               content: |
-                ## Showing the operator things, asking them, and using a browser (Paddock)
+                ## Your browser, and live pages for the operator (Paddock)
 
-                The operator works in Paddock: your terminal, and next to it tabs you can fill. Use them
-                instead of pasting paths or URLs into the chat or asking questions in the terminal.
+                Paddock's base kit has `paddock` (tabs, `wait`, `feedback`); this kit adds a browser.
 
-                ### Reach for it when
-                | Situation | Run |
-                |---|---|
-                | You built or changed something they should see | `paddock open http://localhost:3000 --title "Checkout"` |
-                | A document, plan, or report they should read | `paddock open plan.md --native` (on their screen, sharp text) |
-                | Playwright's test report | `paddock open playwright-report/index.html --native` |
-                | You need a decision, an approval, or values | `paddock ui question.oui --title "Deploy target"` |
-                | You want them to point at something on a page | `paddock annotate tab-a3f9` |
-                | You need to test or poke at a page yourself | `playwright-cli -s=checkout open http://localhost:3000` |
-
-                ### The loop
-                1. Show it: `paddock open ...` or `paddock ui ...` prints the tab's id, such as `tab-a3f9`.
-                   Keep it; every other command needs it.
-                2. Tell the operator in one line what to look at (new tabs never take their focus).
-                3. Wait for them: `paddock wait tab-a3f9` prints what they did: opened or closed it, an
-                   answer from a ui tab (one JSON line with the form's values), or a saved screenshot.
-                   Run it again for the next thing.
-                4. Act on it. `paddock feedback tab-a3f9` prints their screenshots and annotations with
-                   comments and file paths; `paddock status tab-a3f9` the whole history.
-
-                ### paddock, in detail
-                - `open URL-or-FILE [--title T] [--note N]`: a live page (a URL, or a file opened as
-                  `file:`, no server needed). `--native` opens a file on their screen instead, once they
-                  click it: for documents to read or copy from.
-                - `ui FILE` (or `ui -` with the document on stdin): an interactive tab from an OpenUI Lang
-                  document: forms, choices, tables, charts, buttons. Read
-                  \#(openUIReferencePath) before your first one. A small one:
-                  ```
-                  root = Card([header, form])
-                  header = CardHeader("Deploy", "Choose how to roll out")
-                  form = Form("deploy", buttons, [env])
-                  env = FormControl("Environment", Select("env", [SelectItem("staging", "Staging"), SelectItem("prod", "Production")], "Select...", {required: true}))
-                  buttons = Buttons([Button("Deploy", @ToAssistant("Deploy", {step: "deploy"}), "primary")])
-                  ```
-                  Its answer: `{"type":"continue_conversation","message":"Deploy","context":{"step":"deploy"},"form":"deploy","values":{"env":"staging"}}`.
-                  If part of it cannot be drawn, `paddock wait` says what (with the component's
-                  signature); fix the file and run `paddock goto tab-a3f9 question.oui`. The tab is
-                  offline (no images or internet links). Never ask for passwords or keys.
-                - `annotate ID`: the operator marks up a live page; it waits, then prints their comment
-                  and the annotated screenshot's path. If it fails, run `paddock feedback ID`: they may
-                  have saved their markup anyway.
-                - `reload ID` (after you changed it), `goto ID URL-or-FILE`, `back ID`, `note ID TEXT`,
-                  `close ID`. Any command with the id first prints what is new, as `Paddock:` lines.
-                - Before telling the operator you cannot see their review, run `paddock feedback ID`. If
-                  a comment is unclear (one word, a box over several things), ask what they mean.
-
-                ### playwright-cli, your browser
                 - `playwright-cli -s=checkout open URL` starts a new session and prints its name, such as
                   `checkout-7f3a`; use it in every command after: `snapshot`, `click e3`, `fill e5 "text"`,
-                  `goto URL`, `screenshot`, `close`. The operator sees your sessions live (and may take
-                  over); `Paddock:` lines in the output say what they did. `playwright-cli --help` has more.
-                - `playwright-cli -s=checkout-7f3a show --annotate` asks them to mark up your own session's
-                  page, like `paddock annotate`.
-                - In Claude Code a browser also comes as MCP tools (`mcp__\#(mcpServerName)__*`). It is
-                  one browser for every agent in this sandbox, and it keeps its profile (logins, cookies)
-                  across sandbox restarts: open a tab of your own, leave other tabs alone, and never type
-                  passwords or keys into it (ask the operator to log in). The operator sees its pages
-                  live in the same Playwright tab; tell them the page you mean.
-                - Chromium extensions for it: put each unpacked extension (a folder with its
-                  `manifest.json`) in `\#(mcpExtensions)`, then run `paddock-browser-mcp restart`
-                  (it closes the browser: say so first). `paddock-browser-mcp status` lists them.
+                  `goto URL`, `screenshot`, `close`. The operator sees your sessions live in the
+                  Playwright tab (and may take over); `Paddock:` lines in the output say what they did.
+                  `playwright-cli --help` has more.
+                - `paddock open URL-or-FILE [--title T] [--note N]`: a live page for the operator in a
+                  tab of its own (a URL, or a file opened as `file:`, no server needed). `reload ID`
+                  after you changed it, `goto ID URL-or-FILE`, `back ID`.
+                - `paddock annotate ID`: the operator marks up a live page; it waits, then prints their
+                  comment and the annotated screenshot's path. If it fails, run `paddock feedback ID`:
+                  they may have saved their markup anyway. `playwright-cli -s=checkout-7f3a show --annotate`
+                  asks the same for your own session's page.
 
                 ### Good to know
                 - Pages on localhost work (the browser runs next to you); other sites may be blocked by
                   the network rules (a proxy error): ask the operator.
-                - `npx playwright test` is headless; show its report afterwards. If the project pins its
-                  own `@playwright/test`, run `npx playwright install chromium` in it; do not change its
+                - `npx playwright test` is headless; show its report afterwards with
+                  `paddock open playwright-report/index.html --native`. If the project pins its own
+                  `@playwright/test`, run `npx playwright install chromium` in it; do not change its
                   Playwright version.
-                - Ports \#(dashboardPort) and \#(mcpPort) are taken. Other agents may share this sandbox: use only the
-                  session names and tab ids you were given.
-                - If Paddock gets in your way or lacks something you needed, tell the operator what you
-                  tried and what would have helped. They are building it and want to know.
+                - Port \#(dashboardPort) is taken. Other agents may share this sandbox: use only the
+                  session names you were given.
 
         """#
-    }
-
-    /// The OpenUI Lang reference the kit installs for agents (`tools/tasks/vendor/openui.sh`).
-    public static let openUIReferencePath = "/usr/local/share/paddock/openui.md"
-
-    public static var openUIReference: String {
-        guard let url = Bundle.module.url(forResource: "openui-reference", withExtension: "md"),
-              let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
-        return text
     }
 
     /// The dashboard on the Mac: the loopback port sbx publishes for `dashboardPort`. Nil when sbx

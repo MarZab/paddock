@@ -4,6 +4,8 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-147 Paddock's small base kit (tabs, wait, the sandbox guide) is a kit of its own, on by default; the browser kit is only the browser, and Playwright MCP is its own kit.
+
 ## 261122
 
 - PAD-145 Projects can be put in groups in Info, and each group folds from its title in the sidebar.

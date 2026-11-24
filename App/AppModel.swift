@@ -735,6 +735,7 @@ final class AppModel {
         guard withSaved(project, { self.setKits(kits, for: $0) }) else { return }
         guard var updated = projects.project(named: project.name) else { return }
         updated.kits = kits.sorted()
+        updated.kitChoice = KitSelection.choiceRevision
         do {
             try projectDirectory.save(updated)
             try projects.update(updated)
@@ -1391,14 +1392,15 @@ final class AppModel {
     /// One `paddock-browser-watch` per running project with the browser kit (backlog doc Browser).
     private var browserWatchers: [String: Task<Void, Never>] = [:]
 
-    /// Starts or stops the watchers to match: a project with the browser kit whose sandbox runs.
-    /// A stopped sandbox's browser tabs go with its sessions.
+    /// Starts or stops the watchers to match: a running project with the base kit (PAD-147) or, from
+    /// before it, the browser kit. A stopped sandbox's browser tabs go with its sessions.
     func syncBrowserWatchers() {
         syncAgentWatchers()
         voice.sync()
         guard let sbxPath else { return }
         var wanted = Set<String>()
-        for project in projects.projects where state(of: project) == .running && BrowserKit.isChosen(by: project, app: appConfig) {
+        for project in projects.projects where state(of: project) == .running
+            && (BaseKit.isChosen(by: project, app: appConfig) || BrowserKit.isChosen(by: project, app: appConfig)) {
             wanted.insert(project.name)
         }
         for (name, task) in browserWatchers where !wanted.contains(name) {
@@ -1411,9 +1413,10 @@ final class AppModel {
         }
     }
 
-    /// Follows the sandbox's `paddock-browser-watch`: the agent's pages and its activity. The
-    /// lines are untrusted (`BrowserSessions`). Started again after it ends (a sandbox from before
-    /// the kit has no watcher), less often each time.
+    /// Follows the sandbox's `paddock-browser-watch`: the tabs the agent shows, and its browser's
+    /// pages and activity. The lines are untrusted (`BrowserSessions`). Started again after it ends
+    /// (a sandbox from before the base kit and without the browser kit has no watcher), less often
+    /// each time.
     private func watchBrowser(_ name: String, sbx: URL) -> Task<Void, Never> {
         Task { [weak self] in
             var delay: Duration = .seconds(2)
@@ -1437,9 +1440,9 @@ final class AppModel {
                 if !heard {
                     failures += 1
                     if failures == 3, !Task.isCancelled {
-                        self?.fail("Paddock cannot follow the browser in \(name): "
+                        self?.fail("Paddock cannot follow the agent's tabs in \(name): "
                                    + "paddock-browser-watch did not run (\(problem)). "
-                                   + "Recreate the sandbox to get the current browser kit.", in: name)
+                                   + "Recreate the sandbox to get Paddock's base kit.", in: name)
                     }
                 }
                 try? await Task.sleep(for: delay)

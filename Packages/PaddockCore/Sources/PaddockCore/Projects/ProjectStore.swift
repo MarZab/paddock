@@ -67,6 +67,9 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
     /// The `[kits]` sections the operator chose (backlog doc Kits); nil in files from before kits,
     /// which get what Paddock always added (`KitSelection.legacy`).
     public var kits: [String]?
+    /// The revision of the kit choice `kits` was made under (`KitSelection.choiceRevision`); nil for
+    /// a choice from before PAD-147, which also gets `KitSelection.addedToOlderChoices`.
+    public var kitChoice: Int?
     /// The kits the sandbox was created with (`ResolvedKit.recorded`: the `--kit` values, with a
     /// hash of Paddock's own kits' specs). sbx does not report them, so this is how a changed
     /// choice, or a newer version of Paddock's kit, shows as a difference; nil when unknown.
@@ -116,7 +119,7 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, name, folder, agent, provider, cloneMode, gatewayPort, approvedEnvironment, declinedHosts, sandboxEnvironment
         case sandboxEnvironmentRecord
-        case kits, sandboxKits, ignoredSuggestions
+        case kits, kitChoice, sandboxKits, ignoredSuggestions
         case terminalTheme, extraFolders, keepsClaudeSessions, sandboxClaudeSessions, group
     }
 
@@ -137,6 +140,7 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
         sandboxEnvironment = try c.decodeIfPresent(String.self, forKey: .sandboxEnvironment)
         sandboxEnvironmentRecord = try c.decodeIfPresent(EnvironmentRecord.self, forKey: .sandboxEnvironmentRecord)
         kits = try c.decodeIfPresent([String].self, forKey: .kits)
+        kitChoice = try c.decodeIfPresent(Int.self, forKey: .kitChoice)
         sandboxKits = try c.decodeIfPresent([String].self, forKey: .sandboxKits)
         ignoredSuggestions = try c.decodeIfPresent([String].self, forKey: .ignoredSuggestions) ?? []
         terminalTheme = try c.decodeIfPresent(String.self, forKey: .terminalTheme)
@@ -161,7 +165,8 @@ extension Project {
     public func chosenKits(_ app: AppConfig) -> [String] {
         let chosen = app.agents[agent].map { kits ?? KitSelection.legacy(agent: $0, app: app) } ?? kits ?? []
         let kept = chosen.filter { !KitSelection.removed.contains($0) }
-        let added = KitSelection.withNeeds(kept, app: app).subtracting(kept).sorted()
+        let older = (kitChoice ?? 0) < KitSelection.choiceRevision ? KitSelection.addedToOlderChoices.filter { app.kits[$0] != nil } : []
+        let added = KitSelection.withNeeds(kept + older, app: app).subtracting(kept).sorted()
         return kept + added
     }
 

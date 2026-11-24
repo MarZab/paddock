@@ -164,6 +164,7 @@ public enum NewProject {
         var project = Project(name: draft.name, folder: folder, agent: draft.agent, provider: draft.provider,
                               cloneMode: draft.cloneMode, gatewayPort: gatewayPort, kits: draft.kits.sorted(),
                               keepsClaudeSessions: draft.keepsClaudeSessions && app.agents[draft.agent] == .claudeCode)
+        project.kitChoice = KitSelection.choiceRevision
         // Each extra folder is checked like the project folder, and against the ones before it.
         for extra in draft.extraFolders {
             do throws(ExtraFolderProblem) {
