@@ -29,6 +29,7 @@ functions; id `https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json`)
 | `renderer/actions.jsonl` | captured from A2UI's Swift core (`mise run capture:a2ui`): every Button of every example pressed once, and the login example after typing |
 | `renderer/checks.jsonl` | captured the same way: the presses of a Button whose `@checks` failed, which send a `VALIDATION_FAILED` error with the button's id as `path` instead of the action |
 | `renderer/errors.jsonl` | captured the same way: the errors the core reports for an unknown catalog, an unknown component, a missing surface, a wrong property type, and an unknown version |
+| `renderer/library-calls.jsonl` | captured the same way: what the core answers to each line of `agent/calls.jsonl` (`rendererFunctionResponse`), and the `callAgentFunction` it sends when a Text calls a function the renderer does not have |
 | `renderer/calls.jsonl` | the valid cases of upstream `function_response.json` and `call_agent_function_message.json`, and the `error` with a `functionCallId` from `renderer_messages.json` (all in `specification/v1_0/test/cases/`) |
 
 Seen in the capture:
@@ -37,6 +38,9 @@ Seen in the capture:
 - A `Column` naming a child that never arrives reports nothing: the core waits for it.
 - A `Button` whose action is a function call (`openUrl`) sends no message; only `event` actions do.
 - `timestamp` is the core's clock when the button was pressed (ISO 8601, seconds).
+- The agent may not call `openUrl` (`rendererOnly`): the core answers `INVALID_FUNCTION_CALL`.
+- A function the catalog lacks becomes a `callAgentFunction` to the agent, with a fresh UUID as
+  `functionCallId`, and the surface waits for an `agentFunctionResponse`.
 
 On Linux the capture skips the examples that use `pluralize` (`functions`, `product-card`,
 `recipe-card`); a capture on the Mac includes them.

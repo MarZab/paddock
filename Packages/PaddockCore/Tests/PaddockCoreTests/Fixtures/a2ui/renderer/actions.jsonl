@@ -1,32 +1,34 @@
-{"action":{"context":{"email":"ann@example.com"},"name":"login","sourceComponentId":"login_btn","surfaceId":"gallery-login-form","timestamp":"2026-11-24T20:36:44Z"},"version":"1.0"}
-{"action":{"context":{"pass":null,"user":null},"name":"login_submitted","sourceComponentId":"submit_button","surfaceId":"gallery-simple-login-form","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{"restaurantName":"Ocean's Bounty"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{"restaurantName":"Pizzeria Roma"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{"restaurantName":"Spice Route"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{"restaurantName":"The Golden Fork"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"accept","sourceComponentId":"accept_btn","surfaceId":"gallery-event-detail","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"accept","sourceComponentId":"yes_btn","surfaceId":"gallery-notification-permission","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"add","sourceComponentId":"add_btn","surfaceId":"gallery-calendar-day","timestamp":"2026-11-24T20:36:44Z"},"version":"1.0"}
-{"action":{"context":{},"name":"add_to_cart","sourceComponentId":"add_btn","surfaceId":"gallery-coffee-order","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"button_clicked","sourceComponentId":"action_button","surfaceId":"gallery-interactive-button","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"call","sourceComponentId":"call_btn","surfaceId":"gallery-contact-card","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"cancel","sourceComponentId":"cancel_btn","surfaceId":"gallery-software-purchase","timestamp":"2026-11-24T20:36:46Z"},"version":"1.0"}
-{"action":{"context":{},"name":"confirm","sourceComponentId":"confirm_btn","surfaceId":"gallery-software-purchase","timestamp":"2026-11-24T20:36:46Z"},"version":"1.0"}
-{"action":{"context":{},"name":"decline","sourceComponentId":"decline_btn","surfaceId":"gallery-event-detail","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"decline","sourceComponentId":"no_btn","surfaceId":"gallery-notification-permission","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"discard","sourceComponentId":"discard_btn","surfaceId":"gallery-calendar-day","timestamp":"2026-11-24T20:36:44Z"},"version":"1.0"}
-{"action":{"context":{},"name":"discard","sourceComponentId":"discard_btn","surfaceId":"gallery-email-compose","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"follow","sourceComponentId":"follow_btn","surfaceId":"gallery-user-profile","timestamp":"2026-11-24T20:36:46Z"},"version":"1.0"}
-{"action":{"context":{},"name":"message","sourceComponentId":"message_btn","surfaceId":"gallery-contact-card","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"next","sourceComponentId":"next_btn","surfaceId":"gallery-music-player","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"openModalEvent","sourceComponentId":"open_btn","surfaceId":"modal-sample-surface","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"open_trailer","sourceComponentId":"watch_trailer_btn","surfaceId":"gallery-movie-card","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"pay_bill","sourceComponentId":"pay_btn","surfaceId":"gallery-account-balance","timestamp":"2026-11-24T20:36:44Z"},"version":"1.0"}
-{"action":{"context":{},"name":"playPause","sourceComponentId":"play_btn","surfaceId":"gallery-music-player","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"previous","sourceComponentId":"prev_btn","surfaceId":"gallery-music-player","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"purchase","sourceComponentId":"purchase_btn","surfaceId":"gallery-coffee-order","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"send","sourceComponentId":"send_btn","surfaceId":"gallery-email-compose","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"signup","sourceComponentId":"signup_link","surfaceId":"gallery-login-form","timestamp":"2026-11-24T20:36:44Z"},"version":"1.0"}
-{"action":{"context":{},"name":"signup","sourceComponentId":"signup_link","surfaceId":"gallery-login-form","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
-{"action":{"context":{},"name":"transfer","sourceComponentId":"transfer_btn","surfaceId":"gallery-account-balance","timestamp":"2026-11-24T20:36:44Z"},"version":"1.0"}
-{"action":{"context":{},"name":"view_details","sourceComponentId":"view_btn","surfaceId":"gallery-purchase-complete","timestamp":"2026-11-24T20:36:45Z"},"version":"1.0"}
+{"action":{"context":{"email":"ann@example.com"},"name":"login","sourceComponentId":"login_btn","surfaceId":"gallery-login-form","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{"pass":null,"user":null},"name":"login_submitted","sourceComponentId":"submit_button","surfaceId":"gallery-simple-login-form","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{"replicas":2,"skipTests":false},"name":"deploy","sourceComponentId":"deploy","surfaceId":"paddock-functions","timestamp":"2026-11-24T21:20:02Z"},"version":"1.0"}
+{"action":{"context":{"restaurantName":"Ocean's Bounty"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{"restaurantName":"Pizzeria Roma"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{"restaurantName":"Spice Route"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{"restaurantName":"The Golden Fork"},"name":"book_now","sourceComponentId":"rc_button","surfaceId":"gallery-incremental","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"accept","sourceComponentId":"accept_btn","surfaceId":"gallery-event-detail","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"accept","sourceComponentId":"yes_btn","surfaceId":"gallery-notification-permission","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"add","sourceComponentId":"add_btn","surfaceId":"gallery-calendar-day","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"addToCart","sourceComponentId":"add_cart_btn","surfaceId":"gallery-product-card","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"add_to_cart","sourceComponentId":"add_btn","surfaceId":"gallery-coffee-order","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"button_clicked","sourceComponentId":"action_button","surfaceId":"gallery-interactive-button","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"call","sourceComponentId":"call_btn","surfaceId":"gallery-contact-card","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"cancel","sourceComponentId":"cancel_btn","surfaceId":"gallery-software-purchase","timestamp":"2026-11-24T21:20:02Z"},"version":"1.0"}
+{"action":{"context":{},"name":"confirm","sourceComponentId":"confirm_btn","surfaceId":"gallery-software-purchase","timestamp":"2026-11-24T21:20:02Z"},"version":"1.0"}
+{"action":{"context":{},"name":"decline","sourceComponentId":"decline_btn","surfaceId":"gallery-event-detail","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"decline","sourceComponentId":"no_btn","surfaceId":"gallery-notification-permission","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"discard","sourceComponentId":"discard_btn","surfaceId":"gallery-calendar-day","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"discard","sourceComponentId":"discard_btn","surfaceId":"gallery-email-compose","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"follow","sourceComponentId":"follow_btn","surfaceId":"gallery-user-profile","timestamp":"2026-11-24T21:20:02Z"},"version":"1.0"}
+{"action":{"context":{},"name":"message","sourceComponentId":"message_btn","surfaceId":"gallery-contact-card","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"next","sourceComponentId":"next_btn","surfaceId":"gallery-music-player","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"openModalEvent","sourceComponentId":"open_btn","surfaceId":"modal-sample-surface","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"open_trailer","sourceComponentId":"watch_trailer_btn","surfaceId":"gallery-movie-card","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"pay_bill","sourceComponentId":"pay_btn","surfaceId":"gallery-account-balance","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"playPause","sourceComponentId":"play_btn","surfaceId":"gallery-music-player","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"previous","sourceComponentId":"prev_btn","surfaceId":"gallery-music-player","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"purchase","sourceComponentId":"purchase_btn","surfaceId":"gallery-coffee-order","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"send","sourceComponentId":"send_btn","surfaceId":"gallery-email-compose","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"signup","sourceComponentId":"signup_link","surfaceId":"gallery-login-form","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"signup","sourceComponentId":"signup_link","surfaceId":"gallery-login-form","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}
+{"action":{"context":{},"name":"transfer","sourceComponentId":"transfer_btn","surfaceId":"gallery-account-balance","timestamp":"2026-11-24T21:20:00Z"},"version":"1.0"}
+{"action":{"context":{},"name":"view_details","sourceComponentId":"view_btn","surfaceId":"gallery-purchase-complete","timestamp":"2026-11-24T21:20:01Z"},"version":"1.0"}

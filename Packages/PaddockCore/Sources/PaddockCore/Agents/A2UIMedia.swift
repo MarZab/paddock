@@ -24,6 +24,10 @@ public enum A2UIMedia {
     /// Why a URL shows nothing, for the placeholder the tab draws instead.
     public struct Refusal: Error, Sendable, Equatable {
         public var reason: String
+
+        public init(reason: String) {
+            self.reason = reason
+        }
     }
 
     /// Most bytes one image, video, or audio clip may have: what fits the largest output Paddock

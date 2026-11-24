@@ -115,6 +115,7 @@ struct A2UIPolicyTests {
     @Test func everyRendererFixtureGoesBackUnchanged() throws {
         let lines = try fixtureLines("renderer/actions.jsonl") + fixtureLines("renderer/checks.jsonl")
             + fixtureLines("renderer/errors.jsonl") + fixtureLines("renderer/calls.jsonl")
+            + fixtureLines("renderer/library-calls.jsonl")
         #expect(lines.count > 40)
         for message in lines {
             #expect(A2UIPolicy.lineForAgent(message) == message)

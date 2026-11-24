@@ -1,0 +1,5 @@
+{"rendererFunctionResponse":{"error":{"code":"INVALID_FUNCTION_CALL","message":"Function 'openUrl' cannot be called by agent (allowedCallers is rendererOnly)."},"functionCallId":"unique-call-id-123"},"version":"1.0"}
+{"rendererFunctionResponse":{"error":{"code":"INVALID_FUNCTION_CALL","message":"Function 'openUrl' cannot be called by agent (allowedCallers is rendererOnly)."},"functionCallId":"unique-call-id-123-cat"},"version":"1.0"}
+{"rendererFunctionResponse":{"error":{"code":"INVALID_FUNCTION_CALL","message":"Function 'openUrl' cannot be called by agent (allowedCallers is rendererOnly)."},"functionCallId":"unique-call-id-123-surf"},"version":"1.0"}
+{"rendererFunctionResponse":{"error":{"code":"INVALID_FUNCTION_CALL","message":"Function not found: pingAgent"},"functionCallId":"unique-call-id-123a"},"version":"1.0"}
+{"callAgentFunction":{"callFunction":{"@call":"lookupGreeting","args":{"name":"Ann"},"catalogId":"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json"},"functionCallId":"C284589F-058E-42E9-ADEA-5A88D1A44DBC","surfaceId":"surface_1"},"version":"1.0"}

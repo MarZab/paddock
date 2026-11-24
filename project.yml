@@ -14,6 +14,8 @@ packages:
     path: Packages/PaddockCore
   PaddockShell:
     path: Packages/PaddockShell
+  PaddockA2UI:
+    path: Packages/PaddockA2UI
 targets:
   Paddock:
     type: application
@@ -35,6 +37,8 @@ targets:
         product: PaddockShellCore
       - package: PaddockShell
         product: PaddockShellUI
+      # A2UI tabs (PAD-146), rendered natively with A2UI's Swift library
+      - package: PaddockA2UI
     info:
       path: App/Info.plist
       properties:

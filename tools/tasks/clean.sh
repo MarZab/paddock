@@ -25,6 +25,7 @@ paths=(
   .tmp/capture-projects
   Packages/PaddockCore/.build
   Packages/PaddockShell/.build
+  Packages/PaddockA2UI/.build
   build  # where build output went before .tmp/build
 )
 # In a Linux sandbox, mise run test builds on the sandbox's own disk.

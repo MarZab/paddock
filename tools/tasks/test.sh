@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Run PaddockCore and PaddockShell tests; each run's output is kept in .tmp/test-runs"
+#MISE description="Run PaddockCore and PaddockShell tests (and PaddockA2UI on the Mac); each run's output is kept in .tmp/test-runs"
 # Arguments go to swift test in both packages (mise run test --filter AppVersion).
 # The whole run, live output included, goes to .tmp/test-runs/<time>.log (gitignored), with
 # latest.log pointing at it, so an agent can read a run made on the Mac. The newest 20 are kept.
@@ -66,7 +66,10 @@ run() {
   echo "# $(swift --version 2>&1 | grep -m 1 'Swift version')"
   echo "# mise run test $*"
   status=0
-  for package in PaddockCore PaddockShell; do
+  # PaddockA2UI links A2UI, whose core imports Combine: it builds on the Mac only (PAD-146).
+  packages=(PaddockCore PaddockShell)
+  if [ "$(uname -s)" = Darwin ]; then packages+=(PaddockA2UI); fi
+  for package in "${packages[@]}"; do
     echo
     echo "## $package"
     if [ "$(uname -s)" = Linux ]; then scratch=(--scratch-path "$HOME/.cache/paddock-build/$package"); fi

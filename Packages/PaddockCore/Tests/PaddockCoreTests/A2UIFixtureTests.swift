@@ -126,7 +126,7 @@ struct A2UIFixtureTests {
         let actions = try lines(folder("renderer/actions.jsonl"))
         let checks = try lines(folder("renderer/checks.jsonl"))
         let errors = try lines(folder("renderer/errors.jsonl"))
-        let calls = try lines(folder("renderer/calls.jsonl"))
+        let calls = try lines(folder("renderer/calls.jsonl")) + lines(folder("renderer/library-calls.jsonl"))
         #expect(actions.count >= 30)
         #expect(checks.count >= 2)
         #expect(errors.count == 5)

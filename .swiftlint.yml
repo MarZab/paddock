@@ -5,6 +5,7 @@ included:
 excluded:
   - Packages/PaddockCore/.build
   - Packages/PaddockShell/.build
+  - Packages/PaddockA2UI/.build
   - .tmp
 disabled_rules:
   - trailing_comma
