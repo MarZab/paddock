@@ -1,0 +1,122 @@
+{
+  "name": "Paddock media",
+  "description": "Written for Paddock (PAD-146.1): Image, Video, AudioPlayer with https, sandbox-relative, data: and bound URLs, and an openUrl button.",
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "paddock-media",
+        "catalogId": "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json",
+        "sendDataModel": true
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "paddock-media",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "col"
+          },
+          {
+            "id": "col",
+            "component": "Column",
+            "children": [
+              "title",
+              "img_https",
+              "img_relative",
+              "img_data",
+              "img_bound",
+              "video",
+              "audio_relative",
+              "audio_data",
+              "open_docs"
+            ]
+          },
+          {
+            "id": "title",
+            "component": "Text",
+            "text": "## Media"
+          },
+          {
+            "id": "img_https",
+            "component": "Image",
+            "url": "https://images.example.com/photo.jpg",
+            "description": "Photo from the web",
+            "fit": "cover",
+            "variant": "mediumFeature"
+          },
+          {
+            "id": "img_relative",
+            "component": "Image",
+            "url": "screenshots/home.png",
+            "description": "A screenshot in the sandbox"
+          },
+          {
+            "id": "img_data",
+            "component": "Image",
+            "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+            "description": "An inline image",
+            "variant": "icon"
+          },
+          {
+            "id": "img_bound",
+            "component": "Image",
+            "url": {
+              "@path": "/avatar"
+            },
+            "description": "Bound URL",
+            "variant": "avatar"
+          },
+          {
+            "id": "video",
+            "component": "Video",
+            "url": "recordings/demo.mp4",
+            "posterUrl": "https://images.example.com/poster.jpg"
+          },
+          {
+            "id": "audio_relative",
+            "component": "AudioPlayer",
+            "url": "audio/notes.m4a",
+            "description": "Voice notes"
+          },
+          {
+            "id": "audio_data",
+            "component": "AudioPlayer",
+            "url": "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=",
+            "description": "Inline beep"
+          },
+          {
+            "id": "open_docs",
+            "component": "Button",
+            "child": "open_docs_label",
+            "action": {
+              "functionCall": {
+                "@call": "openUrl",
+                "args": {
+                  "url": "https://docs.example.com/a2ui"
+                }
+              }
+            }
+          },
+          {
+            "id": "open_docs_label",
+            "component": "Text",
+            "text": "Open the docs"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0",
+      "updateDataModel": {
+        "surfaceId": "paddock-media",
+        "value": {
+          "avatar": "https://images.example.com/avatar.png"
+        }
+      }
+    }
+  ]
+}

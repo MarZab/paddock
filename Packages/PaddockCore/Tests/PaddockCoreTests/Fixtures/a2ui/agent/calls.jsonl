@@ -1,0 +1,7 @@
+{"version":"1.0","callRendererFunction":{"functionCallId":"unique-call-id-123","callFunction":{"@call":"openUrl","catalogId":"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json","args":{"url":"https://example.com"}}}}
+{"version":"1.0","callRendererFunction":{"functionCallId":"unique-call-id-123-cat","callFunction":{"@call":"openUrl","catalogId":"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json","args":{"url":"https://example.com"}}}}
+{"version":"1.0","callRendererFunction":{"surfaceId":"surface_1","functionCallId":"unique-call-id-123-surf","callFunction":{"@call":"openUrl","catalogId":"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json","args":{"url":"https://example.com"}}}}
+{"version":"1.0","callRendererFunction":{"functionCallId":"unique-call-id-123a","callFunction":{"@call":"pingAgent","catalogId":"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json"}}}
+{"version":"1.0","deleteSurface":{"surfaceId":"user_profile_card"}}
+{"version":"1.0","agentFunctionResponse":{"functionCallId":"verify_provider_99","value":{"valid":true,"name":"Acme Provider"}}}
+{"version":"1.0","agentFunctionResponse":{"functionCallId":"verify_provider_99","error":{"code":"PROVIDER_NOT_FOUND","message":"Provider ID PRV-102 was not found."}}}

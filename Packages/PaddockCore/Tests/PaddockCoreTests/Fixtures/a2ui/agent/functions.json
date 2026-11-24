@@ -1,0 +1,131 @@
+{
+  "name": "Paddock functions",
+  "description": "Written for Paddock (PAD-146.1): the basic functions the upstream examples do not use (numeric, pluralize, not), in a Slider, Text, CheckBox and a primary Button.",
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "paddock-functions",
+        "catalogId": "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json",
+        "sendDataModel": true
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "paddock-functions",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "col"
+          },
+          {
+            "id": "col",
+            "component": "Column",
+            "children": [
+              "replicas",
+              "replicas_label",
+              "skip_tests",
+              "deploy"
+            ]
+          },
+          {
+            "id": "replicas",
+            "component": "Slider",
+            "label": "Replicas",
+            "value": {
+              "@path": "/replicas"
+            },
+            "min": 0,
+            "max": 10,
+            "@checks": [
+              {
+                "condition": {
+                  "@call": "numeric",
+                  "args": {
+                    "value": {
+                      "@path": "/replicas"
+                    },
+                    "min": 1,
+                    "max": 5
+                  }
+                },
+                "message": "Between 1 and 5 replicas"
+              }
+            ]
+          },
+          {
+            "id": "replicas_label",
+            "component": "Text",
+            "text": {
+              "@call": "pluralize",
+              "args": {
+                "value": {
+                  "@path": "/replicas"
+                },
+                "one": "One replica",
+                "other": "Several replicas"
+              }
+            }
+          },
+          {
+            "id": "skip_tests",
+            "component": "CheckBox",
+            "label": "Skip tests",
+            "value": {
+              "@path": "/skipTests"
+            }
+          },
+          {
+            "id": "deploy",
+            "component": "Button",
+            "child": "deploy_label",
+            "variant": "primary",
+            "@checks": [
+              {
+                "condition": {
+                  "@call": "not",
+                  "args": {
+                    "value": {
+                      "@path": "/skipTests"
+                    }
+                  }
+                },
+                "message": "Run the tests before deploying"
+              }
+            ],
+            "action": {
+              "event": {
+                "name": "deploy",
+                "context": {
+                  "replicas": {
+                    "@path": "/replicas"
+                  },
+                  "skipTests": {
+                    "@path": "/skipTests"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "deploy_label",
+            "component": "Text",
+            "text": "Deploy"
+          }
+        ]
+      }
+    },
+    {
+      "version": "1.0",
+      "updateDataModel": {
+        "surfaceId": "paddock-functions",
+        "value": {
+          "replicas": 2,
+          "skipTests": false
+        }
+      }
+    }
+  ]
+}

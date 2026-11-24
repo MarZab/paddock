@@ -11,6 +11,7 @@ mise file tasks (`[task_config]` in `mise.toml`): run them with `mise run <task>
 | `hang` | the Mac, while Paddock is stuck | `.tmp/hangs/` |
 | `capture:cli` | the operator's Mac | raw sbx and llmman captures in `.tmp/captures/`, throwaway projects in `.tmp/capture-projects/` |
 | `capture:socket` | the Mac | sandboxd socket captures in `.tmp/captures/socket/` |
+| `capture:a2ui` | the Mac, or a sandbox from `tools/sandbox/paddock` | A2UI's Swift core at the pinned release, built in `.tmp/captures/a2ui` (Linux: `~/.cache/paddock-build/a2ui-capture`); what it sends back into `Fixtures/a2ui/renderer/` |
 | `capture:fixtures` | the Mac, after a capture | sanitized copies in `Packages/PaddockCore/Tests/PaddockCoreTests/Fixtures/` |
 | `vendor:openui` | a dev machine with Node | `App/OpenUI/vendor/` and the OpenUI reference resource |
 | `icon` | a dev machine with Node | `App/Assets.xcassets` |
@@ -18,6 +19,6 @@ mise file tasks (`[task_config]` in `mise.toml`): run them with `mise run <task>
 | `clean` | anywhere | removes `.tmp/build`, `.tmp/test-runs`, `.tmp/lint-runs`, `.tmp/build-runs`, `.tmp/capture-projects`, the packages' `.build`, and an old `build/`; `--all` also `.tmp/captures` and `.tmp/hangs`; `-n` only lists |
 | `version` | anywhere with git | nothing; prints `yymmdd.N` (or `build`, `commit`), which `build` and `install` put into the app |
 
-Helpers a task uses but that are no task are in `lib/`, not executable, so mise does not list them: `render-icon.js` (for `icon`) and `fake-anthropic.py` (a stand-in model server for `capture:cli kits`).
+Helpers a task uses but that are no task are in `lib/`, not executable, so mise does not list them: `render-icon.js` (for `icon`), `fake-anthropic.py` (a stand-in model server for `capture:cli kits`), and `a2ui-capture.swift` with `a2ui-capture-patch.py` (the capture tool `capture:a2ui` builds inside A2UI's checkout, and its Package.swift patch).
 
 Everything a task writes for local use is under `.tmp/` (gitignored). The M0 capture's findings are backlog doc M0 findings; its sanitized output is the test fixtures. The icon's source is `App/AppIcon.svg`.

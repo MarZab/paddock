@@ -1,0 +1,5 @@
+{"error":{"code":"CATALOG_NOT_FOUND","message":"Catalog not found: https://example.com/unknown.json","surfaceId":"s1"},"version":"1.0"}
+{"error":{"code":"UNKNOWN_COMPONENT_TYPE","message":"Component 'root' has type 'NoSuchThing', which is not in catalog 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json'.","surfaceId":"s2"},"version":"1.0"}
+{"error":{"code":"INTEGRITY_ERROR","message":"Surface not found for message: missing","surfaceId":"missing"},"version":"1.0"}
+{"error":{"code":"VALIDATION_FAILED","message":"Validation failed for component 'Text' at 'text': Expected type '[OrderedJSON.JSONType.string]' but found 'integer'","path":"/components/0/text","surfaceId":"s3"},"version":"1.0"}
+{"error":{"code":"VALIDATION_FAILED","message":"Unsupported protocol version '9.9'","path":"/version","surfaceId":"s4"},"version":"v0.9"}
