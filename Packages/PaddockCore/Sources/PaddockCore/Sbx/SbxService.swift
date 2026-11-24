@@ -113,6 +113,11 @@ public actor SbxService {
     public func output(_ arguments: [String]) async throws -> Data {
         try await cli.output(arguments)
     }
+
+    /// `sbx exec -i ...` with `stdin` for the command in the sandbox: what must not be in argv.
+    public func perform(_ arguments: [String], stdin: Data) async throws {
+        try await cli.perform(arguments, stdin: stdin)
+    }
 }
 
 /// Runs sbx through the `ProcessRunner` and decodes its JSON output.
@@ -124,8 +129,8 @@ struct SbxCLI: Sendable {
         try await query(SbxDaemonStatus.self, ["daemon", "status", "--format", "json"])
     }
 
-    func perform(_ arguments: [String]) async throws {
-        let result = try await runner.run(sbx, arguments: arguments)
+    func perform(_ arguments: [String], stdin: Data? = nil) async throws {
+        let result = try await runner.run(sbx, arguments: arguments, environment: nil, stdin: stdin)
         guard result.exitCode == 0 else {
             throw SbxError.commandFailed(arguments: arguments, exitCode: result.exitCode, stderr: result.failureText())
         }

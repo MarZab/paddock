@@ -568,7 +568,8 @@ final class AppModel {
 
     // MARK: - Ports
 
-    private func runner() async throws -> ProjectRunner {
+    /// Also for the A2UI tabs (`AppModel.syncA2UI`).
+    func runner() async throws -> ProjectRunner {
         guard let sbx = await probe.sbxPath() else { throw AppError("sbx is not installed") }
         return ProjectRunner(sbx: SbxService(runner: FoundationProcessRunner(), sbx: sbx, reads: await probe.reads(for: sbx)), paths: paths,
                              log: activityLog(for: nil))
@@ -1480,39 +1481,6 @@ final class AppModel {
         guard let show else { return }
         let opened = show.opened || openedShows.contains("\(project.name)/\(show.id)")
         sendShowEvent(opened ? .closed : .dismissed, show: show.id, of: project)
-    }
-
-    /// What an interactive tab's page sent (checked): an action goes to the sandbox for
-    /// `paddock wait`, problems too (only when they changed), and form state stays here.
-    func received(_ message: OpenUIMessage, from show: BrowserSessions.Show, of project: Project) {
-        guard let terminals = terminals[project.name] else { return }
-        let event: BrowserShow.UIEvent
-        let json: String
-        switch message {
-        case .ready:
-            return
-        case .state(let state):
-            terminals.keepUIState(state, for: show.id)
-            return
-        case .action(let action):
-            event = .action
-            json = action
-        case .problems(let problems):
-            guard terminals.uiProblemsSent[show.id] != problems else { return }
-            terminals.uiProblemsSent[show.id] = problems
-            event = .problems
-            json = problems
-        }
-        Task {
-            do {
-                try await runner().sendUIEvent(event, json: json, show: show.id, of: project)
-                if event == .action { terminals.delivered(show.id, sent: true, detail: "Sent to the agent") }
-            } catch {
-                fail("Could not hand your answer to the agent in \(project.name): \(String(describing: error))",
-                     in: project.name)
-                if event == .action { terminals.delivered(show.id, sent: false, detail: "Not sent: \(String(describing: error))") }
-            }
-        }
     }
 
     /// A host tab menu's Refresh or Back. A page shown in the sandbox is reloaded or sent back

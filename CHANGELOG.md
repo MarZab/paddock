@@ -4,6 +4,8 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-146 Interactive tabs (paddock ui) draw A2UI natively, with images, video, and audio through the sandbox, instead of OpenUI.
+
 ## 261122
 
 - PAD-145 Projects can be put in groups in Info, and each group folds from its title in the sidebar.

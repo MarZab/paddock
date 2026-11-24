@@ -434,7 +434,6 @@ struct OpenUITests {
         let script = BrowserShow.script
         #expect(script.contains("case 'ui': {") && script.contains("if (record.mode === 'ui') {"))
         #expect(script.contains("event === 'action' || event === 'problems'"))
-        #expect(script.contains("const action = / the operator acted: (\\{.*\\})$/.exec(line);"))
     }
 
     @Test func theAgentGetsTheLanguageAndHowToUseIt() {

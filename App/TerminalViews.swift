@@ -1,3 +1,4 @@
+import PaddockA2UI
 import PaddockCore
 import PaddockShellCore
 import PaddockShellUI
@@ -46,33 +47,29 @@ final class ProjectTerminals {
     private var playwrightShown = false
     /// The Processes tab is open (backlog doc UI, Resources); opened from Info, closed by the operator.
     private var processesOpen = false
-    /// The renderer's form state for each interactive tab (`OpenUIMessage.state`), kept for the
-    /// next view of it, and the last problems sent to the sandbox, so the same ones go once.
-    private(set) var uiStates: [String: String] = [:]
-    var uiProblemsSent: [String: String] = [:]
+    /// Each interactive tab's A2UI tab (backlog doc Browser, interactive tabs), kept while it is
+    /// hidden so what the operator typed stays; the operator's last Refresh it drew again for; and
+    /// the tabs being read now (and read again after, when the sandbox changed meanwhile).
+    private(set) var a2uiTabs: [String: A2UITab] = [:]
+    var a2uiRedrawn: [String: Int] = [:]
+    var a2uiReading: Set<String> = []
+    var a2uiAgain: Set<String> = []
 
-    func keepUIState(_ state: String, for id: String) {
-        uiStates[id] = state
+    /// The tab's A2UI tab, made the first time.
+    func a2uiTab(_ id: String, make: () -> A2UITab) -> A2UITab {
+        if let tab = a2uiTabs[id] { return tab }
+        let tab = make()
+        a2uiTabs[id] = tab
+        return tab
+    }
+
+    /// Ends an A2UI tab: the next read makes a new one, from the first message.
+    func resetA2UI(_ id: String) {
+        a2uiTabs.removeValue(forKey: id)?.dispose()
     }
 
     /// Native Markdown tabs the operator switched to the file's source (backlog doc Browser).
     var sourceShows: Set<String> = []
-
-    /// Whether the operator's last answer in an interactive tab reached the sandbox, for the
-    /// confirmation the tab shows (a serial, so each answer shows once).
-    struct UIDelivery: Equatable {
-        let serial: Int
-        let sent: Bool
-        let detail: String
-    }
-
-    private(set) var uiDeliveries: [String: UIDelivery] = [:]
-    private var deliverySerial = 0
-
-    func delivered(_ id: String, sent: Bool, detail: String) {
-        deliverySerial += 1
-        uiDeliveries[id] = UIDelivery(serial: deliverySerial, sent: sent, detail: detail)
-    }
 
     /// What a host tab's view should do next (its menu's Refresh or Back), with a serial so the
     /// same command twice still counts.
@@ -424,8 +421,8 @@ final class ProjectTerminals {
             }
             for id in gone {
                 let tab = Self.showTab(id)
-                uiStates[id] = nil
-                uiProblemsSent[id] = nil
+                resetA2UI(id)
+                a2uiRedrawn[id] = nil
                 sourceShows.remove(id)
                 closedShows.remove(id)
                 unseen.remove(tab)
@@ -495,6 +492,7 @@ final class ProjectTerminals {
     /// Ends every session's process (the sandbox itself keeps its state).
     func terminateAll() {
         views.releaseAll()
+        for id in Array(a2uiTabs.keys) { resetA2UI(id) }
         for session in sessions.values {
             Task { await session.terminate() }
         }
@@ -654,7 +652,7 @@ struct ProjectTabs<Info: View>: View {
             SandboxProcessesTab(project: project)
         } else if let id = ProjectTerminals.showID(tab), let show = terminals.browser.shows.first(where: { $0.id == id }) {
             if show.isInteractive {
-                OpenUIView(project: project, show: show)
+                A2UIShowView(project: project, show: show)
             } else if show.isNative {
                 NativeShowView(project: project, show: show)
             } else {

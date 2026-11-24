@@ -220,5 +220,11 @@ public enum A2UICommands {
         BrowserShow.readCommand(sandbox: sandbox, id: id, relativePath: relativePath).map { Command(arguments: $0) }
     }
 
+    /// `openUrl`: opens an http(s) page as a tab of the sandbox's browser (`paddock open`).
+    public static func open(sandbox: String, url: URL) -> Command? {
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host?.isEmpty == false else { return nil }
+        return Command(arguments: ["exec", sandbox, "paddock", "open", url.absoluteString])
+    }
+
     static func base64Length(_ bytes: Int) -> Int { (bytes + 2) / 3 * 4 + 2 }
 }

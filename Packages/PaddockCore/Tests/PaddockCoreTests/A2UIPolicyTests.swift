@@ -284,4 +284,54 @@ struct A2UIPolicyTests {
         #expect(A2UIMedia.mimeType(forPath: "screenshots/home.png") == "image/png")
         #expect(A2UIMedia.accepts(A2UIMedia.mimeType(forPath: "a.flac"), for: .audio))
     }
+
+    // MARK: - Through sbx
+
+    func runner() -> (FakeRunner, ProjectRunner, Project) {
+        let fake = FakeRunner()
+        let runner = ProjectRunner(sbx: SbxService(runner: fake, sbx: URL(fileURLWithPath: "/sbx")), paths: PaddockPaths(configDirectory: "/tmp/p"))
+        return (fake, runner, Project(name: "web", folder: "/a"))
+    }
+
+    @Test func theRunnerReadsTheLogAndDeliversOnStdin() async throws {
+        let (fake, runner, project) = runner()
+        let log = log([line(Self.create)])
+        fake.respond(to: ["exec", "web", "paddock", "--messages", "tab-a3f9", "0"], with: Data(log.base64EncodedString().utf8))
+        #expect(try await runner.a2uiMessages(show: "tab-a3f9", from: 0, of: project) == log)
+        let action = line(#"{"action":{"context":{"password":"correct horse"},"name":"login"},"version":"1.0"}"#)
+        fake.respond(to: ["exec", "-i", "web", "paddock", "--operator", "tab-a3f9", "a2ui"], with: Data())
+        try await runner.a2uiDeliver(action, show: "tab-a3f9", of: project)
+        #expect(fake.calls.last == ["exec", "-i", "web", "paddock", "--operator", "tab-a3f9", "a2ui"])
+        #expect(fake.stdins.last == action + Data([0x0A]))
+        await #expect(throws: (any Error).self) { try await runner.a2uiDeliver(action, show: "nope", of: project) }
+    }
+
+    @Test func theRunnerGetsMediaFromTheSandboxOnly() async throws {
+        let (fake, runner, project) = runner()
+        let url = try #require(URL(string: "https://images.example.com/photo.jpg"))
+        fake.respond(to: ["exec", "web", "paddock", "--fetch", "tab-a3f9", url.absoluteString], with: Data("image/jpeg\n/9j/4A==".utf8))
+        let fetched = try await runner.a2uiMedia(.sandboxFetch(url), kind: .image, show: "tab-a3f9", of: project)
+        #expect(fetched.mimeType == "image/jpeg" && fetched.data == Data([0xFF, 0xD8, 0xFF, 0xE0]))
+        await #expect(throws: A2UIMedia.Refusal.self) { try await runner.a2uiMedia(.sandboxFetch(url), kind: .video, show: "tab-a3f9", of: project) }
+        fake.respond(to: ["exec", "web", "paddock", "--read", "tab-a3f9", "audio/notes.m4a"], with: Data("AAAA".utf8))
+        let file = try await runner.a2uiMedia(.sandboxFile("audio/notes.m4a"), kind: .audio, show: "tab-a3f9", of: project)
+        #expect(file.mimeType == "audio/mp4" && file.data == Data([0, 0, 0]))
+        // A picture's name for an audio clip: refused, whatever its bytes.
+        fake.respond(to: ["exec", "web", "paddock", "--read", "tab-a3f9", "a.png"], with: Data("AAAA".utf8))
+        await #expect(throws: A2UIMedia.Refusal.self) { try await runner.a2uiMedia(.sandboxFile("a.png"), kind: .audio, show: "tab-a3f9", of: project) }
+        // Only the sandbox: every call went through sbx exec.
+        #expect(fake.calls.allSatisfy { $0.first == "exec" })
+    }
+
+    @Test func openURLBecomesASandboxBrowserTab() async throws {
+        let (fake, runner, project) = runner()
+        let url = try #require(URL(string: "https://docs.example.com/a2ui"))
+        fake.respond(to: ["exec", "web", "paddock", "open", "https://docs.example.com/a2ui"], with: Data())
+        try await runner.a2uiOpen(url, of: project)
+        #expect(fake.calls == [["exec", "web", "paddock", "open", "https://docs.example.com/a2ui"]])
+        for other in ["mailto:ann@example.com", "tel:+1555", "file:///etc/passwd", "javascript:alert(1)"] {
+            await #expect(throws: (any Error).self) { try await runner.a2uiOpen(try #require(URL(string: other)), of: project) }
+        }
+        #expect(fake.calls.count == 1)
+    }
 }
