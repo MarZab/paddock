@@ -4,6 +4,8 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+## 261122
+
 - PAD-145 Projects can be put in groups in Info, and each group folds from its title in the sidebar.
 - PAD-144 There is no New Window: Paddock is one window.
 - PAD-143 The Playwright tab keeps its page when another tab shows, and no longer disappears on its own.
