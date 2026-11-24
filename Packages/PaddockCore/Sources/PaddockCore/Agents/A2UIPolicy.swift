@@ -226,5 +226,12 @@ public enum A2UICommands {
         return Command(arguments: ["exec", sandbox, "paddock", "open", url.absoluteString])
     }
 
+    /// A file link in a tab's text (`A2UIMarkdown.Link.file`): opens the file next to the tab's
+    /// messages as a native tab (`paddock --show-file`).
+    public static func openFile(sandbox: String, id: String, relativePath: String) -> Command? {
+        guard BrowserShow.isShowID(id), !relativePath.isEmpty, NativeShowPolicy.isRelativePath(relativePath) else { return nil }
+        return Command(arguments: ["exec", sandbox, "paddock", "--show-file", id, relativePath])
+    }
+
     static func base64Length(_ bytes: Int) -> Int { (bytes + 2) / 3 * 4 + 2 }
 }

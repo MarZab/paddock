@@ -14,8 +14,10 @@ public protocol A2UITabLink: Sendable {
     /// The bytes of a media file in the sandbox (`.sandboxFetch` or `.sandboxFile`), checked
     /// for `kind` (`A2UIMedia.decodeFetched`).
     func media(_ source: A2UIMedia.Source, kind: A2UIMedia.Kind) async throws -> (mimeType: String, data: Data)
-    /// Opens a page in a browser tab in the sandbox (`openUrl`), never on the Mac.
+    /// Opens a page in a browser tab in the sandbox (`openUrl`, a web link in a Text), never on the Mac.
     func openInSandbox(_ url: URL) async throws
+    /// Opens a file next to the tab's messages as a native tab (a file link in a Text; PAD-149).
+    func openFile(_ relativePath: String) async throws
 }
 
 /// One A2UI tab (`paddock ui`; backlog doc Browser, interactive tabs): the agent's surfaces,
@@ -49,6 +51,7 @@ public final class A2UITab {
     private let processor: MessageProcessor
     private let link: any A2UITabLink
     private let opener: SandboxURLOpener
+    private let links: A2UILinkOpener
     @ObservationIgnored private var inbox = A2UIInbox()
     @ObservationIgnored private var order: [String] = []
     @ObservationIgnored private var subscription: AnyCancellable?
@@ -64,11 +67,14 @@ public final class A2UITab {
         self.opener = opener
         let media = A2UIMediaStore(link: link, folder: folder)
         self.media = media
-        let catalog = PaddockCatalog.make(media: media, openURLHandler: opener)
+        let links = A2UILinkOpener()
+        self.links = links
+        let catalog = PaddockCatalog.make(media: media, links: links, openURLHandler: opener)
         self.catalog = catalog
         processor = MessageProcessor(catalogs: [catalog])
         processor.agentFunctionTimeoutSeconds = Self.agentFunctionTimeout
         opener.handler = { [weak self] url in self?.openInSandbox(url) }
+        links.handler = { [weak self] link in self?.open(link) }
         processor.outboundListener = { [weak self] message in
             Self.onMain { [weak self] in self?.send(message) }
         }
@@ -163,6 +169,24 @@ public final class A2UITab {
                 self?.show(ok: true, "Opened \(url.host ?? url.absoluteString) in the sandbox's browser")
             } catch {
                 self?.show(ok: false, "Could not open \(url.absoluteString): \(error)")
+            }
+        }
+    }
+
+    /// A link the operator clicked in a Text (PAD-149): a page in the sandbox's browser, or a file
+    /// next to the messages as a native tab.
+    func open(_ link: A2UIMarkdown.Link) {
+        switch link {
+        case .web(let url):
+            openInSandbox(url)
+        case .file(let path):
+            Task { [weak self, tabLink = self.link] in
+                do {
+                    try await tabLink.openFile(path)
+                    self?.show(ok: true, "Opened \(path) in a tab")
+                } catch {
+                    self?.show(ok: false, "Could not open \(path): \(error)")
+                }
             }
         }
     }

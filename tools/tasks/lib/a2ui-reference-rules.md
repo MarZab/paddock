@@ -38,6 +38,19 @@ of yours. Their clicks and form values come back to you through `paddock wait`.
 - `{"paddock":"refused","line":N,"reason":...}`: Paddock did not draw line N of what you sent; the
   rest was drawn.
 
+## Text and Markdown
+
+- Paddock's `Text` renders more than the schema below says ("simple Markdown"); this section is
+  what holds. A `Text` renders GitHub Markdown, natively: headings, paragraphs, **bold**, *italic*,
+  ~~strikethrough~~, `code`, code blocks, quotes, lists (nested, `- [ ]` tasks), rules, and
+  tables with column alignment (`|:--|--:|`). A table of values in one Text is fine.
+- Markdown images are not shown (their alt text is); use an `Image` component. HTML is shown as text.
+- Links in a Text open as tabs in Paddock: `[plan](notes/plan.md)`, a path relative to the
+  messages file, opens that file as a native tab on the operator's screen; `[docs](https://...)`
+  opens the page in this sandbox's browser (needs the browser kit). Other links do nothing.
+- When rows need their own buttons, choices, or fields, build them from components instead: a
+  `Column` of `Row`s, or a `List` with a template bound to an array in the data model.
+
 ## Media and links
 
 - Image, Video, and AudioPlayer take `https://` or `http://` URLs (fetched inside this sandbox,

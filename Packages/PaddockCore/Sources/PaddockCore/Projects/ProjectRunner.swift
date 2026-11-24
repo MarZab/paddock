@@ -630,6 +630,15 @@ public struct ProjectRunner: Sendable {
         try await sbx.perform(command.arguments)
     }
 
+    /// A file link in an A2UI tab's text: the file next to the tab's messages, as a native tab.
+    public func a2uiOpenFile(_ relativePath: String, show id: String, of project: Project) async throws {
+        try owned(project)
+        guard let command = A2UICommands.openFile(sandbox: project.name, id: id, relativePath: relativePath) else {
+            throw ProjectRunError.invalidShowPath(relativePath)
+        }
+        try await sbx.perform(command.arguments)
+    }
+
     /// A file of a native tab (the shown file, or one beside it), read through `sbx exec`.
     public func readShowFile(show id: String, relativePath: String, of project: Project) async throws -> Data {
         try owned(project)

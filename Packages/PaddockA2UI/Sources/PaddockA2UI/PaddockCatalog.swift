@@ -7,12 +7,14 @@ import SwiftUI
 
 /// The one catalog A2UI tabs have: A2UI's v1.0 basic catalog under its own id, with every
 /// component and function, formatting for the Mac's locale. Image, Video, and AudioPlayer are
-/// Paddock's, so their bytes come through the sandbox (`A2UIMedia`); `openUrl` asks the tab to open
-/// the page in the sandbox's browser.
+/// Paddock's, so their bytes come through the sandbox (`A2UIMedia`); Text is Paddock's, for Markdown
+/// with tables and links that open as Paddock tabs (PAD-149); `openUrl` asks the tab to open the
+/// page in the sandbox's browser.
 @MainActor
 enum PaddockCatalog {
-    static func make(media: A2UIMediaStore, openURLHandler: any OpenURLHandler) -> Catalog<ComponentImplementation> {
+    static func make(media: A2UIMediaStore, links: A2UILinkOpener, openURLHandler: any OpenURLHandler) -> Catalog<ComponentImplementation> {
         let replaced: [String: ComponentViewBuilder] = [
+            "Text": { node in AnyView(PaddockText(node: node, links: links)) },
             "Image": { node in AnyView(PaddockImage(node: node, media: media)) },
             "Video": { node in AnyView(PaddockVideo(node: node, media: media)) },
             "AudioPlayer": { node in AnyView(PaddockAudio(node: node, media: media)) },

@@ -171,4 +171,25 @@ struct A2UIHelperTests {
         let records = try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("tabs/shows").path)
         #expect(records == ["\(id).json"])
     }
+
+    /// PAD-149: a file link in a tab's text opens that file, next to the tab's messages, as a native tab.
+    @Test func aFileLinkOpensANativeTab() throws {
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: work.appendingPathComponent("notes"), withIntermediateDirectories: true)
+        try write("notes/plan.md", "# Plan\n")
+        try "secret".write(to: root.appendingPathComponent("outside.md"), atomically: true, encoding: .utf8)
+        try fixture("agent/media.json").write(to: work.appendingPathComponent("media.json"))
+        let id = try tabID(try paddock(["ui", "media.json"]))
+        let opened = try paddock(["--show-file", id, "notes/plan.md"])
+        #expect(opened.status == 0, "\(opened.err)")
+        let native = try tabID(opened)
+        let record = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("tabs/shows/\(native).json"))) as? [String: Any]
+        #expect(record?["mode"] as? String == "native")
+        #expect((record?["path"] as? String)?.hasSuffix("/work/notes/plan.md") == true)
+        for refused in ["../outside.md", "", "notes", "missing.md"] {
+            #expect(try paddock(["--show-file", id, refused]).status != 0, "\(refused)")
+        }
+        // only from an interactive tab
+        #expect(try paddock(["--show-file", native, "plan.md"]).status != 0)
+    }
 }

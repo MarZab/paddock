@@ -23,6 +23,9 @@ actor FakeLink: A2UITabLink {
 
     func openInSandbox(_ url: URL) async throws { opened.append(url) }
 
+    private(set) var files: [String] = []
+    func openFile(_ relativePath: String) async throws { files.append(relativePath) }
+
     func setAnswer(_ answer: (mimeType: String, data: Data)?) { self.answer = answer }
 
     /// The delivered lines, decoded.
@@ -188,5 +191,41 @@ struct A2UITabTests {
         let docs = try #require(URL(string: "https://docs.example.com/a2ui"))
         #expect(await link.opened == [docs])
         #expect(tab.notice?.ok == true)
+    }
+
+    /// PAD-149: a Text's links. A web link is a page of the sandbox's browser, a file link a native
+    /// tab of the file next to the messages; the tab says which.
+    @Test func textLinksOpenAsPaddockTabs() async throws {
+        let link = FakeLink()
+        let tab = A2UITab(id: "tab-a3f9", link: link, folder: folder())
+        tab.open(.file("notes/plan.md"))
+        await settle()
+        #expect(await link.files == ["notes/plan.md"])
+        #expect(tab.notice?.ok == true && tab.notice?.text == "Opened notes/plan.md in a tab")
+        let docs = try #require(URL(string: "https://docs.example.com/a2ui"))
+        tab.open(.web(docs))
+        await settle()
+        #expect(await link.opened == [docs])
+    }
+
+    /// A Text with a Markdown table renders, and its link URLs read back as the same links.
+    @Test func markdownTextRendersAndItsLinksReadBack() async throws {
+        let link = FakeLink()
+        let tab = A2UITab(id: "tab-a3f9", link: link, folder: folder())
+        let create = #"{"version":"1.0","createSurface":{"surfaceId":"s","catalogId":"\#(A2UIPolicy.basicCatalogID)"}}"#
+        let table = "| Service | Replicas |\\n|:--|--:|\\n| api | 3 |\\n\\nSee [the plan](notes/plan%20v2.md) or [docs](https://docs.example.com)."
+        let text = #"{"version":"1.0","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"Text","text":"\#(table)"}]}}"#
+        #expect(tab.take(Data((create + "\n" + text + "\n").utf8)).isEmpty)
+        await settle()
+        #expect(tab.surfaces.first?.rootNode != nil)
+        #expect(await link.delivered.isEmpty)
+        let blocks = A2UIMarkdown.blocks(node("root", in: tab)?.string(for: "text") ?? "")
+        guard case .paragraph(let runs)? = blocks.last else {
+            Issue.record("no paragraph: \(blocks)")
+            return
+        }
+        let urls = MarkdownBlocksView.attributed(runs).runs.compactMap(\.link)
+        #expect(urls.compactMap { A2UIMarkdown.Link($0.absoluteString) }
+            == [.file("notes/plan v2.md"), .web(try #require(URL(string: "https://docs.example.com")))])
     }
 }

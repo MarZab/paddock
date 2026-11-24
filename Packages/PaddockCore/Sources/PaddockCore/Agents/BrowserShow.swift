@@ -364,6 +364,19 @@ public enum BrowserShow {
           });
           console.log(`Sent ${lines.length} message${lines.length === 1 ? '' : 's'} to tab ${id}.`);
         }
+        // For Paddock: a file the operator clicked in an interactive tab's text (a link relative to its
+        // messages), opened as a native tab. Never outside the tab's folder.
+        function showFile(id, relative) {
+          const record = find(id);
+          if (record.mode !== 'ui') fail(`tab ${id} is not interactive`);
+          if (!relative) fail('which file? a path relative to the tab\'s messages');
+          const base = record.base;
+          let real;
+          try { real = fs.realpathSync(path.resolve(base, relative)); } catch { fail(`${relative} does not exist next to the tab's messages`); }
+          if (!real.startsWith(base + '/')) fail('outside the tab\'s folder');
+          if (!fs.statSync(real).isFile()) fail(`${relative} is not a file`);
+          show(real, path.basename(real), `opened from ${id}`, true);
+        }
         // For Paddock: an interactive tab's log from byte OFFSET on, as base64.
         function messagesFrom(id, offset) {
           const record = find(id);
@@ -648,6 +661,7 @@ public enum BrowserShow {
           case '--read': read(args[1], args[2] || ''); break;
           case '--messages': messagesFrom(args[1], args[2]); break;
           case '--fetch': fetchMedia(args[1], args[2]); break;
+          case '--show-file': showFile(args[1], args[2]); break;
           case 'open': args.shift(); open(); break;
           case 'status': status(args[1]); break;
           case 'feedback': feedbackOf(args[1]); break;

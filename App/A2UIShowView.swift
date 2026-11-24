@@ -44,6 +44,10 @@ struct AppA2UILink: A2UITabLink {
     func openInSandbox(_ url: URL) async throws {
         try await runner().a2uiOpen(url, of: project)
     }
+
+    func openFile(_ relativePath: String) async throws {
+        try await runner().a2uiOpenFile(relativePath, show: show, of: project)
+    }
 }
 
 extension AppModel {
