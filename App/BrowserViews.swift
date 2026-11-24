@@ -32,7 +32,7 @@ struct BrowserTab: View {
             } else if let dashboard, let policy = BrowserWebPolicy(dashboard: dashboard), answer == .otherServer {
                 placeholder("Another server holds the dashboard's port",
                             detail: "Port \(BrowserKit.dashboardPort) in the sandbox does not answer like playwright-cli's dashboard. Stop what serves there, then restart the sandbox.") {
-                    Button("Check Again") { generation += 1 }
+                    Button("Check Again") { reload() }
                 }
                 .task(id: "\(policy.port)-\(generation)") { await check(policy) }
             } else if let dashboard, let policy = BrowserWebPolicy(dashboard: dashboard), answer == BrowserKit.DashboardAnswer.none {
@@ -46,8 +46,9 @@ struct BrowserTab: View {
                     if case .show = content, script == nil {
                         // Until the watcher reports the shown page in the paddock session.
                         ProgressView("Waiting for the page").frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if answer == .dashboard {
-                        BrowserWebView(policy: policy, selectScript: script) { file, name, selectedSession in
+                    } else if answer == .dashboard || (answer == nil && cache?.keeps(tabID, key: viewKey(policy)) == true) {
+                        // A kept view shows at once, while the port is checked again.
+                        BrowserWebView(policy: policy, selectScript: script, tab: tabID, key: viewKey(policy), cache: cache) { file, name, selectedSession in
                             model.captured(file: file, suggestedName: name, owner: captureOwner(selectedSession: selectedSession), of: project)
                         }
                             .id("\(policy.port)-\(generation)-\(script?.hashValue ?? 0)")
@@ -67,8 +68,22 @@ struct BrowserTab: View {
         .task(id: project.name) { await model.refreshSnapshot(project.name) }
         // The tab menu's Refresh (the Playwright tab's dashboard; a shown page reloads in the sandbox).
         .onChange(of: model.terminals[project.name]?.viewCommands[tabID]) { _, command in
-            if command?.kind == .reload { generation += 1 }
+            if command?.kind == .reload { reload() }
         }
+    }
+
+    /// The project's kept web views: this tab's lives while the tab does (`BrowserWebViewCache`).
+    private var cache: BrowserWebViewCache? { model.terminals[project.name]?.webViews }
+
+    /// What a kept web view must match to be shown again: the dashboard's port and the page it selects.
+    private func viewKey(_ policy: BrowserWebPolicy) -> String {
+        "\(policy.port)-\(script ?? "")"
+    }
+
+    /// Loads the dashboard again in a new web view (Refresh, Check Again, a started dashboard).
+    private func reload() {
+        cache?.release(tabID)
+        generation += 1
     }
 
     /// Whose page a capture from this view shows: the show tab's, or in the Playwright tab the
@@ -113,7 +128,7 @@ struct BrowserTab: View {
         Task {
             await model.startBrowserDashboard(of: project)
             try? await Task.sleep(for: .seconds(3))
-            generation += 1
+            reload()
         }
     }
 
@@ -153,19 +168,32 @@ struct BrowserWebView: NSViewRepresentable {
     var selectScript: String?
     /// A screenshot or recording the operator saved from the dashboard (a download): the file in a
     /// temporary folder, its suggested name, and the session selected in this view (if any).
+    /// The host tab it shows in and what it loads, for `cache`: a kept view with the same key is
+    /// put back as it was instead of loading the dashboard again.
+    var tab: String = ""
+    var key: String = ""
+    var cache: BrowserWebViewCache?
     var captured: @MainActor (URL, String, String?) -> Void = { _, _, _ in }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(policy: policy, selectScript: selectScript, captured: captured)
+        if let kept = cache?.coordinator(for: tab, key: key) { return kept }
+        let coordinator = Coordinator(policy: policy, selectScript: selectScript, captured: captured)
+        cache?.keep(coordinator, for: tab, key: key)
+        return coordinator
     }
 
     func makeNSView(context: Context) -> WKWebView {
+        if let kept = context.coordinator.webView {
+            kept.removeFromSuperview()
+            return kept
+        }
         let configuration = WKWebViewConfiguration()
-        // Nothing the sandbox's page stores outlives the view.
+        // Nothing the sandbox's page stores outlives the view (a kept view lives as long as its tab).
         configuration.websiteDataStore = .nonPersistent()
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
+        context.coordinator.webView = webView
         context.coordinator.load(into: webView)
         return webView
     }
@@ -173,8 +201,8 @@ struct BrowserWebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {}
 
     static func dismantleNSView(_ nsView: WKWebView, coordinator: Coordinator) {
-        coordinator.cancel()
-        nsView.stopLoading()
+        // A kept view lives until its cache releases it.
+        if !coordinator.kept { coordinator.detach() }
     }
 
     @MainActor
@@ -183,6 +211,10 @@ struct BrowserWebView: NSViewRepresentable {
         private let selectScript: String?
         private let captured: @MainActor (URL, String, String?) -> Void
         private var loading: Task<Void, Never>?
+        /// The view, owned here so a `BrowserWebViewCache` can keep it while its tab is hidden.
+        var webView: WKWebView?
+        /// Kept by a `BrowserWebViewCache`, which then owns the view.
+        var kept = false
         /// Downloads in progress: where each goes, and its suggested name.
         private var downloads: [ObjectIdentifier: (file: URL, name: String)] = [:]
 
@@ -255,6 +287,14 @@ struct BrowserWebView: NSViewRepresentable {
             loading?.cancel()
         }
 
+        /// The view goes: nothing loads in it any more.
+        func detach() {
+            kept = false
+            cancel()
+            webView?.stopLoading()
+            webView = nil
+        }
+
         static let failClosedPage = """
             <body style="font: -apple-system-body; color: gray; padding: 2em">
             Paddock could not install its web content rules, so the browser dashboard stays off.
@@ -276,6 +316,40 @@ struct BrowserWebView: NSViewRepresentable {
         ) -> WKWebView? {
             nil
         }
+    }
+}
+
+/// Each browser tab's web view, kept while the tab is hidden (backlog doc Browser): showing the
+/// tab again puts the same view back, the dashboard as the operator left it, instead of loading it
+/// again. A view lives until its tab closes, its show goes, the sandbox stops, or a reload.
+@MainActor
+final class BrowserWebViewCache {
+    private var entries: [String: (key: String, coordinator: BrowserWebView.Coordinator)] = [:]
+
+    /// The kept coordinator for the tab, if it loaded the same thing (`key`).
+    func coordinator(for tab: String, key: String) -> BrowserWebView.Coordinator? {
+        guard let entry = entries[tab], entry.key == key, entry.coordinator.webView != nil else { return nil }
+        return entry.coordinator
+    }
+
+    func keeps(_ tab: String, key: String) -> Bool {
+        coordinator(for: tab, key: key) != nil
+    }
+
+    /// Keeps the tab's new view; one it kept for something else goes.
+    func keep(_ coordinator: BrowserWebView.Coordinator, for tab: String, key: String) {
+        release(tab)
+        coordinator.kept = true
+        entries[tab] = (key, coordinator)
+    }
+
+    func release(_ tab: String) {
+        entries.removeValue(forKey: tab)?.coordinator.detach()
+    }
+
+    func releaseAll() {
+        for entry in entries.values { entry.coordinator.detach() }
+        entries = [:]
     }
 }
 

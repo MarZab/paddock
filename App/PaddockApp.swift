@@ -20,6 +20,9 @@ struct PaddockApp: App {
         // macOS 26 rounds a window's corners by its toolbar; the compact one gets the smaller radius.
         .windowToolbarStyle(.unifiedCompact)
         .commands {
+            // One window: a second one showed the same projects and tabs again (PAD-144). Not a
+            // `Window` scene, which quits the app (and its sessions) when the window closes.
+            CommandGroup(replacing: .newItem) {}
             // Paddock itself, as the sidebar's System section is (backlog doc UI, System menu).
             CommandMenu("System") {
                 // Pages in the main window, not windows of their own.

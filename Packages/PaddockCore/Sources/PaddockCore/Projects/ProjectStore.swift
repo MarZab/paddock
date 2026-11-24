@@ -85,11 +85,15 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
     /// The sessions folder Paddock mounted, and read back, when it created the sandbox; nil when
     /// none. sbx's reads over the socket do not list a kit's host mounts, so Sync compares this.
     public var sandboxClaudeSessions: String?
+    /// The sidebar group the operator put the project in (`ProjectGroups`; PAD-145); nil for none.
+    /// The operator's choice in Info, never from the folder.
+    public var group: String?
 
     public init(id: UUID = UUID(), name: String, folder: String, agent: String = "claude", provider: String = "agent-default",
                 cloneMode: Bool = false, gatewayPort: Int? = nil, approvedEnvironment: String? = nil,
                 declinedHosts: [String] = [], sandboxEnvironment: String? = nil, kits: [String]? = nil, sandboxKits: [String]? = nil, ignoredSuggestions: [String] = [],
-                terminalTheme: String? = nil, extraFolders: [ExtraFolder] = [], keepsClaudeSessions: Bool = false) {
+                terminalTheme: String? = nil, extraFolders: [ExtraFolder] = [], keepsClaudeSessions: Bool = false,
+                group: String? = nil) {
         self.id = id
         self.name = name
         self.folder = folder
@@ -106,13 +110,14 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
         self.terminalTheme = terminalTheme
         self.extraFolders = extraFolders
         self.keepsClaudeSessions = keepsClaudeSessions
+        self.group = ProjectGroups.normalized(group)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, name, folder, agent, provider, cloneMode, gatewayPort, approvedEnvironment, declinedHosts, sandboxEnvironment
         case sandboxEnvironmentRecord
         case kits, sandboxKits, ignoredSuggestions
-        case terminalTheme, extraFolders, keepsClaudeSessions, sandboxClaudeSessions
+        case terminalTheme, extraFolders, keepsClaudeSessions, sandboxClaudeSessions, group
     }
 
     /// Files are hand-editable, so the optional parts may be left out. Keys from older versions
@@ -138,6 +143,7 @@ public struct Project: Sendable, Equatable, Codable, Identifiable {
         extraFolders = try c.decodeIfPresent([ExtraFolder].self, forKey: .extraFolders) ?? []
         keepsClaudeSessions = try c.decodeIfPresent(Bool.self, forKey: .keepsClaudeSessions) ?? false
         sandboxClaudeSessions = try c.decodeIfPresent(String.self, forKey: .sandboxClaudeSessions)
+        group = ProjectGroups.normalized(try c.decodeIfPresent(String.self, forKey: .group))
     }
 }
 

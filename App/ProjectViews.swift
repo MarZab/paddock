@@ -922,7 +922,7 @@ struct ProjectStatusCard: View {
     }
 }
 
-/// Info's Agent card: the agent and its model, the terminals' colors, and Claude's sessions.
+/// Info's Agent card: the agent and its model, the terminals' colors, its sidebar group, and Claude's sessions.
 struct ProjectAgentCard: View {
     @Environment(AppModel.self) private var model
     let project: Project
@@ -933,6 +933,7 @@ struct ProjectAgentCard: View {
                 CardFact("Agent") { Text(project.agent) }
                 CardFact("Model") { Text(providerSummary).truncationMode(.middle) }
                 CardFact("Terminal") { themePicker }
+                CardFact("Group") { ProjectGroupField(project: project) }
                 if model.appConfig.agents[project.agent] == .claudeCode {
                     CardFact("Sessions") { ClaudeSessionsLine(project: project) }
                 }
@@ -965,6 +966,51 @@ struct ProjectAgentCard: View {
 
     private var providerSummary: String {
         model.appConfig.provider(named: project.provider)?.summary ?? "\(project.provider) (not defined)"
+    }
+}
+
+/// The sidebar group of a project in Info's Agent card (PAD-145): a name typed in, kept when
+/// Return is pressed or the field is left, or one of the groups in use from its menu; empty for none.
+struct ProjectGroupField: View {
+    @Environment(AppModel.self) private var model
+    let project: Project
+    @State private var draft = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        let names = ProjectGroups.names(model.allProjects)
+        HStack(spacing: 4) {
+            TextField("Group", text: $draft, prompt: Text("None"))
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 160)
+                .focused($focused)
+                .onSubmit(save)
+                .onChange(of: focused) { _, isFocused in if !isFocused { save() } }
+            Menu {
+                ForEach(names, id: \.self) { name in
+                    Button(name) { set(name) }
+                }
+                if !names.isEmpty { Divider() }
+                Button("None") { set(nil) }.disabled(project.group == nil)
+            } label: {
+                Image(systemName: "folder")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Put the project in a group in use, or in none")
+        }
+        .help("The project's group in the sidebar; projects without one are in Other")
+        .onAppear { draft = project.group ?? "" }
+        .onChange(of: project.group) { _, group in if !focused { draft = group ?? "" } }
+    }
+
+    private func save() { set(draft) }
+
+    private func set(_ group: String?) {
+        draft = ProjectGroups.normalized(group) ?? ""
+        model.setGroup(group, for: project)
     }
 }
 

@@ -3,7 +3,7 @@ id: doc-13
 title: ProjectStore
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-06 07:46'
+updated_date: '2026-11-22 07:57'
 ---
 One hand-editable file per project, `~/.config/paddock/projects/<sandbox-name>.json`, next to `paddock.yaml`. It holds only the operator's decisions sbx cannot store; ports and rules live in sbx (see Where state lives):
 
@@ -28,6 +28,7 @@ One hand-editable file per project, `~/.config/paddock/projects/<sandbox-name>.j
 - `gatewayPort` is assigned once, from `models.gatewayPorts`, when the project uses a local model.
 - `extraFolders` (optional, PAD-73.5): `[{"path", "readOnly"}]`, folders mounted besides the project folder in the order added. `readOnly` defaults to true, and the paths are canonical as checked when added. Only the operator adds them, in Paddock.
 - `terminalTheme` (optional) is the `TerminalTheme` id the operator picked in Info for the project's terminals; left out, they keep the terminal's own colors. It is never read from the project folder.
+- `group` (optional, PAD-145) is the sidebar group the operator typed in Info's Agent card, trimmed; left out (or empty), the project is in Other (backlog doc UI, Project groups). It is never read from the project folder.
 - Files are written atomically and owner-only. A bad file (malformed, newer version, a name that does not match the file name, or a name, folder, or gateway port another project already uses) is shown as a problem and skipped; the other projects still load.
 - `ProjectDirectory` loads and saves them; `ProjectList` holds the rules that span projects; `NewProject` turns the sheet's draft into a project (FolderPolicy, unique name and folder, no existing sbx sandbox of that name, defined sections, and extra folders that pass `ExtraFolders`). Its `sbxenv.yaml` is confirmed later, before the first create.
 - All Paddock files live in this one folder. Paddock stores no secrets.

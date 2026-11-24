@@ -44,11 +44,11 @@ struct BrowserWebPolicyTests {
 struct BrowserActivityTests {
     @Test func theKitInstallsTheWrapperAndTheWatcherAndFixesHTTPSAndFiles() throws {
         let spec = BrowserKit.spec
-        // both go in as base64, so no shell changes them
+        // all go in as base64, so no shell changes them
         let encoded = spec.components(separatedBy: "printf '%s' '").dropFirst().compactMap { $0.components(separatedBy: "'").first }
         #expect(encoded.compactMap { Data(base64Encoded: $0) }
             == [Data(BrowserActivity.wrapper.utf8), Data(BrowserActivity.watcher.utf8), Data(BrowserShow.script.utf8),
-                Data(BrowserKit.openUIReference.utf8)])
+                Data(BrowserKit.mcpLauncher.utf8), Data(BrowserKit.openUIReference.utf8)])
         #expect(spec.contains("/usr/local/bin/paddock"))
         #expect(spec.contains("ln -sf \"$real\" \(BrowserActivity.realCLI)"))
         #expect(spec.contains("/usr/local/bin/paddock-browser-watch"))
@@ -126,6 +126,28 @@ struct BrowserActivityTests {
         #expect(BrowserActivity.wrapper.contains(#"if [ "$command" = close ] && [ "$status" = 0 ]; then rm -f "$state/sessions/$session"; fi"#))
         // every workspace's sessions, each read in its own folder
         #expect(BrowserActivity.watcher.contains("['list', '--all', '--json']"))
+    }
+
+    /// Playwright MCP's browsers are listed under `servers`, not `browsers` (checked with
+    /// playwright-cli 0.1.22 and @playwright/mcp 0.0.83): the watcher reads their pages over a
+    /// connection and reports each as a session of its own (PAD-141).
+    @Test func playwrightMCPBrowsersAreReportedAsSessions() {
+        let watcher = BrowserActivity.watcher
+        #expect(watcher.contains("servers: Array.isArray(parsed.servers) ? parsed.servers : []"))
+        #expect(watcher.contains("sessions.push(...await mcpSessions(servers, seen));"))
+        // through the real CLI's own playwright-core, never a path a registry file names
+        #expect(watcher.contains("require.resolve('playwright-core', { paths: [path.dirname(fs.realpathSync(REAL))] })"))
+        #expect(!watcher.contains("playwrightLib"))
+        // names the Mac accepts, never one of playwright-cli's sessions, and no notes for them
+        #expect(watcher.contains("('mcp-' + String(title || 'browser').toLowerCase().replace(/[^a-z0-9._-]+/g, '-')"))
+        #expect(watcher.contains("!s.title.startsWith('--playwright-internal') && !taken.has(s.title)"))
+        #expect(watcher.contains("} else if (!mcpNames.has(name)) {"))
+        // what the watcher prints for one (as run against a live MCP browser) opens the Playwright tab's pages
+        var browser = BrowserSessions()
+        let line = #"{"type":"tabs","sessions":[{"name":"mcp-claude-code","tabs":[{"title":"Checkout page","url":"http://localhost:8765/","current":false},{"title":"Checkout page","url":"http://localhost:8765/?two","current":false}]}]}"#
+        #expect(browser.apply(line: line) != .none)
+        #expect(browser.pages.map(\.session) == ["mcp-claude-code", "mcp-claude-code"])
+        #expect(browser.pages.map(\.url) == ["http://localhost:8765/", "http://localhost:8765/?two"])
     }
 
     @Test func eachViewSelectsItsOwnPage() throws {

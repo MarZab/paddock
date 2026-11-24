@@ -28,18 +28,22 @@ final class ProjectTerminals {
     private(set) var sessions: [UUID: SandboxShellSession] = [:]
     /// Each session's terminal view, kept while its tab is hidden (`TerminalViewCache`).
     let views = TerminalViewCache()
+    /// Each browser tab's web view, kept while its tab is hidden (`BrowserWebViewCache`).
+    let webViews = BrowserWebViewCache()
     /// Exit statuses of sessions that ended, by tab.
     private(set) var exits: [UUID: Int32] = [:]
     private(set) var problem: String?
     /// The agent's browser and shown tabs (from `paddock-browser-watch`), the half each host tab
     /// shows in (the left unless moved), host tabs with something the operator has not looked at,
     /// show tabs the operator closed (gone once the sandbox says so), and whether they closed the
-    /// Playwright tab (it comes back with the next change).
+    /// Playwright tab (it comes back with the next change). Once the agent had a browser page, the
+    /// Playwright tab stays while the sandbox runs, also when no page is open for a moment.
     private(set) var browser = BrowserSessions()
     private var hostHalves: [String: Half] = [:]
     private(set) var unseen: Set<String> = []
     private var closedShows: Set<String> = []
     private var playwrightClosed = false
+    private var playwrightShown = false
     /// The Processes tab is open (backlog doc UI, Resources); opened from Info, closed by the operator.
     private var processesOpen = false
     /// The renderer's form state for each interactive tab (`OpenUIMessage.state`), kept for the
@@ -357,12 +361,13 @@ final class ProjectTerminals {
                 style: .standard, closable: true, activity: .none, actions: []))
         }
         let sessions = agentSessions
-        if !sessions.isEmpty, !playwrightClosed, self.half(of: Self.playwrightTab) == half {
+        if playwrightShown || !sessions.isEmpty, !playwrightClosed, self.half(of: Self.playwrightTab) == half {
             let busy = !browser.busy.subtracting([BrowserShow.session]).isEmpty
             // An agent waits for the operator to annotate its page (show --annotate): it says so.
             let waiting = !browser.annotating.isEmpty
             let help = waiting
                 ? "The agent asks you to mark something on its page (\(browser.annotating.sorted().joined(separator: ", "))): open this tab"
+                : sessions.isEmpty ? "The agent's browser: no page open now"
                 : "The agent's browser: \(sessions.joined(separator: ", "))"
             result.append(TerminalTabs.HostTab(
                 id: Self.playwrightTab, title: "Playwright", systemImage: "theatermasks",
@@ -399,6 +404,7 @@ final class ProjectTerminals {
             let agentChanges = changed.contains { BrowserSessions.sessionAndIndex(of: $0)?.session != BrowserShow.session }
             if agentChanges {
                 playwrightClosed = false
+                playwrightShown = true
                 if !isShown(Self.playwrightTab) { unseen.insert(Self.playwrightTab) }
                 place(Self.playwrightTab)
             }
@@ -408,6 +414,7 @@ final class ProjectTerminals {
             // A closed Playwright tab comes back for it.
             if active {
                 playwrightClosed = false
+                playwrightShown = true
                 place(Self.playwrightTab)
             }
         case .shows(let added, let gone):
@@ -423,6 +430,7 @@ final class ProjectTerminals {
                 closedShows.remove(id)
                 unseen.remove(tab)
                 hostHalves[tab] = nil
+                webViews.release(tab)
                 deselect(tab)
             }
         case .busy, .none:
@@ -446,6 +454,7 @@ final class ProjectTerminals {
             closedShows.insert(id)
         }
         unseen.remove(tab)
+        webViews.release(tab)
         deselect(tab)
     }
 
@@ -454,11 +463,13 @@ final class ProjectTerminals {
         deselect(Self.playwrightTab)
         for show in browser.shows { deselect(Self.showTab(show.id)) }
         browser = BrowserSessions()
+        webViews.releaseAll()
         hostHalves = [:]
         unseen = []
         closedShows = []
         sourceShows = []
         playwrightClosed = false
+        playwrightShown = false
     }
 
     /// A new host tab takes its place among the tabs now, so tabs opened later come after it.
