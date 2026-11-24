@@ -11,9 +11,9 @@ public struct ProjectDraft: Sendable, Equatable {
     public var kits: [String] = []
     /// Folders to mount besides the project folder, read-only unless switched (PAD-73.5).
     public var extraFolders: [Project.ExtraFolder] = []
-    /// Keep Claude's sessions on this Mac across recreates (PAD-127): the operator's choice, off
-    /// unless chosen; it applies to a Claude Code project.
-    public var keepsClaudeSessions = false
+    /// Keep Claude's sessions on this Mac across recreates (PAD-127): the operator's choice, on
+    /// unless they turn it off (PAD-148); it applies to a Claude Code project.
+    public var keepsClaudeSessions = true
 
     public init(folder: String, name: String, agent: String, provider: String, cloneMode: Bool = false,
                 kits: [String] = []) {

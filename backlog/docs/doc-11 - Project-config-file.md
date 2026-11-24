@@ -3,7 +3,7 @@ id: doc-11
 title: Project config file
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-06 08:49'
+updated_date: '2026-11-24 22:08'
 ---
 A project's own setup is sbx's environment file, `sbxenv.yaml` at the project root, plus the project's own v3 kits (PAD-73). A project set up this way runs with plain `sbx env run`, without Paddock. Paddock reads the same files, checks them, has the operator confirm them, and adds its own part from a file of its own (the overlay). A project without `sbxenv.yaml` is created with `sbx create` and Paddock's kits only, as before.
 
@@ -22,7 +22,7 @@ sandboxOptions:
 ```
 
 - **The operator's choices stay Paddock's.** The agent, provider, Paddock's kits, extra folders, and clone mode live in the project file in Paddock's config dir (backlog doc ProjectStore). `name` and `agent` in `sbxenv.yaml` only pre-fill the New Project sheet; Paddock always creates the sandbox under the project's name and with the project's agent.
-- **Config** (the Info tab's folder row) opens `sbxenv.yaml` in the default editor. When the folder has none, it first writes one and a kit for the project (`SandboxFiles`, below). New Project offers the same ("Create sbxenv.yaml and a kit for this project", off by default); a folder that has one says Paddock uses it.
+- **Config** (the Info tab's folder row) opens `sbxenv.yaml` in the default editor. When the folder has none, it first writes one and a kit for the project (`SandboxFiles`, below). New Project offers the same ("Create sbxenv.yaml and a kit for this project", on unless the operator turns it off; PAD-148); a folder that has one says Paddock uses it.
 - **Untrusted input:** the agent can write to this folder. A project file never sets the agent's provider, Paddock's kits, or extra folders the operator did not confirm, and nothing in it runs on the Mac.
 
 ## Reading and checking
