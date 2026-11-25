@@ -17,33 +17,11 @@ const offlineMaps = {
   },
 };
 
-/**
- * Code blocks highlight with Shiki, which brings a grammar for some 230 languages (most of the
- * page's size). These common ones stay; a block in any other shows as plain monospaced text.
- */
-const LANGUAGES = new Set([
-  "bash", "shellscript", "shellsession", "powershell", "bat", "json", "jsonc", "json5", "yaml", "toml", "ini", "xml", "html",
-  "css", "scss", "javascript", "jsx", "typescript", "tsx", "vue", "svelte", "markdown", "mdx", "python", "ruby", "php", "go",
-  "rust", "java", "kotlin", "scala", "swift", "objective-c", "c", "cpp", "csharp", "sql", "graphql", "lua", "r", "dart",
-  "dockerfile", "make", "nginx", "diff", "regexp", "csv", "proto", "terraform", "hcl", "elixir", "haskell", "zig",
-]);
-const fewerLanguages = {
-  name: "paddock-fewer-languages",
-  enforce: "pre" as const,
-  resolveId(source: string) {
-    const match = /^@shikijs\/langs\/([a-z0-9-]+)$/.exec(source);
-    return match && !LANGUAGES.has(match[1]) ? "\0paddock-no-language" : null;
-  },
-  load(id: string) {
-    return id === "\0paddock-no-language" ? "export default [];" : null;
-  },
-};
-
 export default defineConfig({
   root: __dirname,
   base: "./",
   publicDir: path.resolve(__dirname, "public"),
-  plugins: [react(), offlineMaps, fewerLanguages],
+  plugins: [react(), offlineMaps],
   resolve: {
     alias: [
       { find: /^@\//, replacement: app + "/src/" },
