@@ -114,14 +114,21 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
 
     init(link: A2UIWebLink) {
         self.link = link
+        // A web view copies its configuration when it is made: the scheme handler must be set
+        // before (set after, WebKit sends the page's URL to the network and fails with -1002).
+        // Both handlers are weak proxies, pointed at the tab once it exists: the configuration
+        // keeps its scheme handler alive, and the controller its message handlers, so the tab
+        // itself would never go.
+        let schemeHandler = WeakSchemeHandler()
+        let messageHandler = WeakScriptMessageHandler()
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
+        configuration.setURLSchemeHandler(schemeHandler, forURLScheme: A2UIWebPolicy.scheme)
+        configuration.userContentController.add(messageHandler, name: A2UIWebPolicy.messageHandler)
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init()
-        // Both through weak proxies: the configuration keeps its scheme handler alive, and the
-        // controller its message handlers, so the tab itself would never go.
-        configuration.setURLSchemeHandler(WeakSchemeHandler(self), forURLScheme: A2UIWebPolicy.scheme)
-        configuration.userContentController.add(WeakScriptMessageHandler(self), name: A2UIWebPolicy.messageHandler)
+        schemeHandler.target = self
+        messageHandler.target = self
         webView.navigationDelegate = self
         webView.uiDelegate = self
         load()
@@ -138,6 +145,8 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
                     self.webView.loadHTMLString(Self.failClosedPage, baseURL: nil)
                     return
                 }
+                // Loaded again after the page stopped: one list, not two.
+                self.webView.configuration.userContentController.removeAllContentRuleLists()
                 self.webView.configuration.userContentController.add(rules)
                 self.webView.load(URLRequest(url: home))
             } catch {
@@ -148,7 +157,7 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
 
     static let failClosedPage = """
         <body style="font: -apple-system-body; color: gray; padding: 2em">
-        Paddock could not install its web content rules or find its A2UI page, so this tab stays closed.
+        Paddock could not load this tab's page, so it stays closed. The Log says why.
         </body>
         """
 
@@ -310,9 +319,37 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
         let mainFrame = navigationAction.targetFrame?.isMainFrame ?? false
         // The page itself, an anchor in it, and the card media.ts puts in an embed's frame.
         if mainFrame, let home = A2UIWebPolicy.homeURL, Self.withoutFragment(url) == home { return .allow }
+        // Paddock's own fail-closed page (loadHTMLString without a base URL).
+        if mainFrame, url.absoluteString == "about:blank" { return .allow }
         if !mainFrame, ["data", "about"].contains(url.scheme?.lowercased() ?? "") { return .allow }
         open(url)
         return .cancel
+    }
+
+    /// The page did not load: say why in the tab and the log, instead of a blank tab.
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
+        pageFailed(error)
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
+        pageFailed(error)
+    }
+
+    /// The web content process ended (a crash, or memory): the tab is drawn again from its messages.
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        ready = false
+        link.report("The A2UI tab's page stopped; Paddock loads it again")
+        load()
+    }
+
+    private func pageFailed(_ error: any Error) {
+        // A navigation Paddock cancelled (a link it opened in the sandbox) is no failure.
+        let code = (error as NSError).code
+        guard (error as NSError).domain != "WebKitErrorDomain" || code != 102, code != NSURLErrorCancelled else { return }
+        // The fail-closed page itself is never loaded again.
+        guard webView.url?.absoluteString != "about:blank" else { return }
+        link.report("The A2UI tab's page did not load: \(error.localizedDescription) (\((error as NSError).domain) \(code))")
+        webView.loadHTMLString(Self.failClosedPage, baseURL: nil)
     }
 
     /// `window.open` and `target=_blank`: never a second web view; the link opens in the sandbox.
@@ -352,11 +389,7 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
 /// once the tab is gone, nothing is answered.
 @MainActor
 private final class WeakSchemeHandler: NSObject, WKURLSchemeHandler {
-    private weak var target: (any WKURLSchemeHandler)?
-
-    init(_ target: any WKURLSchemeHandler) {
-        self.target = target
-    }
+    weak var target: (any WKURLSchemeHandler)?
 
     func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
         guard let target else {
@@ -374,11 +407,7 @@ private final class WeakSchemeHandler: NSObject, WKURLSchemeHandler {
 /// Forwards the page's messages without the controller keeping the tab alive.
 @MainActor
 private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
-    private weak var target: (any WKScriptMessageHandler)?
-
-    init(_ target: any WKScriptMessageHandler) {
-        self.target = target
-    }
+    weak var target: (any WKScriptMessageHandler)?
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         target?.userContentController(userContentController, didReceive: message)
