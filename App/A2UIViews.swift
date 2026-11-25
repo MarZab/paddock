@@ -118,8 +118,9 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
         configuration.websiteDataStore = .nonPersistent()
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init()
-        configuration.setURLSchemeHandler(self, forURLScheme: A2UIWebPolicy.scheme)
-        // Through a weak proxy: the controller keeps its handlers alive.
+        // Both through weak proxies: the configuration keeps its scheme handler alive, and the
+        // controller its message handlers, so the tab itself would never go.
+        configuration.setURLSchemeHandler(WeakSchemeHandler(self), forURLScheme: A2UIWebPolicy.scheme)
         configuration.userContentController.add(WeakScriptMessageHandler(self), name: A2UIWebPolicy.messageHandler)
         webView.navigationDelegate = self
         webView.uiDelegate = self
@@ -344,6 +345,29 @@ final class A2UIWebTab: NSObject, WKNavigationDelegate, WKUIDelegate, WKURLSchem
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         components?.fragment = nil
         return components?.url
+    }
+}
+
+/// Answers the page's requests through the tab without the configuration keeping the tab alive;
+/// once the tab is gone, nothing is answered.
+@MainActor
+private final class WeakSchemeHandler: NSObject, WKURLSchemeHandler {
+    private weak var target: (any WKURLSchemeHandler)?
+
+    init(_ target: any WKURLSchemeHandler) {
+        self.target = target
+    }
+
+    func webView(_ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask) {
+        guard let target else {
+            urlSchemeTask.didFailWithError(URLError(.cancelled))
+            return
+        }
+        target.webView(webView, start: urlSchemeTask)
+    }
+
+    func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {
+        target?.webView(webView, stop: urlSchemeTask)
     }
 }
 
