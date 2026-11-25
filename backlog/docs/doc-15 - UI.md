@@ -3,7 +3,7 @@ id: doc-15
 title: UI
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-24 22:08'
+updated_date: '2026-11-25 07:51'
 ---
 ```
 ┌ sidebar ─────────┬ main ──────────────────────────────────────────────────┐
@@ -45,7 +45,7 @@ updated_date: '2026-11-24 22:08'
 
   | | Global | Per sandbox (in sbx, the only store) |
   |---|---|---|
-  | **Published** (sandbox to host, e.g. a dev server the agent starts) | `paddock.yaml` `ports.publishRange`, the host ports Paddock picks from (free in every sandbox); bind `127.0.0.1` | `sbx ports N --publish/--unpublish`; add (the sandbox port, and the host port when the operator chooses one, else Paddock's pick; PAD-139), remove, copy URL |
+  | **Published** (sandbox to host, e.g. a dev server the agent starts) | `paddock.yaml` `ports.publishRange`, the host ports Paddock picks from (free in every sandbox); bind `127.0.0.1` | `sbx ports N --publish/--unpublish`; add (the sandbox port, and the host port when the operator chooses one, which may be outside the range but never llmman's, a gateway's, or Docker's API port, else Paddock's pick; PAD-139), remove, copy URL |
   | **Host services** (sandbox to host loopback, e.g. Postgres on 5432) | sbx's own global rules (listed on the Network page, removable there; Paddock sandboxes deny them unless allowed) | Per-sandbox allow rules (`localhost:PORT`) |
 
   - Live state comes from `sandbox.ports` events and `sbx ports N --json`; a port published by hand with the CLI is simply in effect.

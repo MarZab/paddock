@@ -150,7 +150,7 @@ struct NewPortPopover: View {
     let done: () -> Void
     @State private var direction = Direction.publish
     @State private var port = ""
-    /// The Mac's side of a published port; empty lets Paddock pick it from `ports.publishRange`.
+    /// The Mac's side of a published port; empty lets Paddock pick one from `ports.publishRange`.
     @State private var hostPort = ""
 
     init(model: AppModel, project: Project, done: @escaping () -> Void) {
@@ -177,7 +177,7 @@ struct NewPortPopover: View {
                 TextField("Mac", text: $hostPort, prompt: Text("auto"))
                     .frame(width: 70)
                     .onSubmit(add)
-                    .help("The port on this Mac, from ports.publishRange; empty picks a free one")
+                    .help("The port on this Mac; empty picks a free one from ports.publishRange")
             }
             Button("Add", action: add)
                 .keyboardShortcut(.defaultAction)

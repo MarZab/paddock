@@ -385,7 +385,7 @@ public enum AppConfigFile {
         #   opencode:
         #     kind: openCode
 
-        # Host ports for the sandbox ports Paddock publishes (on 127.0.0.1).
+        # Host ports Paddock picks from when it publishes a sandbox port (on 127.0.0.1).
         # ports:
         #   publishRange: [18000, 18999]
 

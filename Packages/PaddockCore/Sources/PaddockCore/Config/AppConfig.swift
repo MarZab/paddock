@@ -32,7 +32,7 @@ public struct AppConfig: Sendable, Equatable {
         }
     }
 
-    /// The only port setting: host ports for published sandbox ports (loopback only).
+    /// The only port setting: the host ports Paddock picks from for published sandbox ports (loopback only).
     public struct Ports: Sendable, Equatable, Codable {
         public var publishRange: ClosedRange<Int> = 18000...18999
     }
