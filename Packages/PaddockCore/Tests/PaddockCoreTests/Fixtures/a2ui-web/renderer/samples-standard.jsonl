@@ -1,0 +1,3 @@
+{"version":"1.0","action":{"name":"follow_up","surfaceId":"preview-FollowUp","sourceComponentId":"root","timestamp":"2026-11-25T07:46:42.907Z","userMessage":"Compare with last quarter","context":{"message":"Compare with last quarter"}}}
+{"version":"1.0","action":{"name":"follow_up","surfaceId":"preview-FollowUp","sourceComponentId":"root","timestamp":"2026-11-25T07:46:43.151Z","userMessage":"Break down by region","context":{"message":"Break down by region"}}}
+{"version":"1.0","action":{"name":"follow_up","surfaceId":"preview-FollowUp","sourceComponentId":"root","timestamp":"2026-11-25T07:46:43.385Z","userMessage":"Export as CSV","context":{"message":"Export as CSV"}}}

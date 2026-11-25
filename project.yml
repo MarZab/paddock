@@ -22,10 +22,16 @@ targets:
       - path: App
         excludes:
           - "OpenUI/**"
+          - "A2UI/**"
           # the icon's source, rendered into Assets.xcassets by `mise run icon`; not shipped
           - "AppIcon.svg"
       # OpenUI's renderer and Paddock's host page, copied as a folder (OpenUIPolicy.files)
       - path: App/OpenUI
+        type: folder
+        buildPhase: resources
+      # A2UI tabs' page: CopilotKit's renderer and the A2UI Playground's catalog, built by
+      # mise run vendor:a2ui-web, copied as a folder (its manifest.json lists what it may load)
+      - path: App/A2UI
         type: folder
         buildPhase: resources
     dependencies:
