@@ -39,7 +39,7 @@ final class ProjectTerminals {
     /// Playwright tab (it comes back with the next change). Once the agent had a browser page, the
     /// Playwright tab stays while the sandbox runs, also when no page is open for a moment.
     private(set) var browser = BrowserSessions()
-    private var hostHalves: [String: Half] = [:]
+    var hostHalves: [String: Half] = [:]
     private(set) var unseen: Set<String> = []
     private var closedShows: Set<String> = []
     private var playwrightClosed = false
@@ -69,6 +69,16 @@ final class ProjectTerminals {
 
     /// Native Markdown tabs the operator switched to the file's source (backlog doc Browser).
     var sourceShows: Set<String> = []
+
+    /// Agents Paddock left running (PAD-153, `ProjectTerminals+LeftAgents`): the tabs this app
+    /// opened (from `AppModel`, which keeps them), who hears of a new one, the sessions being
+    /// stopped (their tabs go at once), and the ones placed in the tab bars.
+    var opened = OpenedTabs()
+    var onOpened: ((UUID) -> Void)?
+    /// A tab with agents in it closed: `AppModel` stops them.
+    var onClosedWithAgents: (([AgentState]) -> Void)?
+    var leftStopping: Set<String> = []
+    var leftPlaced: Set<String> = []
 
     /// Whether the operator's last answer in an interactive tab reached the sandbox, for the
     /// confirmation the tab shows (a serial, so each answer shows once).
@@ -140,14 +150,18 @@ final class ProjectTerminals {
     /// at the real size, as in any terminal app. Without that OpenCode never drew.
     private var waitingForView: Set<UUID> = []
 
-    /// Opens a tab. An agent session (`sbx run --name N`) also starts a stopped sandbox.
-    func open(_ kind: TerminalTabs.Kind, in half: Half = .left) {
+    /// Opens a tab. An agent session (`sbx run --name N`) also starts a stopped sandbox;
+    /// `agentArguments` are the agent's own (`--resume ID` to take a conversation over, PAD-153).
+    func open(_ kind: TerminalTabs.Kind, in half: Half = .left, agentArguments: [String] = []) {
         var bar = tabs(half)
         let tab = bar.add(kind)
         // The agent's status hooks report this ID with the state (backlog doc Kits, Agent status); a
         // shell has it too, for an agent the operator starts in it (PAD-64).
         let session = SandboxShellSession(sandbox: sandbox, kind: sessionKind(kind), sbx: sbx,
-                                          sandboxEnvironment: ["PADDOCK_TAB": tab.id.uuidString])
+                                          sandboxEnvironment: ["PADDOCK_TAB": tab.id.uuidString],
+                                          agentArguments: kind == .agent ? agentArguments : [])
+        // Remembered, so an agent left running in it is found again (`LeftAgents`).
+        if kind != .mac { onOpened?(tab.id) }
         sessions[tab.id] = session
         // After the session is there, so selecting the new tab focuses its terminal.
         setTabs(bar, half)
@@ -212,11 +226,13 @@ final class ProjectTerminals {
     func receiveAgent(_ line: String) {
         agents.apply(line: line)
         showAgentActivity()
+        placeLeftAgents()
     }
 
     func clearAgent() {
         agents = AgentStates()
         showAgentActivity()
+        placeLeftAgents()
     }
 
     /// The watcher starts again: keep what is shown until it reported every session (`AgentStates`).
@@ -227,6 +243,7 @@ final class ProjectTerminals {
     func endAgentResync() {
         agents.endResync()
         showAgentActivity()
+        placeLeftAgents()
     }
 
     private var agentMarks = AgentTabMarks()
@@ -259,7 +276,7 @@ final class ProjectTerminals {
                 SidebarAgents.Tab(id: tab.id, title: tab.title, label: tab.terminalTitle == nil ? nil : tab.label.text,
                                   isAgent: tab.kind == .agent)
             }
-        return SidebarAgents.rows(tabs: sessionTabs, marks: { self.agentMarks.mark(of: $0) }, states: agents, now: now)
+        return SidebarAgents.rows(tabs: sessionTabs, marks: { self.agentMarks.mark(of: $0) }, states: agents, left: leftAgents, now: now)
     }
 
     /// Shows a tab from the sidebar: selects it in its half, which focuses its terminal and clears
@@ -296,6 +313,11 @@ final class ProjectTerminals {
     }
 
     func close(_ tab: TerminalTabs.Tab) {
+        // The agents in it go too: ending sbx on the Mac leaves them running in the sandbox (PAD-153).
+        // Marked as being stopped first, so they never flash up as left running.
+        let inTab = agents.sessions.values.filter { $0.tab == tab.id && $0.pid != nil }
+        leftStopping.formUnion(inTab.map(\.session))
+        if !inTab.isEmpty { onClosedWithAgents?(inTab) }
         if let session = sessions[tab.id] {
             views.release(session)
             Task { await session.terminate() }
@@ -307,6 +329,7 @@ final class ProjectTerminals {
         tabs.close(tab.id)
         rightTabs.close(tab.id)
         if activeTab == tab.id { activeTab = tabs.selection ?? rightTabs.selection }
+        placeLeftAgents()
     }
 
     /// Moves a tab to the other half, from its context menu or a drag; before `target` when it
@@ -320,7 +343,8 @@ final class ProjectTerminals {
             setTabs(source, half.other)
             setTabs(destination, half)
         case .host(let id):
-            guard id == Self.playwrightTab || id == Self.processesTab || Self.showID(id).map({ show in browser.shows.contains { $0.id == show } }) == true else { return }
+            guard id == Self.playwrightTab || id == Self.processesTab || Self.showID(id).map({ show in browser.shows.contains { $0.id == show } }) == true
+                || LeftAgents.session(ofHostTab: id).map({ session in leftAgents.contains { $0.session == session } }) == true else { return }
             hostHalves[id] = half
             var source = tabs(half.other), destination = tabs(half)
             if source.shownHostTab(offered: [id]) == id { source.selectHost(nil) }
@@ -388,6 +412,7 @@ final class ProjectTerminals {
                 activity: waiting ? .attention : busy ? .busy : unseen.contains(Self.playwrightTab) ? .unseen : .none,
                 actions: [Self.refresh]))
         }
+        result += leftAgentHostTabs(half)
         for show in browser.shows where !closedShows.contains(show.id) && self.half(of: Self.showTab(show.id)) == half {
             let tab = Self.showTab(show.id)
             let place = show.isInteractive ? "Asks you for an answer; the agent gets your clicks and form values"
@@ -465,6 +490,9 @@ final class ProjectTerminals {
         } else if let id = Self.showID(tab) {
             closedShows.insert(id)
             resetA2UI(id)
+        } else if let session = LeftAgents.session(ofHostTab: tab) {
+            // Closing it stops the agent (`AppModel.closeHostTab`); its tab goes at once.
+            leftStopping.insert(session)
         }
         unseen.remove(tab)
         webViews.release(tab)
@@ -487,14 +515,14 @@ final class ProjectTerminals {
     }
 
     /// A new host tab takes its place among the tabs now, so tabs opened later come after it.
-    private func place(_ tab: String) {
+    func place(_ tab: String) {
         var bar = tabs(half(of: tab))
         guard !bar.isPlaced(.host(tab)) else { return }
         bar.place(.host(tab))
         setTabs(bar, half(of: tab))
     }
 
-    private func deselect(_ tab: String) {
+    func deselect(_ tab: String) {
         for half in [Half.left, .right] {
             var bar = tabs(half)
             if bar.shownHostTab(offered: [tab]) == tab {
@@ -667,6 +695,8 @@ struct ProjectTabs<Info: View>: View {
             BrowserTab(project: project, content: .dashboard)
         } else if tab == ProjectTerminals.processesTab {
             SandboxProcessesTab(project: project)
+        } else if let session = LeftAgents.session(ofHostTab: tab), let state = terminals.leftAgents.first(where: { $0.session == session }) {
+            LeftAgentView(project: project, state: state)
         } else if let id = ProjectTerminals.showID(tab), let show = terminals.browser.shows.first(where: { $0.id == id }) {
             if show.isInteractive {
                 A2UIShowView(project: project, show: show)

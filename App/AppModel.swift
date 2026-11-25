@@ -87,6 +87,8 @@ final class AppModel {
     private var gatewayHost: GatewayHost?
     /// Terminal sessions per project, kept while the app runs.
     private(set) var terminals: [String: ProjectTerminals] = [:]
+    /// The tabs this app opened, to find the agents it left running (`AppModel+LeftAgents`, PAD-153).
+    var openedTabs = OpenedTabs()
     /// The sbx binary found by the last refresh.
     private(set) var sbxPath: String?
     /// What sbx reports per sandbox (any sandbox, project or not): ports and its own rules.
@@ -120,6 +122,7 @@ final class AppModel {
 
     func start() {
         guard refreshLoop == nil else { return }
+        loadOpenedTabs()
         hangWatchdog.start { [weak self] stuck, folder in
             self?.appendLog("Paddock did not respond for \(Int(stuck)) s; diagnostics are in \(folder.path)", isError: true)
         }
@@ -1479,7 +1482,10 @@ final class AppModel {
     func closeHostTab(_ tab: String, of project: Project) {
         guard let terminals = terminals[project.name] else { return }
         let show = ProjectTerminals.showID(tab).flatMap { id in terminals.browser.shows.first { $0.id == id } }
+        // A left-running agent's tab: closing it stops the agent (PAD-153).
+        let left = LeftAgents.session(ofHostTab: tab).flatMap { session in terminals.leftAgents.first { $0.session == session } }
         terminals.closeHostTab(tab)
+        if let left { stopLeftAgent(left, of: project) }
         guard let show else { return }
         let opened = show.opened || openedShows.contains("\(project.name)/\(show.id)")
         sendShowEvent(opened ? .closed : .dismissed, show: show.id, of: project)
@@ -1606,6 +1612,11 @@ final class AppModel {
             return nil
         }
         let created = ProjectTerminals(sandbox: project.name, sbx: sbxPath, folder: project.folder)
+        created.opened = openedTabs
+        created.onOpened = { [weak self] tab in self?.recordOpenedTab(tab, in: project.name) }
+        created.onClosedWithAgents = { [weak self] states in
+            for state in states { self?.stopLeftAgent(state, of: project) }
+        }
         terminals[project.name] = created
         showOnScreen()
         return created

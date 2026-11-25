@@ -20,6 +20,14 @@ public enum LeftAgents {
             .sorted { ($0.time, $0.session) < ($1.time, $1.session) }
     }
 
+    /// The host tab that shows a left-running session (`left:` and its session).
+    public static func hostTab(_ state: AgentState) -> String { "left:" + state.session }
+
+    /// The session a host tab shows, or nil for another tab.
+    public static func session(ofHostTab tab: String) -> String? {
+        tab.hasPrefix("left:") ? String(tab.dropFirst("left:".count)) : nil
+    }
+
     /// The agent's arguments for a new agent tab that takes the session over (`sbx run --name N --
     /// ARGS`): Claude's own session by its id, else the agent's most recent one. Only a Claude
     /// session id that is a UUID is passed on, so nothing from the sandbox becomes an option.

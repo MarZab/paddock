@@ -68,6 +68,20 @@ struct LeftAgentsTests {
         #expect(LeftAgents.stopProcessCommand(sandbox: "paddock", pid: 40, name: "node")?.suffix(3) == ["40", "name", "node"])
     }
 
+    /// The sidebar lists a left-running agent after the open tabs; its row opens its host tab.
+    @Test func theSidebarListsItAfterTheTabs() throws {
+        let states = try states()
+        let left = LeftAgents.find(states: states, openTabs: [Self.openTab], opened: opened(Self.leftTab, Self.openTab), project: "paddock")
+        let tabs = [SidebarAgents.Tab(id: Self.openTab, title: "agent", isAgent: true)]
+        let rows = SidebarAgents.rows(tabs: tabs, marks: { _ in .none }, states: states, left: left, now: Self.now)
+        #expect(rows.map(\.place) == [.agentTab, .leftRunning])
+        let row = try #require(rows.last)
+        #expect(row.tab == nil && row.hostTab == "left:59fd5a55-8be1-411c-b27f-9fb066a30387" && row.title == "claude")
+        #expect(LeftAgents.session(ofHostTab: try #require(row.hostTab)) == "59fd5a55-8be1-411c-b27f-9fb066a30387")
+        #expect(LeftAgents.session(ofHostTab: "show:tab-a1b2") == nil)
+        #expect(SidebarAgents.help(row, now: Self.now).contains("left running"))
+    }
+
     @Test func theRunnerStopsThroughSbx() async throws {
         let fake = FakeRunner()
         fake.succeedByDefault = true
