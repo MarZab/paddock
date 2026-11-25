@@ -1,4 +1,5 @@
 import PaddockCore
+import PaddockShellCore
 import SwiftUI
 
 /// Agents Paddock left running (PAD-153; backlog doc UI, Agents left running): an agent whose tab
