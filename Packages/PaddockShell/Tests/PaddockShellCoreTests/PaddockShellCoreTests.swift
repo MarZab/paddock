@@ -126,6 +126,23 @@ struct SandboxShellSessionTests {
                                                     ["exec", "-it", "paddock-app", "env", "PADDOCK_TAB=T1", "bash"]])
     }
 
+    /// PAD-153: taking over a conversation passes the agent's own arguments after `--`; a shell
+    /// takes none.
+    @Test func anAgentTakesItsOwnArgumentsAfterTheSeparator() async throws {
+        let spawner = FakeSpawner()
+        let agent = SandboxShellSession(sandbox: "paddock-app", kind: .agent, sbx: "/sbx", environment: [:],
+                                        sandboxEnvironment: ["PADDOCK_TAB": "T2"], agentArguments: ["--resume", "59fd5a55-8be1-411c-b27f-9fb066a30387"],
+                                        spawner: spawner)
+        let shell = SandboxShellSession(sandbox: "paddock-app", kind: .bash, sbx: "/sbx", environment: [:],
+                                        agentArguments: ["--resume", "x"], spawner: spawner)
+        try await agent.start()
+        try await shell.start()
+        #expect(spawner.spawned.map(\.arguments) == [
+            ["run", "--name", "paddock-app", "-e", "PADDOCK_TAB=T2", "--", "--resume", "59fd5a55-8be1-411c-b27f-9fb066a30387"],
+            ["exec", "-it", "paddock-app", "bash"],
+        ])
+    }
+
     @Test func agentAndShellCommands() async throws {
         let spawner = FakeSpawner()
         let agent = SandboxShellSession(sandbox: "paddock-app", kind: .agent, sbx: "/opt/homebrew/bin/sbx", environment: ["HOME": "/Users/op"], spawner: spawner)

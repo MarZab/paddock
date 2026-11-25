@@ -34,6 +34,9 @@ public actor SandboxShellSession {
 
     private let sbx: String
     private let sandboxEnvironment: [String: String]
+    /// The agent's own arguments (`sbx run ... -- ARGS`), such as `--resume ID` to take over a
+    /// conversation; an agent session only.
+    private let agentArguments: [String]
     private let spawner: any PseudoTerminalSpawning
     private let environment: [String: String]
     private let scrollbackLimit: Int
@@ -66,12 +69,14 @@ public actor SandboxShellSession {
     ///   - sandboxEnvironment: variables the session gets inside the sandbox: an agent session through
     ///     `sbx run -e`, a shell through `env` before it (so an agent started in the shell inherits them,
     ///     PAD-64); not a shell on this Mac.
+    ///   - agentArguments: the agent's own arguments, after `--`; only an agent session takes them.
     public init(
         sandbox: String,
         kind: Kind,
         sbx: String,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         sandboxEnvironment: [String: String] = [:],
+        agentArguments: [String] = [],
         spawner: any PseudoTerminalSpawning = PosixPseudoTerminal(),
         scrollbackLimit: Int = 2 * 1024 * 1024,
         resendAfter: [Duration] = SandboxShellSession.resendAfter
@@ -80,6 +85,7 @@ public actor SandboxShellSession {
         self.kind = kind
         self.sbx = sbx
         self.sandboxEnvironment = sandboxEnvironment
+        self.agentArguments = agentArguments
         self.environment = environment.merging(["TERM": "xterm-256color", "COLORTERM": "truecolor"]) { _, terminal in terminal }
         self.spawner = spawner
         self.scrollbackLimit = scrollbackLimit
@@ -95,7 +101,7 @@ public actor SandboxShellSession {
     /// and the shell are arguments of the script, never part of it.
     public nonisolated var arguments: [String] {
         switch kind {
-        case .agent: ["run", "--name", sandbox] + variables.flatMap { ["-e", $0] }
+        case .agent: ["run", "--name", sandbox] + variables.flatMap { ["-e", $0] } + (agentArguments.isEmpty ? [] : ["--"] + agentArguments)
         case .shell(let shell): ["exec", "-it", sandbox] + (variables.isEmpty ? [] : ["env"] + variables) + [shell]
         case .mac(let folder, let shell): ["-c", #"cd -- "$1" && exec "$2" -l"#, "sh", folder, shell]
         }

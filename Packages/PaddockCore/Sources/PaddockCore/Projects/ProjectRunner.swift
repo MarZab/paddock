@@ -32,6 +32,8 @@ public enum ProjectRunError: Error, Equatable, CustomStringConvertible {
     case invalidShowPath(String)
     /// Claude's sessions folder cannot be mounted, or sbx mounted another one (PAD-127).
     case claudeSessions(ClaudeSessionsProblem)
+    /// A process Paddock does not stop: no known process, or pid 1 (PAD-153).
+    case cannotStop(String)
 
     public var description: String {
         switch self {
@@ -54,6 +56,7 @@ public enum ProjectRunError: Error, Equatable, CustomStringConvertible {
         case .kit(let error): error.description
         case .invalidShowPath(let path): "Paddock does not read \(path) for a shown file"
         case .claudeSessions(let problem): "Claude's sessions cannot be kept on this Mac: \(problem.description)"
+        case .cannotStop(let what): "Paddock does not stop \(what)"
         }
     }
 }
@@ -554,6 +557,28 @@ public struct ProjectRunner: Sendable {
     public func navigateShow(_ navigation: BrowserShow.Navigation, show id: String, of project: Project) async throws {
         try owned(project)
         guard let command = BrowserShow.navigateCommand(sandbox: project.name, id: id, navigation) else { return }
+        try await sbx.perform(command)
+    }
+
+    // MARK: - Agents left running and sandbox processes (PAD-153; every command from LeftAgents)
+
+    /// Stops an agent Paddock left running (`LeftAgents.find`), only while its process is still that
+    /// session's. Throws when the pid is another process now.
+    public func stopLeftAgent(_ state: AgentState, of project: Project) async throws {
+        try owned(project)
+        guard let command = LeftAgents.stopCommand(sandbox: project.name, state: state) else {
+            throw ProjectRunError.cannotStop("agent session \(state.session): it has no tab or process Paddock knows")
+        }
+        try await sbx.perform(command)
+    }
+
+    /// Stops a process the operator picked in the sandbox's Processes tab, only while its pid still
+    /// has the same name.
+    public func stopSandboxProcess(pid: Int32, name: String, of project: Project) async throws {
+        try owned(project)
+        guard let command = LeftAgents.stopProcessCommand(sandbox: project.name, pid: pid, name: name) else {
+            throw ProjectRunError.cannotStop("process \(pid)")
+        }
         try await sbx.perform(command)
     }
 
