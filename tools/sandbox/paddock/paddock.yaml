@@ -56,7 +56,13 @@ capabilities:
               esac
               # What Swift's own Debian 12 image installs, plus gnupg to check the download.
               apt-get update
-              apt-get install -y --no-install-recommends \
+              # libcurl4-openssl-dev -> libldap-dev pins libldap2 to its exact version. When DHI ships a
+              # newer libldap2 in the image before rebuilding libldap-dev, apt won't downgrade on its own
+              # (--allow-downgrades only permits it), so ask for libldap-dev's libldap2 explicitly. No-op
+              # once the repo is consistent again.
+              ldap="$(apt-cache policy libldap-dev | awk '/Candidate:/ {print $2}')"
+              apt-get install --allow-downgrades -y --no-install-recommends \
+                "libldap2=$ldap" \
                 binutils binutils-gold gcc g++ libc6-dev libcurl4-openssl-dev libedit-dev libncurses-dev \
                 libsqlite3-dev libxml2-dev pkg-config tzdata unzip uuid-dev zlib1g-dev gnupg ca-certificates curl
               rm -rf /var/lib/apt/lists/*

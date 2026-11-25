@@ -87,6 +87,8 @@ final class AppModel {
     private var gatewayHost: GatewayHost?
     /// Terminal sessions per project, kept while the app runs.
     private(set) var terminals: [String: ProjectTerminals] = [:]
+    /// The tabs this app opened, to find the agents it left running (`AppModel+LeftAgents`, PAD-153).
+    var openedTabs = OpenedTabs()
     /// The sbx binary found by the last refresh.
     private(set) var sbxPath: String?
     /// What sbx reports per sandbox (any sandbox, project or not): ports and its own rules.
@@ -120,6 +122,7 @@ final class AppModel {
 
     func start() {
         guard refreshLoop == nil else { return }
+        loadOpenedTabs()
         hangWatchdog.start { [weak self] stuck, folder in
             self?.appendLog("Paddock did not respond for \(Int(stuck)) s; diagnostics are in \(folder.path)", isError: true)
         }
@@ -568,7 +571,7 @@ final class AppModel {
 
     // MARK: - Ports
 
-    private func runner() async throws -> ProjectRunner {
+    func runner() async throws -> ProjectRunner {
         guard let sbx = await probe.sbxPath() else { throw AppError("sbx is not installed") }
         return ProjectRunner(sbx: SbxService(runner: FoundationProcessRunner(), sbx: sbx, reads: await probe.reads(for: sbx)), paths: paths,
                              log: activityLog(for: nil))
@@ -735,6 +738,7 @@ final class AppModel {
         guard withSaved(project, { self.setKits(kits, for: $0) }) else { return }
         guard var updated = projects.project(named: project.name) else { return }
         updated.kits = kits.sorted()
+        updated.kitChoice = KitSelection.choiceRevision
         do {
             try projectDirectory.save(updated)
             try projects.update(updated)
@@ -1391,14 +1395,15 @@ final class AppModel {
     /// One `paddock-browser-watch` per running project with the browser kit (backlog doc Browser).
     private var browserWatchers: [String: Task<Void, Never>] = [:]
 
-    /// Starts or stops the watchers to match: a project with the browser kit whose sandbox runs.
-    /// A stopped sandbox's browser tabs go with its sessions.
+    /// Starts or stops the watchers to match: a running project with the base kit (PAD-147) or, from
+    /// before it, the browser kit. A stopped sandbox's browser tabs go with its sessions.
     func syncBrowserWatchers() {
         syncAgentWatchers()
         voice.sync()
         guard let sbxPath else { return }
         var wanted = Set<String>()
-        for project in projects.projects where state(of: project) == .running && BrowserKit.isChosen(by: project, app: appConfig) {
+        for project in projects.projects where state(of: project) == .running
+            && (BaseKit.isChosen(by: project, app: appConfig) || BrowserKit.isChosen(by: project, app: appConfig)) {
             wanted.insert(project.name)
         }
         for (name, task) in browserWatchers where !wanted.contains(name) {
@@ -1411,9 +1416,10 @@ final class AppModel {
         }
     }
 
-    /// Follows the sandbox's `paddock-browser-watch`: the agent's pages and its activity. The
-    /// lines are untrusted (`BrowserSessions`). Started again after it ends (a sandbox from before
-    /// the kit has no watcher), less often each time.
+    /// Follows the sandbox's `paddock-browser-watch`: the tabs the agent shows, and its browser's
+    /// pages and activity. The lines are untrusted (`BrowserSessions`). Started again after it ends
+    /// (a sandbox from before the base kit and without the browser kit has no watcher), less often
+    /// each time.
     private func watchBrowser(_ name: String, sbx: URL) -> Task<Void, Never> {
         Task { [weak self] in
             var delay: Duration = .seconds(2)
@@ -1437,9 +1443,9 @@ final class AppModel {
                 if !heard {
                     failures += 1
                     if failures == 3, !Task.isCancelled {
-                        self?.fail("Paddock cannot follow the browser in \(name): "
+                        self?.fail("Paddock cannot follow the agent's tabs in \(name): "
                                    + "paddock-browser-watch did not run (\(problem)). "
-                                   + "Recreate the sandbox to get the current browser kit.", in: name)
+                                   + "Recreate the sandbox to get Paddock's base kit.", in: name)
                     }
                 }
                 try? await Task.sleep(for: delay)
@@ -1480,39 +1486,6 @@ final class AppModel {
         guard let show else { return }
         let opened = show.opened || openedShows.contains("\(project.name)/\(show.id)")
         sendShowEvent(opened ? .closed : .dismissed, show: show.id, of: project)
-    }
-
-    /// What an interactive tab's page sent (checked): an action goes to the sandbox for
-    /// `paddock wait`, problems too (only when they changed), and form state stays here.
-    func received(_ message: OpenUIMessage, from show: BrowserSessions.Show, of project: Project) {
-        guard let terminals = terminals[project.name] else { return }
-        let event: BrowserShow.UIEvent
-        let json: String
-        switch message {
-        case .ready:
-            return
-        case .state(let state):
-            terminals.keepUIState(state, for: show.id)
-            return
-        case .action(let action):
-            event = .action
-            json = action
-        case .problems(let problems):
-            guard terminals.uiProblemsSent[show.id] != problems else { return }
-            terminals.uiProblemsSent[show.id] = problems
-            event = .problems
-            json = problems
-        }
-        Task {
-            do {
-                try await runner().sendUIEvent(event, json: json, show: show.id, of: project)
-                if event == .action { terminals.delivered(show.id, sent: true, detail: "Sent to the agent") }
-            } catch {
-                fail("Could not hand your answer to the agent in \(project.name): \(String(describing: error))",
-                     in: project.name)
-                if event == .action { terminals.delivered(show.id, sent: false, detail: "Not sent: \(String(describing: error))") }
-            }
-        }
     }
 
     /// A host tab menu's Refresh or Back. A page shown in the sandbox is reloaded or sent back
@@ -1636,6 +1609,11 @@ final class AppModel {
             return nil
         }
         let created = ProjectTerminals(sandbox: project.name, sbx: sbxPath, folder: project.folder)
+        created.opened = openedTabs
+        created.onOpened = { [weak self] tab in self?.recordOpenedTab(tab, in: project.name) }
+        created.onClosedWithAgents = { [weak self] states in
+            for state in states { self?.stopLeftAgent(state, of: project) }
+        }
         terminals[project.name] = created
         showOnScreen()
         return created

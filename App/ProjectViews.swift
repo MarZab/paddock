@@ -414,6 +414,11 @@ struct ProjectDetailView: View {
                     if model.appConfig.agents[project.agent] != nil {
                         ProjectKitsCard(project: project)
                     }
+                    // What runs in the sandbox (PAD-153.5).
+                    ProjectAgentsCard(project: project)
+                    if model.mayPoll(project) {
+                        ProjectProcessesCard(project: project)
+                    }
                     RecentActivity(entries: model.timeline[project.name])
                 }
                 VStack(alignment: .leading, spacing: 12) {
@@ -1100,8 +1105,9 @@ struct NewProjectSheet: View {
     @State private var draft: ProjectDraft?
     @State private var configProblem: String?
     @State private var error: String?
-    /// Write `sbxenv.yaml` and a kit for the project into its folder (`SandboxFiles`).
-    @State private var writesFiles = false
+    /// Write `sbxenv.yaml` and a kit for the project into its folder (`SandboxFiles`): on unless the
+    /// operator turns it off (PAD-148); a folder with its own sbxenv.yaml gets none.
+    @State private var writesFiles = true
     /// The folder's sensitive names the operator is asked about before Create (`FolderPolicy.sensitiveNames`).
     @State private var sensitiveToConfirm: [String] = []
 

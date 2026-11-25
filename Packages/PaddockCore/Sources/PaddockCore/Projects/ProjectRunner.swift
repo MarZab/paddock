@@ -32,6 +32,8 @@ public enum ProjectRunError: Error, Equatable, CustomStringConvertible {
     case invalidShowPath(String)
     /// Claude's sessions folder cannot be mounted, or sbx mounted another one (PAD-127).
     case claudeSessions(ClaudeSessionsProblem)
+    /// A process Paddock does not stop: no known process, or pid 1 (PAD-153).
+    case cannotStop(String)
 
     public var description: String {
         switch self {
@@ -54,6 +56,7 @@ public enum ProjectRunError: Error, Equatable, CustomStringConvertible {
         case .kit(let error): error.description
         case .invalidShowPath(let path): "Paddock does not read \(path) for a shown file"
         case .claudeSessions(let problem): "Claude's sessions cannot be kept on this Mac: \(problem.description)"
+        case .cannotStop(let what): "Paddock does not stop \(what)"
         }
     }
 }
@@ -557,6 +560,28 @@ public struct ProjectRunner: Sendable {
         try await sbx.perform(command)
     }
 
+    // MARK: - Agents left running and sandbox processes (PAD-153; every command from LeftAgents)
+
+    /// Stops an agent Paddock left running (`LeftAgents.find`), only while its process is still that
+    /// session's. Throws when the pid is another process now.
+    public func stopLeftAgent(_ state: AgentState, of project: Project) async throws {
+        try owned(project)
+        guard let command = LeftAgents.stopCommand(sandbox: project.name, state: state) else {
+            throw ProjectRunError.cannotStop("agent session \(state.session): it has no tab or process Paddock knows")
+        }
+        try await sbx.perform(command)
+    }
+
+    /// Stops a process the operator picked in the sandbox's Processes tab, only while its pid still
+    /// has the same name.
+    public func stopSandboxProcess(pid: Int32, name: String, of project: Project) async throws {
+        try owned(project)
+        guard let command = LeftAgents.stopProcessCommand(sandbox: project.name, pid: pid, name: name) else {
+            throw ProjectRunError.cannotStop("process \(pid)")
+        }
+        try await sbx.perform(command)
+    }
+
     /// A screenshot or recording the operator saved from a dashboard view: copied into the sandbox
     /// (`BrowserCapture.folder`), and the agent whose page it shows is told. Returns its path there.
     @discardableResult
@@ -573,12 +598,70 @@ public struct ProjectRunner: Sendable {
         return BrowserCapture.folder + "/" + name
     }
 
-    /// An interactive tab's action or the renderer's problems, handed to the sandbox for the agent
-    /// (`paddock wait`). `json` comes checked from `OpenUIMessage`.
-    public func sendUIEvent(_ event: BrowserShow.UIEvent, json: String, show id: String, of project: Project) async throws {
+    // MARK: - A2UI tabs (backlog doc Browser, interactive tabs; every command from A2UICommands)
+
+    /// An A2UI tab's message log from byte `offset` on (for `A2UIInbox.take`).
+    public func a2uiMessages(show id: String, from offset: Int, of project: Project) async throws -> Data {
         try owned(project)
-        guard let command = BrowserShow.uiEventCommand(sandbox: project.name, id: id, event, json: json) else { return }
-        try await sbx.perform(command)
+        guard let command = A2UICommands.messages(sandbox: project.name, id: id, from: offset) else {
+            throw ProjectRunError.invalidShowPath(id)
+        }
+        guard let log = A2UICommands.decodeMessages(try await sbx.output(command.arguments)) else {
+            throw ProjectRunError.invalidShowPath(id)
+        }
+        return log
+    }
+
+    /// Hands a line for `paddock wait` (`A2UIPolicy.lineForAgent` or an `A2UIEvent`) to the sandbox,
+    /// on stdin.
+    public func a2uiDeliver(_ line: Data, show id: String, of project: Project) async throws {
+        try owned(project)
+        guard let command = A2UICommands.deliver(sandbox: project.name, id: id, line: line), let stdin = command.stdin else {
+            throw ProjectRunError.invalidShowPath(id)
+        }
+        try await sbx.perform(command.arguments, stdin: stdin)
+    }
+
+    /// The bytes of an A2UI tab's media from the sandbox: fetched there (sbx's network rules
+    /// apply), or a file next to the tab's messages. Refused unless they are of `kind`.
+    public func a2uiMedia(_ source: A2UIMedia.Source, kind: A2UIMedia.Kind, show id: String, of project: Project) async throws -> (mimeType: String, data: Data) {
+        try owned(project)
+        switch source {
+        case .inline(let mimeType, let data):
+            return (mimeType, data)
+        case .sandboxFetch(let url):
+            guard let command = A2UICommands.fetch(sandbox: project.name, id: id, url: url) else { throw ProjectRunError.invalidShowPath(url.absoluteString) }
+            return try A2UIMedia.decodeFetched(try await sbx.output(command.arguments), kind: kind).get()
+        case .sandboxFile(let path):
+            guard let command = A2UICommands.read(sandbox: project.name, id: id, relativePath: path) else { throw ProjectRunError.invalidShowPath(path) }
+            let output = try await sbx.output(command.arguments)
+            let mimeType = A2UIMedia.mimeType(forPath: path)
+            guard output.count <= A2UICommands.base64Length(A2UIMedia.maxBytes),
+                  let data = Data(base64Encoded: output, options: .ignoreUnknownCharacters) else {
+                throw A2UIMedia.Refusal(reason: "over \(A2UIMedia.maxBytes / 1024 / 1024) MB")
+            }
+            guard A2UIMedia.accepts(mimeType, for: kind) else {
+                throw A2UIMedia.Refusal(reason: "\(path) is not \(kind.rawValue)")
+            }
+            return (mimeType, data)
+        }
+    }
+
+    /// `openUrl` in an A2UI tab: the page opens as a tab of the sandbox's browser (`paddock open`),
+    /// never on the Mac.
+    public func a2uiOpen(_ url: URL, of project: Project) async throws {
+        try owned(project)
+        guard let command = A2UICommands.open(sandbox: project.name, url: url) else { throw ProjectRunError.invalidShowPath(url.absoluteString) }
+        try await sbx.perform(command.arguments)
+    }
+
+    /// A file link in an A2UI tab's text: the file next to the tab's messages, as a native tab.
+    public func a2uiOpenFile(_ relativePath: String, show id: String, of project: Project) async throws {
+        try owned(project)
+        guard let command = A2UICommands.openFile(sandbox: project.name, id: id, relativePath: relativePath) else {
+            throw ProjectRunError.invalidShowPath(relativePath)
+        }
+        try await sbx.perform(command.arguments)
     }
 
     /// A file of a native tab (the shown file, or one beside it), read through `sbx exec`.

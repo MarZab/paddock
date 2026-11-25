@@ -11,9 +11,9 @@ public struct ProjectDraft: Sendable, Equatable {
     public var kits: [String] = []
     /// Folders to mount besides the project folder, read-only unless switched (PAD-73.5).
     public var extraFolders: [Project.ExtraFolder] = []
-    /// Keep Claude's sessions on this Mac across recreates (PAD-127): the operator's choice, off
-    /// unless chosen; it applies to a Claude Code project.
-    public var keepsClaudeSessions = false
+    /// Keep Claude's sessions on this Mac across recreates (PAD-127): the operator's choice, on
+    /// unless they turn it off (PAD-148); it applies to a Claude Code project.
+    public var keepsClaudeSessions = true
 
     public init(folder: String, name: String, agent: String, provider: String, cloneMode: Bool = false,
                 kits: [String] = []) {
@@ -164,6 +164,7 @@ public enum NewProject {
         var project = Project(name: draft.name, folder: folder, agent: draft.agent, provider: draft.provider,
                               cloneMode: draft.cloneMode, gatewayPort: gatewayPort, kits: draft.kits.sorted(),
                               keepsClaudeSessions: draft.keepsClaudeSessions && app.agents[draft.agent] == .claudeCode)
+        project.kitChoice = KitSelection.choiceRevision
         // Each extra folder is checked like the project folder, and against the ones before it.
         for extra in draft.extraFolders {
             do throws(ExtraFolderProblem) {

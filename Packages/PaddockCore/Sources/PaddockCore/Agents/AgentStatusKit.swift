@@ -230,9 +230,6 @@ public enum AgentStatusKit {
         let merge = Data(claudeMergeScript.utf8).base64EncodedString()
         let hooks = Data(claudeHooksJSON.utf8).base64EncodedString()
         let plugin = Data(opencodePlugin.utf8).base64EncodedString()
-        // Indented for `content: |` (16 spaces in the file); an interpolation keeps its own indent.
-        let guide = SandboxGuide.context.split(separator: "\n", omittingEmptySubsequences: false)
-            .map { $0.isEmpty ? "" : "                \($0)" }.joined(separator: "\n")
         return #"""
         # syntax=docker/sandbox-kit:3
         # Written by Paddock. Changes are overwritten when Paddock creates a sandbox.
@@ -240,7 +237,7 @@ public enum AgentStatusKit {
         kind: mixin
         version: "\#(KitFile.version)"
         displayName: Agent status (Paddock)
-        description: Tell Paddock when the agent is working, waiting on the operator, or idle, and what to know about this sandbox.
+        description: Tell Paddock when the agent is working, waiting on the operator, or idle.
         provides: [paddock-status]
 
         capabilities:
@@ -267,13 +264,6 @@ public enum AgentStatusKit {
                   user: "1000"
                   env: [PATH]
                   description: Add the status hooks to Claude Code and the status plugin to OpenCode
-
-          # What the agent should know about this sandbox and Paddock's rules, so a project's own
-          # files need not say it (PAD-71, backlog doc Kits). @1, as sbx's own kits use.
-          - type: com.docker.sandbox/agent-context@1
-            config:
-              content: |
-        \#(guide)
 
         """#
     }

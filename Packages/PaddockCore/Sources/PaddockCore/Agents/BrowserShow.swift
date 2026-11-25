@@ -33,20 +33,6 @@ public enum BrowserShow {
         isShowID(id) ? ["exec", sandbox, "paddock", "--operator", id, event.rawValue] : nil
     }
 
-    /// What an interactive tab reports to the sandbox (`OpenUIMessage`): an action, or the
-    /// renderer's problems.
-    public enum UIEvent: String, Sendable {
-        case action, problems
-    }
-
-    /// `sbx exec` command that hands an interactive tab's action or problems to the sandbox, where
-    /// `paddock wait` prints them. `json` comes checked from `OpenUIMessage`. Nil for an id
-    /// `paddock` would not make.
-    public static func uiEventCommand(sandbox: String, id: String, _ event: UIEvent, json: String) -> [String]? {
-        guard isShowID(id), json.utf8.count <= OpenUIMessage.maxActionBytes else { return nil }
-        return ["exec", sandbox, "paddock", "--operator", id, event.rawValue, json]
-    }
-
     /// The operator's Refresh or Back on a tab rendered in the sandbox.
     public enum Navigation: String, Sendable {
         case reload, back
@@ -82,24 +68,28 @@ public enum BrowserShow {
         // Tabs the operator closed or dismissed, kept so --status can still say so.
         const GONE = '/tmp/paddock-tabs/gone';
         const MAX = 12;
-        const READ_LIMIT = 20 * 1024 * 1024;
+        // A native tab's file, or an A2UI tab's media file (A2UIMedia.maxBytes).
+        const READ_LIMIT = 40 * 1024 * 1024;
         const LOCK = '/tmp/paddock-tabs/lock';
-        // The documents of interactive tabs (paddock ui), as shown.
+        // The message logs of interactive tabs (paddock ui): A2UI messages, one per line (A2UIPolicy).
         const UI = '/tmp/paddock-tabs/ui';
-        const UI_LIMIT = 512 * 1024;
+        const MESSAGE_LIMIT = 512 * 1024;
+        const TAB_LIMIT = 8 * 1024 * 1024;
+        const OUTBOUND_LIMIT = 256 * 1024;
+        const REFERENCE = '/usr/local/share/paddock/a2ui.md';
         const USAGE = `paddock: put things in front of the operator, in tabs next to your terminal. New tabs never take
         their focus; tell them in one line what to look at.
 
         When to use it
           You built or changed something they should see    paddock open http://localhost:3000 --title "Checkout"
           A document or report they should read             paddock open notes.md --native   (sharp, on their screen)
-          You need a decision or values from them           paddock ui question.oui           (see /usr/local/share/paddock/openui.md)
+          You need a decision or values from them           paddock ui question.json          (see /usr/local/share/paddock/a2ui.md)
           You want them to point at something on a page     paddock annotate ID
         Then wait for them instead of asking in the terminal:
           paddock wait ID          prints what they did: opened, closed, an answer (JSON), a saved screenshot
           paddock feedback ID      their screenshots and annotations, with comments and file paths
 
-        Every command prints the tab's id (tab-k3f9) or needs it:
+        Every command prints the tab's id (tab-a3f9) or needs it:
           paddock status ID | reload ID | back ID | close ID | goto ID URL-or-FILE | note ID TEXT`;
 
         function fail(message) { process.stderr.write(`paddock: ${message}\n`); process.exit(1); }
@@ -215,7 +205,10 @@ public enum BrowserShow {
           if (url && url[1].trim() === 'about:blank' && wanted !== 'about:blank') return 'it stayed on about:blank';
           return null;
         }
+        // Live pages are the browser kit's (PAD-147); this script is Paddock's base kit's.
+        const NO_BROWSER = "a live page needs Paddock's browser kit (playwright-cli), which this sandbox does not have: ask the operator to add it in Paddock and recreate the sandbox, or show a file with --native";
         function cli(args) {
+          if (!fs.existsSync(REAL)) fail(NO_BROWSER);
           return execFileSync(REAL, args, {
             cwd: '/', encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
             // The same sockets folder as the dashboard, whatever USER and TMPDIR say (PWTEST_SOCKETS_DIR).
@@ -241,7 +234,10 @@ public enum BrowserShow {
               Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
             }
           }
-          try { return work(); } finally { fs.rmSync(LOCK, { recursive: true, force: true }); }
+          // fail() exits at once: the lock goes then too, not 30 s later.
+          const release = () => fs.rmSync(LOCK, { recursive: true, force: true });
+          process.once('exit', release);
+          try { return work(); } finally { release(); process.removeListener('exit', release); }
         }
         // A new record under a random id, created exclusively, so two calls never share one; the id is
         // the handle the agent passes back (no one gets another's by counting).
@@ -302,31 +298,124 @@ public enum BrowserShow {
             : `Opened tab ${id} for the operator. Use the id: paddock status|reload|goto|close ${id}`);
         }
 
-        // An interactive tab: an OpenUI Lang document, rendered by Paddock (reference:
-        // /usr/local/share/paddock/openui.md). Paddock reads the copy kept here.
-        function readDocument(source) {
+        // An interactive tab: A2UI v1.0 messages (reference: REFERENCE), rendered by Paddock on the
+        // operator's Mac. A file (or stdin) holds a JSON array of messages, an object with "messages",
+        // one message, or one message per line; each is kept as one line of the tab's log, which
+        // Paddock reads (--messages) and checks again.
+        function messagesOf(source) {
           let text;
           try { text = source === '-' ? fs.readFileSync(0, 'utf8') : fs.readFileSync(path.resolve(source), 'utf8'); } catch { fail(`${source} cannot be read`); }
-          if (Buffer.byteLength(text) > UI_LIMIT) fail(`the document is over ${UI_LIMIT / 1024} KB; split it`);
-          if (!/^\s*root\s*=/m.test(text)) fail('the document needs a root statement: root = Card(...) (see /usr/local/share/paddock/openui.md)');
-          return text;
+          const trimmed = text.trim();
+          if (!trimmed) fail(`${source} has no A2UI messages (see ${REFERENCE})`);
+          let list = null;
+          try {
+            const whole = JSON.parse(trimmed);
+            list = Array.isArray(whole) ? whole : (whole && Array.isArray(whole.messages) ? whole.messages : [whole]);
+          } catch { /* one message per line */ }
+          if (!list) {
+            list = [];
+            trimmed.split('\n').forEach((line, i) => {
+              if (!line.trim()) return;
+              try { list.push(JSON.parse(line)); } catch { fail(`line ${i + 1} of ${source} is not JSON: write one A2UI message per line, or one JSON array of them`); }
+            });
+          }
+          return list.map((message, i) => {
+            if (!message || typeof message !== 'object' || Array.isArray(message)) fail(`message ${i + 1} is not a JSON object`);
+            if (message.version !== '1.0') fail(`message ${i + 1} has no "version": "1.0" (see ${REFERENCE})`);
+            const line = JSON.stringify(message);
+            if (Buffer.byteLength(line) > MESSAGE_LIMIT) fail(`message ${i + 1} is over ${MESSAGE_LIMIT / 1024} KB; send its components in more than one updateComponents`);
+            return line;
+          });
         }
-        function keepDocument(record, text) {
+        function appendMessages(record, lines) {
           fs.mkdirSync(UI, { recursive: true });
-          record.path = path.join(UI, record.id + '.oui');
-          fs.writeFileSync(record.path, text);
+          let size = 0;
+          try { size = fs.statSync(record.path).size; } catch { /* a new log */ }
+          const text = lines.join('\n') + '\n';
+          if (size + Buffer.byteLength(text) > TAB_LIMIT) fail(`tab ${record.id} has had ${TAB_LIMIT / 1024 / 1024} MB of messages; open a new tab`);
+          fs.appendFileSync(record.path, text);
         }
         function ui(source, title, text) {
-          if (!source) fail(`which document? paddock ui FILE (or - for stdin)\n${USAGE}`);
-          const doc = readDocument(source);
-          const record = { title: title || (source === '-' ? 'Interactive' : path.basename(source)), note: text || '', state: 'new', history: [], mode: 'ui', revision: 0, actions: [] };
+          if (!source) fail(`which messages? paddock ui FILE (or - for stdin)\n${USAGE}`);
+          const lines = messagesOf(source);
+          // Media paths in the messages are relative to the file's folder (stdin: this folder).
+          const base = fs.realpathSync(source === '-' ? process.cwd() : path.dirname(path.resolve(source)));
+          const record = { title: title || (source === '-' ? 'Interactive' : path.basename(source)), note: text || '', state: 'new', history: [], mode: 'ui', revision: 0, base };
           locked(() => {
             if (shows().length >= MAX) fail(`${MAX} tabs are open; close one first: paddock close ID`);
             claim(record);
-            keepDocument(record, doc);
+            record.path = path.join(UI, record.id + '.jsonl');
+            appendMessages(record, lines);
             save(record);
           });
-          console.log(`Opened interactive tab ${record.id} for the operator. Wait for their answer: paddock wait ${record.id}`);
+          console.log(`Opened interactive tab ${record.id} for the operator. Wait for what they do: paddock wait ${record.id}; send it more messages: paddock ui ${record.id} FILE`);
+        }
+        // More messages for an open interactive tab (paddock ui ID FILE, or goto).
+        function send(id, source) {
+          const lines = messagesOf(source || '');
+          locked(() => {
+            const record = find(id);
+            if (record.mode !== 'ui') fail(`tab ${id} is not interactive; open one with paddock ui FILE`);
+            news(record);
+            appendMessages(record, lines);
+            record.revision = (record.revision || 0) + 1;
+            happened(record, `you sent ${lines.length} message${lines.length === 1 ? '' : 's'}`);
+            save(record);
+          });
+          console.log(`Sent ${lines.length} message${lines.length === 1 ? '' : 's'} to tab ${id}.`);
+        }
+        // For Paddock: a file the operator clicked in an interactive tab's text (a link relative to its
+        // messages), opened as a native tab. Never outside the tab's folder.
+        function showFile(id, relative) {
+          const record = find(id);
+          if (record.mode !== 'ui') fail(`tab ${id} is not interactive`);
+          if (!relative) fail('which file? a path relative to the tab\'s messages');
+          const base = record.base;
+          let real;
+          try { real = fs.realpathSync(path.resolve(base, relative)); } catch { fail(`${relative} does not exist next to the tab's messages`); }
+          if (!real.startsWith(base + '/')) fail('outside the tab\'s folder');
+          if (!fs.statSync(real).isFile()) fail(`${relative} is not a file`);
+          show(real, path.basename(real), `opened from ${id}`, true);
+        }
+        // For Paddock: an interactive tab's log from byte OFFSET on, as base64.
+        function messagesFrom(id, offset) {
+          const record = find(id);
+          if (record.mode !== 'ui') fail(`tab ${id} is not interactive`);
+          const from = Math.max(0, Number(offset) || 0);
+          let data = Buffer.alloc(0);
+          try {
+            const fd = fs.openSync(record.path, 'r');
+            const size = fs.fstatSync(fd).size;
+            if (size > from) {
+              data = Buffer.alloc(Math.min(size - from, TAB_LIMIT));
+              fs.readSync(fd, data, 0, data.length, from);
+            }
+            fs.closeSync(fd);
+          } catch { fail('the tab has no messages'); }
+          process.stdout.write(data.toString('base64'));
+        }
+        // For Paddock: a web image, video, or audio clip of an interactive tab, fetched here, where the
+        // sandbox's network rules apply. Prints its Content-Type, a newline, and the body as base64.
+        function fetchMedia(id, url) {
+          const record = find(id);
+          if (record.mode !== 'ui') fail(`tab ${id} is not interactive`);
+          if (!/^https?:\/\//i.test(url || '')) fail('only http and https');
+          const file = path.join(UI, `${record.id}-fetch-${crypto.randomBytes(4).toString('hex')}`);
+          fs.mkdirSync(UI, { recursive: true });
+          let type;
+          try {
+            type = execFileSync('curl', ['--silent', '--show-error', '--fail', '--location', '--proto', '=http,https', '--proto-redir', '=http,https',
+              '--max-filesize', String(READ_LIMIT), '--max-time', '120', '--output', file, '--write-out', '%{content_type}', '--', url],
+              { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+            const data = fs.readFileSync(file);
+            if (data.length > READ_LIMIT) fail('too large');
+            process.stdout.write(`${type}\n${data.toString('base64')}`);
+          } catch (e) {
+            if (e && e.code === 'ENOENT') fail('curl is missing in this sandbox');
+            fail(`could not fetch it: ${String((e && e.stderr) || e).trim().slice(0, 300)}`);
+          } finally {
+            fs.rmSync(file, { force: true });
+          }
         }
 
         function close(id) {
@@ -353,23 +442,17 @@ public enum BrowserShow {
             if (record.state !== 'opened') { record.state = 'opened'; happened(record, 'the operator opened it'); save(record); }
           } else if (event === 'reload' || event === 'back') {
             navigate(id, event, '', true);
-          } else if (event === 'action' || event === 'problems') {
-            // From Paddock, checked there: an action as JSON (a button or a submitted form), or what the
-            // renderer could not draw.
-            let value;
-            try { value = JSON.parse(process.argv[5] || ''); } catch { fail('not JSON'); }
-            if ((process.argv[5] || '').length > 65536) fail('too large');
-            if (event === 'action') {
-              record.actions = (record.actions || []).concat([value]);
-              happened(record, `the operator acted: ${JSON.stringify(value)}`);
-            } else {
-              const list = Array.isArray(value) ? value : [];
-              const text = list.length
-                ? `the renderer could not draw parts of it: ${list.map((p) => `${p.code}${p.statementId ? ' in ' + p.statementId : ''}: ${p.message}${p.hint ? ' (expected ' + p.hint + ')' : ''}`).join('; ')}`
-                : 'the renderer draws all of it now';
-              if (record.lastProblems !== text) { record.lastProblems = text; happened(record, `the operator's screen says ${text}`); }
-            }
-            save(record);
+          } else if (event === 'a2ui') {
+            // From Paddock, checked there (A2UIPolicy.lineForAgent): one line the tab sent, or Paddock's
+            // own word about the tab ({"paddock": ...}), for paddock wait.
+            const line = fs.readFileSync(0, 'utf8').replace(/\n$/, '');
+            if (Buffer.byteLength(line) > OUTBOUND_LIMIT || line.includes('\n')) fail('not one line, or too large');
+            try { JSON.parse(line); } catch { fail('not JSON'); }
+            locked(() => {
+              const current = find(id);
+              happened(current, `the operator's tab sent: ${line}`);
+              save(current);
+            });
           } else if (event === 'screenshot' || event === 'recording') {
             // The operator saved one from this tab; Paddock put it in the sandbox at the path given.
             const file = process.argv[5] || '';
@@ -404,12 +487,11 @@ public enum BrowserShow {
           if (!byOperator) news(record);
           const who = byOperator ? 'the operator' : 'you';
           if (record.mode === 'ui') {
-            if (how === 'back') fail(`tab ${id} is interactive; it has no back (change it with paddock goto ${id} FILE)`);
-            if (how === 'goto') keepDocument(record, readDocument(target || ''));
-            record.revision = (record.revision || 0) + 1;
-            happened(record, how === 'goto' ? `${who} changed the document` : `${who} reloaded it`);
+            if (how === 'goto') return send(id, target);
+            // The operator's Refresh draws the tab again from its first message, in Paddock.
+            if (!byOperator) fail(`tab ${id} is interactive: it has no ${how}; send it more messages with paddock ui ${id} FILE`);
+            happened(record, 'the operator drew it again from its first message');
             save(record);
-            if (!byOperator) console.log(`Tab ${id} shows the ${how === 'goto' ? 'new' : 'same'} document again.`);
             return;
           }
           if (record.mode === 'native') {
@@ -455,8 +537,8 @@ public enum BrowserShow {
           if (!byOperator) console.log(`Tab ${id} shows ${record.url}.`);
         }
 
-        // Waits until the operator does something new with the tab (opens, closes, dismisses, reloads, or
-        // saves a capture of it; for an interactive tab, an action), prints what, and exits; exit code 3
+        // Waits until the operator has done something the agent has not seen with the tab (opens, closes, dismisses, reloads, or
+        // saves a capture of it; for an interactive tab, what the tab sent), prints what, and exits; exit code 3
         // when the timeout passes first.
         function wait(id, seconds) {
           if (!isId(id)) fail(`${id || 'that'} is not a tab id; use the tab-xxxx that paddock open printed`);
@@ -468,7 +550,8 @@ public enum BrowserShow {
           };
           const first = load();
           if (!first) fail(`there is no tab ${id}`);
-          const seen = (first.history || []).length;
+          // From what the agent last saw, so what came before this call (an answer, a refused message) is not lost.
+          const seen = Math.min(first.agentSeen || 0, (first.history || []).length);
           const limit = Date.now() + Math.max(1, Math.min(Number(seconds) || 600, 86400)) * 1000;
           for (;;) {
             const record = load();
@@ -476,8 +559,8 @@ public enum BrowserShow {
             const news = record ? (record.history || []).slice(seen).filter((line) => line.includes('the operator')) : [];
             if (news.length) {
               for (const line of news) {
-                // An action prints as its JSON, ready to parse; anything else as the line.
-                const action = / the operator acted: (\{.*\})$/.exec(line);
+                // What an interactive tab sent prints as its JSON, ready to parse; anything else as the line.
+                const action = / the operator's tab sent: (\{.*\})$/.exec(line);
                 console.log(action ? action[1] : line);
               }
               // Seen now: later commands do not print it again.
@@ -549,12 +632,9 @@ public enum BrowserShow {
         // For Paddock: a file of a native tab, base64, only from the shown file's folder.
         function read(id, relative) {
           const record = find(id);
-          if (record.mode === 'ui') {
-            process.stdout.write(fs.readFileSync(record.path).toString('base64'));
-            return;
-          }
-          if (record.mode !== 'native') fail(`${id} is not rendered on the Mac`);
-          const base = path.dirname(record.path);
+          if (record.mode !== 'native' && record.mode !== 'ui') fail(`${id} is not rendered on the Mac`);
+          if (record.mode === 'ui' && !relative) fail('which file? a path relative to the tab\'s messages');
+          const base = record.mode === 'ui' ? record.base : path.dirname(record.path);
           let real;
           try { real = fs.realpathSync(relative ? path.resolve(base, relative) : record.path); } catch { fail('no such file'); }
           if (real !== record.path && !real.startsWith(base + '/')) fail('outside the shown file\'s folder');
@@ -572,8 +652,6 @@ public enum BrowserShow {
           const text = option('--note');
           const unknown = args.find((a) => a.startsWith('--'));
           if (unknown) fail(`unknown option ${unknown}\n${USAGE}`);
-          // An OpenUI Lang document is an interactive tab, not a page of its source.
-          if (!native && /\.oui$/i.test(args[0] || '')) return ui(args[0], title, text);
           show(args[0], title, text, native);
         }
         const verb = args[0];
@@ -581,6 +659,9 @@ public enum BrowserShow {
           // Paddock's own (what the operator did, and a native tab's files); not in the help.
           case '--operator': operator(args[1], args[2]); break;
           case '--read': read(args[1], args[2] || ''); break;
+          case '--messages': messagesFrom(args[1], args[2]); break;
+          case '--fetch': fetchMedia(args[1], args[2]); break;
+          case '--show-file': showFile(args[1], args[2]); break;
           case 'open': args.shift(); open(); break;
           case 'status': status(args[1]); break;
           case 'feedback': feedbackOf(args[1]); break;
@@ -591,7 +672,7 @@ public enum BrowserShow {
             args.shift();
             const title = option('--title');
             const text = option('--note');
-            ui(args[0], title, text);
+            if (isId(args[0])) send(args[0], args[1]); else ui(args[0], title, text);
             break;
           }
           case 'wait': { const id = args[1]; args.splice(0, 2); wait(id, option('--timeout')); break; }

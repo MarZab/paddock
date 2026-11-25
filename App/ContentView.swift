@@ -7,6 +7,9 @@ enum SidebarSelection: Hashable {
     case project(String)
     /// An agent's row under its project: selecting it shows the project with that tab (PAD-63).
     case agent(String, UUID)
+    /// An agent Paddock left running, or another Paddock's: selecting it shows the project's Info,
+    /// whose Running Agents card has it (PAD-153.5).
+    case leftAgent(String, String)
     case models
     case network
     case filesystem
@@ -132,6 +135,10 @@ struct ContentView: View {
             case .agent(let name, let tab)?:
                 model.shownProject = name
                 model.showAgentTab(tab, of: name)
+            case .leftAgent(let name, _)?:
+                // Its Take Over and Stop are on Info's Running Agents card (PAD-153.5).
+                model.shownProject = name
+                model.terminals[name]?.showInfo()
             case .project(let name)?:
                 model.shownProject = name
             default:
@@ -169,6 +176,8 @@ struct ContentView: View {
         ForEach(model.agentRows(of: project, now: now)) { row in
             if let tab = row.tab {
                 AgentRow(row: row, now: now).tag(SidebarSelection.agent(project.name, tab))
+            } else if let hostTab = row.hostTab {
+                AgentRow(row: row, now: now).tag(SidebarSelection.leftAgent(project.name, hostTab))
             } else {
                 // In no open tab: nothing to show, so not selectable (no tag).
                 AgentRow(row: row, now: now)
@@ -193,7 +202,7 @@ struct ContentView: View {
 
     private var isProjectPage: Bool {
         switch selection {
-        case .project?, .agent?: true
+        case .project?, .agent?, .leftAgent?: true
         default: false
         }
     }
@@ -204,7 +213,7 @@ struct ContentView: View {
     private var breadcrumb: [Breadcrumb.Item] {
         let projects = Breadcrumb.Item(title: "Projects") { selection = .overview }
         switch selection {
-        case .project(let name), .agent(let name, _): return [projects, Breadcrumb.Item(title: name, action: nil)]
+        case .project(let name), .agent(let name, _), .leftAgent(let name, _): return [projects, Breadcrumb.Item(title: name, action: nil)]
         case .models: return system("Models")
         case .network: return system("Network")
         case .filesystem: return system("Filesystem")
@@ -221,7 +230,7 @@ struct ContentView: View {
 
     @ViewBuilder private var detail: some View {
         switch selection {
-        case .project(let name), .agent(let name, _):
+        case .project(let name), .agent(let name, _), .leftAgent(let name, _):
             if let project = model.project(named: name) {
                 ProjectDetailView(project: project)
             } else {

@@ -1,0 +1,940 @@
+# Interactive tabs in Paddock: A2UI
+
+`paddock ui FILE` puts an interactive tab next to your terminal, drawn on the operator's screen
+from A2UI v1.0 messages with the A2UI Playground's catalog (CopilotKit's Gen UI 2.0 components
+plus charts, maps, data views, inputs, and domain cards). Use it for a decision, an approval,
+values, or a result that is clearer shown than told.
+
+## How it works here
+
+- **The file:** one A2UI message per line (JSONL), or one JSON array of them. Every message has
+  `"version": "1.0"`. Paths in it (pictures, links) are relative to the file's folder.
+- **A surface:** start with `createSurface`, the catalog `https://copilotkit.ai/a2ui/catalogs/playground/v1`
+  (the only one), its components inline (the one with id `root` first, parents before children)
+  and its `dataModel`. A component is `{"id": "...", "component": "Name", ...its props}`;
+  children are listed by id. Use your own surface ids; one surface per question.
+- **More later:** `paddock ui tab-a3f9 more.jsonl` adds messages to the open tab:
+  `updateComponents` (same id replaces a component), `updateDataModel` (`path`, `value`),
+  `deleteSurface`. What the operator typed stays.
+- **Values:** every prop takes a literal, `{"@path": "/a/b"}` (a JSON Pointer into the surface's
+  data model), or a function call `{"@call": "formatNumber", "args": {...}}`. Bind an input's
+  `value` to a path: what the operator types lands there.
+- **Answers:** a Button's `onClick` is `{"event": {"name": "approve", "context": {"notes": {"@path": "/notes"}}}}`.
+  `paddock wait tab-a3f9` then prints
+  `the operator's tab sent: {"version":"1.0","action":{"name":"approve","surfaceId":"...","sourceComponentId":"...","timestamp":"...","context":{"notes":"..."}}}`.
+  Paths in `context` are read at the click: put everything you need in it. Run `paddock wait`
+  again for the next answer.
+- **Mistakes:** what the renderer refuses or cannot draw comes back the same way as an A2UI
+  `error` (`VALIDATION_FAILED`, `RENDER_FAILED`, ...: the component and why); a message Paddock
+  refused as `{"paddock":"refused","line":N,"reason":"..."}`. Send the fix to the same tab
+  (`updateComponents` with the same ids).
+- **Pictures, video, audio:** an http(s) URL is fetched in this sandbox, under its network rules;
+  a relative path is read from beside the file. At most 40 MB each. Embedded players
+  (`VideoEmbed`) show a link instead. Maps draw shapes and markers without map tiles.
+- **Links** (a Button's `href`, Markdown links, `openUrl`): an http(s) URL opens in this sandbox's
+  browser (the browser kit), a relative path opens that file in a tab on the operator's screen.
+  Nothing opens on the operator's Mac.
+- **Limits:** 512 KB a message, 8 MB a tab (then open a new one), 20 components a surface is plenty.
+- Never ask for passwords, tokens, or keys, not even in an `obscured` field: answers are logged
+  in this sandbox.
+
+## A small one
+
+```jsonl
+{"version":"1.0","createSurface":{"surfaceId":"deploy","catalogId":"https://copilotkit.ai/a2ui/catalogs/playground/v1","dataModel":{"env":"staging","notes":""},"components":[{"id":"root","component":"Card","child":"body"},{"id":"body","component":"Column","gap":3,"children":["title","env","notes","go"]},{"id":"title","component":"Heading","text":"Deploy","subtitle":"Choose where the build goes"},{"id":"env","component":"RadioGroup","label":"Environment","value":{"@path":"/env"},"options":[{"label":"Staging","value":"staging"},{"label":"Production","value":"prod"}]},{"id":"notes","component":"TextField","label":"Notes","value":{"@path":"/notes"}},{"id":"go","component":"Button","label":"Deploy","variant":"primary","onClick":{"event":{"name":"deploy","context":{"env":{"@path":"/env"},"notes":{"@path":"/notes"}}}}}]}}
+```
+
+## The catalog's design rules
+
+- Fully answer the request. Lead with a Heading, then the component built for the job: comparisons -> ComparisonTable, plans/options -> RadioGroup or ProductCard, schedules -> Agenda or Timeline, code -> CodeBlock, people -> ProfileCard or Avatar/AvatarGroup, statuses -> Badge, ratings -> Rating, a single ratio or score -> RadialProgress or Gauge, recipes -> RecipeCard, events -> EventCard, products -> ProductCard, flights -> FlightCard, weather -> WeatherCard. Pick the richest component that fits: charts for numbers over time or comparisons, MapView for places, DataTable for many rows, Timeline for sequences, domain cards when they match.
+- Layout with Column, Row and Grid. Use Card only for an interactive panel (a form, controls) and Section to group with a title. Short text is Text, Title or Caption; prose is Markdown.
+- Make the layout make sense: one chart per question unless the user asks for more, never two charts or a chart plus a table showing the same numbers, and never a chart whose series is flat or has under 3 points (use a Stat instead).
+- Put KPIs in a Grid of Stat (add a Sparkline when a trend matters). Aim for 8 to 18 components, never more than 20: show each fact once (never the same list in both a map and a table), prefer one rich component over many small ones, but use small ones (Badge, Avatar, Divider) where they carry meaning.
+- Concise copy, specific realistic data. If numbers are illustrative (no live source), end with a Caption saying "Illustrative data".
+- Multi-series charts share one axis: only combine series of similar magnitude. Otherwise plot % change from a common start, or use one chart per series.
+- Percent values are 0-100 (12.4 means 12.4%) with format "percent"; never fractions.
+- Subtitles describe the content ("Revenue grew 12% on EMEA renewals"), never the UI itself.
+- Maps: at most 8 markers, each a specific named place (landmark, venue, neighbourhood) that the plan text mentions, one per stop. Never use the city itself as a marker.
+- Stat values are short numbers; put qualitative takeaways in KeyValueList, Callout or Markdown.
+- Write final copy. Never say "placeholder", "sample text" or "lorem". Never use em dashes.
+
+## Components (124)
+
+Props are `name: type`; `?` marks an optional one. Every prop also takes `{"@path": ...}` or `{"@call": ...}`. `[id]` is a list of child ids (or `{"componentId": id, "path": "/list"}` to repeat one per item of a data model list); `Action` is `{"event": {"name", "context"?, "userMessage"?}}` or `{"functionCall": {...}}`. Every component may also have `accessibility` (`label`, `description`).
+
+- **Box**: A flex container.
+  - children?: [id]
+  - direction?: "col"|"row": Default "col"
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **Column**: A vertical flex container.
+  - children?: [id]
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **Row**: A horizontal flex container.
+  - children?: [id]
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **Grid**: A CSS grid container.
+  - children?: [id]
+  - columns?: number|string: Column count or CSS template. Default 2
+  - minChildWidth?: number|string
+  - rows?: number|string
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **GridItem**: A cell of a Grid, with an optional span.
+  - children?: [id]
+  - span?: number
+  - rowSpan?: number
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **Card**: A bordered panel, only for an interactive panel (controls, a form, a configurator); tables, charts and text need none.
+  - children?: [id]
+  - child?: id
+  - variant?: "default"|"outline"|"section"|"soft"|"elevated"|"transparent"
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+  - size?: "sm"|"md"|"lg": The padding preset: 8, 16 or 24px. Default "md"
+- **Flow**: A masonry-like grid that packs cells of different sizes.
+  - children?: [id]
+  - columns?: number
+  - rows?: number
+  - layout?: "pack"|"fixed": Default "pack"
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **FlowItem**: A cell of a Flow, with an optional span.
+  - children?: [id]
+  - span?: number
+  - rowSpan?: number
+  - aspectMode?: "soft"|"fixed"
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **Carousel**: A horizontally scrolling row that snaps to its CarouselItem or CarouselMediaItem children, with arrows.
+  - children?: [id]
+  - activeIndex?: number: The index of the slide in view. Bind it with { "@path": "/x" } to read or set it
+  - label?: string: A short name of the carousel for screen readers
+  - visibleItems?: number
+  - showArrows?: boolean: Default true
+  - previousLabel?: string: Default "Previous"
+  - nextLabel?: string: Default "Next"
+  - snap?: "none"|"proximity"|"mandatory"
+  - snapAlign?: "start"|"center"|"end"
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **CarouselItem**: A slide of a Carousel.
+  - children?: [id]
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **CarouselMediaItem**: A Carousel slide: an image with its children (a Caption, a Text) under it.
+  - url: string: Image URL
+  - children?: [id]
+  - onClick?: Action: Sent when the user clicks the image. It replaces the full-screen view.
+  - description?: string: What the image shows, for screen readers
+  - href?: string: Opens this URL in a new tab
+  - lightbox?: boolean: Default true: a click opens all slides full-screen
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+  - size?: "sm"|"md"|"lg": The width: "sm" 160px, "md" 240px, "lg" 320px. Default "md"
+- **Spacer**: Flexible empty space.
+- **Divider**: A line between two groups: horizontal, or vertical with axis "vertical" in a Row.
+  - axis?: "horizontal"|"vertical": Default "horizontal"
+  - spacing?: number|string
+  - color?: "default"|"subtle"|"strong"|"info"|"warning"|"caution"|"success"|"danger"|"discovery"
+  - size?: number
+- **Tabs**: Tabs that show one panel at a time.
+  - tabs: {title: string, child: id}[]: One entry per tab
+  - selectedIndex?: number: The open tab. Default 0. Bind it with { "@path": "/x" } to read it
+- **Title**: A heading in a Card or next to another component; a heading alone is markdown.
+  - text: string: Heading text
+  - color?: string: One of default|prose|primary|emphasis|secondary|tertiary|success|info|warning|caution|danger|discovery or a CSS color
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold"
+  - textAlign?: "start"|"center"|"end"
+  - tabularNums?: boolean
+  - size?: "sm"|"md"|"lg"|"xl"|"2xl"|"3xl"|"4xl"|"5xl": Default "md"
+  - strong?: boolean: Default true
+- **Text**: Body text in a Card or next to another component; a paragraph alone is markdown outside the fence.
+  - text?: string|number: Text with inline markdown. A bound number shows as text
+  - children?: [id]
+  - color?: string: One of default|prose|primary|emphasis|secondary|tertiary|success|info|warning|caution|danger|discovery or a CSS color
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold"
+  - textAlign?: "start"|"center"|"end"
+  - tabularNums?: boolean
+  - size?: "3xs"|"2xs"|"xs"|"sm"|"md"|"lg": Default "md"
+  - strong?: boolean: Default false
+- **Caption**: Small secondary text: a hint under a control, or a label in a Row.
+  - text: string|number: Caption text
+  - color?: string: One of default|prose|primary|emphasis|secondary|tertiary|success|info|warning|caution|danger|discovery or a CSS color
+  - size?: "sm"|"md"|"lg": Default "lg"
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold": Default "normal"
+  - textAlign?: "start"|"center"|"end"
+- **Label**: The label of a form field.
+  - text: string|number: Label text
+  - htmlFor?: string
+  - color?: string: One of default|prose|primary|emphasis|secondary|tertiary|success|info|warning|caution|danger|discovery or a CSS color
+  - size?: "3xs"|"2xs"|"xs"|"sm"|"md"|"lg": Default "sm"
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold": Default "medium"
+  - textAlign?: "start"|"center"|"end"
+- **Bold**: Bold inline text.
+  - text: string
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold"
+- **Italic**: Italic inline text.
+  - text: string
+- **Underline**: Underlined inline text.
+  - text: string
+- **Strikethrough**: Struck-through inline text.
+  - text: string
+- **Badge**: A small status pill.
+  - label: string: Badge text
+  - variant?: "soft"|"solid"|"outline": Default "soft"
+  - color?: "secondary"|"success"|"danger"|"warning"|"info"|"discovery": Default "secondary"
+  - size?: "sm"|"md"|"lg": Default "md"
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold": Default "medium"
+- **Blockquote**: A block quotation with a line on the left.
+  - text: string: The quoted text, with inline markdown
+- **Code**: A block of code in a monospace font.
+  - text: string: Source code
+  - language?: string
+- **Markdown**: A block of GitHub-flavored markdown.
+  - text: string: Markdown source
+  - streaming?: boolean: Default false
+- **Math**: A TeX math formula, typeset with KaTeX.
+  - value: string: TeX source
+  - block?: boolean: Default false
+- **ShimmerText**: Text with a moving shimmer.
+  - text: string
+  - color?: string: One of default|prose|primary|emphasis|secondary|tertiary|success|info|warning|caution|danger|discovery or a CSS color
+  - fontWeight?: "normal"|"medium"|"semibold"|"bold"
+  - textAlign?: "start"|"center"|"end"
+  - tabularNums?: boolean
+  - size?: "3xs"|"2xs"|"xs"|"sm"|"md"|"lg": Default "md"
+- **Link**: A link.
+  - text: string: Link text
+  - href: string: URL
+  - title?: string
+- **Tooltip**: Shows `content` when the user points at or focuses `trigger`.
+  - trigger?: id
+  - content?: id
+- **Button**: Sends its onClick event; with href it opens the URL, with copy it copies the text.
+  - label?: string: The button text
+  - onClick?: Action: Sent when the user clicks the button.
+  - text?: string: Same as label. Used when label is not set
+  - variant?: "default"|"primary"|"soft"|"borderless": Default "default": outlined. "primary" is filled, for the one main action. "borderless" has no box, like a link
+  - block?: boolean: Full width
+  - disabled?: boolean
+  - loading?: boolean
+  - submit?: boolean: Submits the Form around it. The Form sends its onSubmit event
+  - icon?: string: Lucide icon name
+  - href?: string: Opens this URL in a new tab on click, instead of onClick
+  - copy?: string: Copies this text to the clipboard on click and shows a check mark, instead of onClick
+  - child?: id
+  - children?: [id]
+  - color?: "primary"|"secondary"|"danger": Default "primary"
+  - size?: "sm"|"md"|"lg": Default "lg"
+- **Pressable**: A layout container that the user can click or press with Enter or Space.
+  - children?: [id]
+  - onClick?: Action: Sent when the user clicks or presses the container.
+  - href?: string: Opens this URL in a new tab on click, instead of onClick
+  - disabled?: boolean
+  - tooltip?: string: Shown on hover
+  - ariaPressed?: boolean: For a toggle
+  - onVisible?: Action: Sent once, the first time the container scrolls into view. Use it to load more content lazily.
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+  - hoverBackground?: string
+  - insetBorder?: boolean: A 1px border inside the box
+- **Form**: A layout container that is a form.
+  - children?: [id]
+  - onSubmit?: Action: Sent when the user submits the form.
+  - label?: string: A short name of the form for screen readers
+  - align?: "start"|"center"|"end"|"baseline"|"stretch"
+  - justify?: "start"|"center"|"end"|"spaceBetween"|"spaceAround"|"spaceEvenly"|"stretch"
+  - wrap?: "nowrap"|"wrap"|"wrap-reverse"
+  - gap?: number|string: 4px steps when a number
+- **TextField**: A text input, single-line unless variant is "longText".
+  - label?: string: The visible label of the field. Always set it
+  - value?: string|number: Bind it with { "@path": "/x" } to read what the user typed
+  - placeholder?: string
+  - variant?: "shortText"|"longText"|"number"|"obscured"|"email"|"url"|"tel": Default "shortText". "longText" is a multi-line field, "obscured" a password
+  - required?: boolean
+  - disabled?: boolean
+  - invalid?: boolean
+  - size?: "sm"|"md"|"lg"|"xl": Default "xl"
+- **TextArea**: A multi-line text input.
+  - label?: string: The visible label of the field. Always set it
+  - value?: string: Bind it with { "@path": "/x" } to read what the user entered
+  - placeholder?: string
+  - rows?: number: Default 3
+  - maxRows?: number
+  - autoResize?: boolean
+  - required?: boolean
+  - disabled?: boolean
+  - invalid?: boolean
+  - size?: "sm"|"md"|"lg"|"xl": Default "xl"
+- **Select**: A dropdown list of options.
+  - label?: string: The visible label of the field. Always set it
+  - options?: (string|{value: string, label?: string, description?: string})[]
+  - value?: string: Bind it with { "@path": "/x" } to read what the user entered
+  - placeholder?: string
+  - required?: boolean
+  - disabled?: boolean
+  - clearable?: boolean
+  - clearLabel?: string: The label of the empty option
+  - searchable?: boolean
+  - icon?: string: Lucide icon shown before the value
+  - block?: boolean: Full width
+  - size?: "sm"|"md"|"lg"|"xl": Default "xl"
+- **CheckBox**: A checkbox with a label.
+  - label?: string: The label text. Always set it
+  - value?: boolean: True when checked. Bind it with { "@path": "/x" } to read the state of the box
+  - disabled?: boolean
+  - required?: boolean
+  - shape?: "round"|"square": Default "round"
+- **Radio**: One radio button.
+  - label?: string
+  - value?: string
+  - disabled?: boolean
+  - required?: boolean
+- **RadioGroup**: A group of radio buttons.
+  - label?: string: The visible label of the field. Always set it
+  - options?: (string|{value: string, label?: string, description?: string})[]
+  - value?: string: Bind it with { "@path": "/x" } to read what the user entered
+  - direction?: "row"|"col": Default "row"
+  - variant?: "list"|"pills"|"cards"
+  - disabled?: boolean
+  - required?: boolean
+- **Slider**: A range slider for a number between min and max.
+  - label?: string: The visible label of the field. Always set it
+  - value?: number: Bind it with { "@path": "/x" } to read the number
+  - min?: number: Default 0
+  - max?: number: Default 100
+  - step?: number: Default 1
+  - steps?: integer: The number of equal divisions between min and max, instead of step
+  - unit?: string: Unit after the value, for example "%"
+  - marks?: {value: number, label?: string}[]
+  - sliderStyle?: "continuous"|"discrete": Default "continuous"
+  - disabled?: boolean
+- **SegmentedControl**: A row of segments.
+  - label?: string: The visible label of the field. Always set it
+  - options?: (string|{value: string, label?: string, description?: string})[]
+  - value?: string: Bind it with { "@path": "/x" } to read what the user entered
+  - block?: boolean: Full width
+  - variant?: "solid"|"soft"|"outline"|"ghost": Default "ghost"
+  - disabled?: boolean
+  - size?: "sm"|"md"|"lg"|"xl": Default "lg"
+- **ChoicePicker**: Options as checkboxes or chips: pick one, or several with variant "multipleSelection".
+  - label?: string: The visible label of the field. Always set it
+  - options?: (string|{value: string, label?: string, description?: string})[]
+  - value?: string[]: The chosen option values. Bind it with { "@path": "/x" } to a string list
+  - variant?: "multipleSelection"|"mutuallyExclusive": Default "mutuallyExclusive": the user picks one option
+  - displayStyle?: "checkbox"|"chips": Default "checkbox". "chips" shows the options as pills
+  - filterable?: boolean: Default false. Shows a field that filters the options
+  - disabled?: boolean
+  - required?: boolean
+- **DateTimeInput**: A date picker, a time picker with enableTime, or both.
+  - label?: string: The visible label of the field. Always set it
+  - value?: string: ISO 8601: "YYYY-MM-DD", "HH:MM" or "YYYY-MM-DDTHH:MM". Bind it with { "@path": "/x" }
+  - enableDate?: boolean: The user picks a date. Default true unless only enableTime is set
+  - enableTime?: boolean: The user picks a time
+  - timeStep?: integer: Minutes between the times the user can pick, e.g. 15 or 30. Shows the time as a list
+  - min?: string: The earliest value, ISO 8601
+  - max?: string: The latest value, ISO 8601
+  - placeholder?: string
+  - disabled?: boolean
+  - required?: boolean
+  - clearable?: boolean
+  - block?: boolean: Full width
+- **PulseIndicator**: A small dot that pulses, for example next to the text "Live".
+  - label?: string: What the dot means, for screen readers. Leave it unset when text next to the dot says the same
+  - pulseColor?: string
+  - duration?: number: Milliseconds. Default 1500
+  - endScale?: number: Default 2.4
+  - startOpacity?: number: Default 0.6
+  - color?: string: Text color token. Default "success"
+  - size?: number: Pixels. Default 12
+- **FlashcardFlip**: A card that shows the front text.
+  - front?: string: The text on the front
+  - back?: string: The text on the back
+  - hint?: string: A small line under the front, for example "Click to flip"
+- **Popover**: A small overlay: exactly two children, one PopoverTrigger then one PopoverContent.
+  - children?: [id]
+  - open?: boolean: Default false
+  - showOnHover?: boolean
+  - hoverOpenDelay?: number: Milliseconds before a hover opens it. Default 0
+- **PopoverTrigger**: The trigger of a Popover.
+  - children?: [id]
+  - block?: boolean: Full width
+- **PopoverContent**: The body of a Popover.
+  - children?: [id]
+  - side?: "top"|"bottom"|"left"|"right": Default "bottom"
+  - sideOffset?: number: Pixels between the trigger and the content. Default 6
+  - align?: "start"|"center"|"end": Default "center"
+- **Modal**: A dialog over the page.
+  - trigger?: id
+  - content?: id
+  - title?: string: The heading of the dialog
+  - open?: boolean: Default false. Bind it with { "@path": "/x" } to read it
+- **Table**: A data table, in a plain Column, not a Card.
+  - columns?: (string|{label: string, align?: "start"|"center"|"end", width?: number|string, componentId?: string}|{componentId: string}|{id: string})[]: Default []
+  - rows?: any[][]: A list of row lists. A cell is a string, a number, or { "componentId": "<id>" } to show a component. Default []
+  - children?: [id]
+  - caption?: string: A short name of the table for screen readers. It is not shown
+  - columnSizing?: "auto"|"equal": Default "auto"
+  - dividers?: boolean: Default true
+  - stickyHeader?: boolean: Default false
+  - emptyLabel?: string: Default "No rows"
+  - cellComponents?: [id]
+- **TableSection**: A group of TableRow children in a Table.
+  - children?: [id]
+  - header?: boolean: Renders the rows as the header
+  - rowDivider?: boolean
+- **TableRow**: A row of a Table.
+  - children?: [id]
+  - label?: string: The text of a header cell at the start of the row
+  - header?: boolean
+  - labelColSpan?: number: Columns the label cell spans
+- **TableCell**: A cell of a TableRow.
+  - text?: string|number
+  - children?: [id]
+  - header?: boolean
+  - vAlign?: "start"|"center"|"end": Default "start"
+  - colSpan?: number
+  - rowSpan?: number
+  - align?: "start"|"center"|"end"
+- **List**: A list in a Card or next to another component; a plain list of text is markdown.
+  - items?: (string|{label: string, description?: string, icon?: string, value?: string|number})[]
+  - children?: [id]
+  - action?: Action: Runs when the user picks an item. The args are the index, label and value of the item.
+  - direction?: "vertical"|"horizontal": Default "vertical". "horizontal" scrolls sideways
+  - marker?: "bullet"|"number"|"rich"|"none": Default "bullet"
+  - connector?: "none"|"solid": Default "none"
+  - start?: number: The first number of marker "number"
+  - maxMarkerSize?: number: The width of the marker column in pixels
+  - align?: "start"|"center"|"end"|"stretch"
+  - gap?: number|string
+- **ListItem**: An item of a List, with a label, a value on the right, a description, an icon and children.
+  - label?: string
+  - value?: string|number: Without an action: shown on the right of the label, for a key and value fact
+  - action?: Action: Runs when the user picks the item.
+  - children?: [id]
+  - description?: string
+  - icon?: string: Lucide icon name
+  - marker?: string: Shows this text as the marker
+  - markerSize?: number: The width of the marker column in pixels
+  - disabled?: boolean: Greys the item out and ignores its action
+- **Chart**: A bar, line, area, scatter, pie or donut chart.
+  - data?: object[]
+  - xKey?: string: The field of the category axis
+  - series?: (string|{key: string, label?: string, color?: string})[]: Default: every number field except xKey
+  - chartType?: "bar"|"line"|"area"|"scatter"|"pie"|"donut": Default "bar"
+  - stacked?: boolean
+  - layout?: "vertical"|"horizontal": "horizontal" draws the bars from left to right. Default "vertical"
+  - yAxis?: {label?: string, min?: number, max?: number, width?: number}: Example: {label: "Revenue (USD)", min: 0, max: 100}. In a horizontal chart it is the horizontal axis, and width sets the category axis width
+  - showDots?: boolean: Point markers on a line or area
+  - barRadius?: number: The corner radius of a bar, in pixels
+  - innerRadius?: number|string: Pie and donut
+  - outerRadius?: number|string: Pie and donut
+  - startAngle?: number: Pie and donut. Default 90
+  - endAngle?: number: Pie and donut. Default -270
+  - cornerRadius?: number: The corners of a slice
+  - paddingAngle?: number: The gap between slices
+  - showLabelLines?: boolean: Leader lines of the slice labels. Default true
+  - showLegend?: boolean: Default true
+  - showGrid?: boolean: Default true
+  - showTooltip?: boolean: Default true
+  - showValueLabels?: boolean
+  - format?: "number"|"currency"|"percent": With "percent", data values and axis min/max are fractions: 0.4 shows as 40%; for 0% to 10%, use min: 0 and max: 0.1.
+  - currency?: string: ISO code. Default "USD"
+  - title?: string
+- **Map**: A map with markers; with "route" a line connects them in order.
+  - markers?: {label: string, lat: number, lng: number, category?: string, icon?: string}[]
+  - selected?: string: The label of the selected marker. Bind it with { "@path": "/x" } to read the choice of the user
+  - route?: boolean: Draws a line through the markers in order
+  - zoom?: number: With two or more markers, only the highest zoom of the fit
+  - center?: {lat: number, lng: number}
+- **Image**: An image from a URL.
+  - url: string: Image URL
+  - description?: string: What the image shows, for screen readers. Leave it unset only for a decorative image
+  - onOverlayClick?: Action: Sent when the user clicks the actionOverlay button and it has no href.
+  - variant?: "icon"|"avatar"|"smallFeature"|"mediumFeature"|"largeFeature"|"header": The size: "icon" 24px, "avatar" 40px round, "smallFeature" 160px wide, "largeFeature" and "header" full width. Default "mediumFeature": the natural size
+  - lightbox?: boolean: Default true: a click opens the image full-screen
+  - actionOverlay?: {label: string, icon?: string, href?: string}: A button over the bottom-right corner of the image. Without href, it sends onOverlayClick
+- **Icon**: A Lucide icon by kebab-case name (for example "arrow-right"), or an A2UI icon name (for example "arrowBack").
+  - name: string|{svgPath: string}: A Lucide icon name in kebab-case ("arrow-right"), an A2UI icon name ("arrowBack"), or { "svgPath" } on a 24px grid
+  - label?: string: What the icon means, for screen readers. Leave it unset when text next to the icon says the same
+  - size?: "sm"|"md"|"lg"|"xl"|number: Default "md"
+  - color?: string
+  - strokeWeight?: "normal"|"medium"|"semibold"|"bold": The stroke width
+- **Favicon**: The favicon of the site at a URL.
+  - url: string
+  - alt?: string
+  - size?: number: Pixels. Default 16
+- **Svg**: A vector drawing from primitive shapes (paths, circles, rects, lines, texts).
+  - paths?: {d: string, fill?: string, stroke?: string, strokeWidth?: number}[]
+  - viewBox?: string
+  - label?: string: What the drawing shows, for screen readers. Leave it unset for a decorative drawing
+  - fill?: string: Default "currentColor"
+  - stroke?: string
+  - strokeWidth?: number
+  - strokeLinecap?: "butt"|"round"|"square"
+  - strokeLinejoin?: "miter"|"round"|"bevel"
+  - preserveAspectRatio?: string
+  - circles?: {cx: number, cy: number, r: number, fill?: string, stroke?: string}[]
+  - rects?: {x: number, y: number, width: number, height: number, rx?: number, fill?: string, stroke?: string}[]
+  - lines?: {x1: number, y1: number, x2: number, y2: number, stroke?: string}[]
+  - texts?: ({x: number, y: number, text: string, size?: number, fill?: string, anchor?: "start"|"middle"|"end"})[]
+  - size?: number|string
+  - color?: string: Default "prose"
+- **Video**: A video file URL (optional captions) or a YouTube link, privacy-enhanced: the poster shows until play.
+  - url: string: The URL of a video file, or of a YouTube video or short. A page on another video site shows as a link
+  - title?: string: Names the video for screen readers
+  - captions?: ({url: string, language?: string, label?: string, kind?: "subtitles"|"captions"|"descriptions"})[]: Caption tracks of a video file
+  - posterUrl?: string: The image shown before the video plays
+- **AudioPlayer**: An audio player for an audio file URL, with the description above it.
+  - url: string: The URL of the audio file
+  - description?: string: A title or summary of the audio, shown above the player
+- **HtmlView**: Raw HTML in a fully sandboxed iframe: no scripts, no same-origin access.
+  - html: string
+  - title?: string
+- **LinkCard**: A preview of a URL: favicon and domain, title, description, thumbnail.
+  - href: string: The URL (http, https)
+  - title: string: The page title
+  - onClick?: Action: Sent when the user clicks the card, instead of the link.
+  - description?: string: One or two lines
+  - image?: string: A thumbnail URL
+  - domain?: string: Shown next to the favicon. Default: the host of href
+  - favicon?: boolean: Default true
+- **Citation**: An inline source marker ([1]) showing title, snippet and link on hover or click.
+  - index?: number: The marker number. Default 1
+  - title?: string: The source title
+  - url?: string: The source URL (http, https)
+  - label?: string: Marker text instead of the number, for example a domain
+  - snippet?: string: The quoted passage, one or two lines
+  - source?: string: The publisher or domain. Default: the host of url
+- **FollowUp**: Suggested next prompts as pills; a click sends the pill's message as the user's next turn, no event needed.
+  - items?: (string|{label: string, message?: string})[]
+  - onFollowUp?: Action: Sent when the user clicks a pill. The args carry the message of the pill.
+  - title?: string: A caption above the pills
+- **EntityCard**: A card for one product, place, person or listing: image, title, subtitle, description, a price or meta line, badge, rating and up to three buttons.
+  - title: string: The name
+  - actions?: ({label: string, href?: string, variant?: "solid"|"soft"|"outline"|"ghost"})[]: Up to three buttons. A button without href sends onAction with its label
+  - onAction?: Action: Sent when the user clicks a button without href. The args carry the label of the button.
+  - onClick?: Action: Sent when the user clicks the card and it has no href.
+  - subtitle?: string: A second line, for example the brand or category
+  - description?: string: Up to three lines
+  - image?: string: An image URL
+  - imageAspectRatio?: string: Default "4 / 3"
+  - meta?: string: A short fact line, for example "$29 / month" or "Open until 22:00"
+  - badge?: {label: string, color?: "secondary"|"success"|"danger"|"warning"|"info"|"discovery"}
+  - rating?: number: 0 to 5, shown as stars
+  - ratingCount?: number: The number of ratings
+  - href?: string: Opens this URL in a new tab when the user clicks the card
+  - layout?: "vertical"|"horizontal": Default "vertical". "horizontal" puts the image on the left
+- **ImageGrid**: A gallery of images in a grid.
+  - images?: {url: string, description?: string, caption?: string, href?: string}[]
+  - columns?: number: Default 3
+  - layout?: "grid"|"bento": Default "grid". "bento" makes the first image twice as large
+  - gap?: number|string: Default 2
+- **Section**: Titled group with eyebrow, title, description, and children.
+  - eyebrow?: string
+  - title: string
+  - description?: string
+  - children: [id]
+- **Accordion**: Collapsible items (FAQs, details, per-file notes); each has a title and either text or a child id.
+  - items: {title: string, text?: string, child?: id}[]
+  - multiple?: boolean
+- **Heading**: Surface title with optional eyebrow and subtitle. Start most surfaces with one.
+  - text: string
+  - eyebrow?: string
+  - subtitle?: string
+  - level?: "1"|"2"|"3"
+- **CodeBlock**: Syntax-colored code with language label and copy button. Use for any code, config, command or diff snippet.
+  - code: string
+  - language?: string
+  - filename?: string
+- **Quote**: Pull quote with attribution: testimonial, review, reviewer comment.
+  - text: string
+  - author?: string
+  - role?: string
+- **ImageGallery**: Grid of images with captions.
+  - images: {url: string, caption?: string}[]
+  - columns?: number
+- **VideoEmbed**: Embedded YouTube/Vimeo video by URL.
+  - url: string
+  - title?: string
+- **Kbd**: Keyboard shortcut chips, e.g. keys ['Cmd','K'] with a label. Use for shortcuts and how-to steps.
+  - keys: string[]
+  - label?: string
+- **Stat**: One numeric KPI: label, short value (number or <10 chars like '$84k'), optional delta (e.g. '+4.2%'), caption. Not for sentences.
+  - label: string
+  - value: string|number
+  - delta?: string
+  - trend?: "up"|"down"|"flat"
+  - caption?: string
+  - tone?: "default"|"positive"|"negative"|"warning"|"info"|"accent"
+  - icon?: string
+- **StatGroup**: Compact strip of several KPIs in one card.
+  - items: ({label: string, value: string|number, delta?: string, trend?: "up"|"down"|"flat"})[]
+- **Avatar**: Person avatar (initials if no image) with name and subtitle: authors, owners, reviewers.
+  - name: string
+  - image?: string
+  - subtitle?: string
+  - size?: "sm"|"md"|"lg"
+  - status?: "online"|"away"|"offline"
+- **AvatarGroup**: Overlapping avatar stack with +N overflow: attendees, team members, reviewers.
+  - people: {name: string, image?: string}[]
+  - max?: number
+  - label?: string
+- **DataTable**: Sortable, filterable table (TanStack Table). columns [{key,label,format?}], rows are objects keyed by column key.
+  - title?: string
+  - columns: ({key: string, label: string, format?: "text"|"number"|"currency"|"percent"|"badge"|"date", align?: "left"|"right"})[]
+  - rows: object[]
+  - searchable?: boolean
+  - pageSize?: number
+- **KeyValueList**: Label/value rows, e.g. specs or order details.
+  - title?: string
+  - items: ({label: string, value: string|number, hint?: string})[]
+  - columns?: number
+- **Timeline**: Vertical timeline of dated events or steps with status.
+  - items: ({title: string, time?: string, description?: string, status?: "done"|"current"|"upcoming", icon?: string})[]
+- **Progress**: Labelled progress bar, value 0-100: goals, budgets used, completion, coverage.
+  - label?: string
+  - value: number
+  - caption?: string
+  - tone?: "default"|"positive"|"negative"|"warning"|"info"|"accent"
+- **RadialProgress**: Ring with centered value, value 0-100: a single score or percent complete.
+  - label?: string
+  - value: number
+  - display?: string
+  - tone?: "default"|"positive"|"negative"|"warning"|"info"|"accent"
+- **Rating**: Star rating (0-5) with optional review count: products, places, reviews.
+  - value: number
+  - count?: number
+  - label?: string
+- **TagList**: Wrapping list of tags/chips.
+  - tags: string[]
+  - tone?: "default"|"positive"|"negative"|"warning"|"info"|"accent"
+- **Agenda**: Calendar agenda: days with timed events (conference, week plan, schedule). Prefer over Timeline for clock times.
+  - title?: string
+  - days: ({date: string, label?: string, events: ({time?: string, title: string, speaker?: string, location?: string, description?: string, tone?: "default"|"positive"|"negative"|"warning"|"info"|"accent"})[]})[]
+- **ComparisonTable**: Feature matrix comparing options side by side. options are the option names as strings; rows [{feature, values}] with one value per option, in the same order, each true/false/text; highlight is the recommended option's index in options (0 is the first).
+  - title?: string
+  - options: string[]
+  - rows: ({feature: string, values: (string|number|boolean)[]})[]
+  - highlight?: number
+- **LineChart**: Trend over ordered x. data [{x,y,series?}]; one line per series.
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: ({x: string|number, y: number, series?: string})[]
+  - curve?: boolean
+  - highlight?: string
+- **AreaChart**: Filled trend for volumes or cumulative totals (traffic, signups); series stack. data [{x,y,series?}].
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: ({x: string|number, y: number, series?: string})[]
+  - stacked?: boolean
+  - highlight?: string
+- **BarChart**: Compare categories. data [{x,y,series?}]; series grouped side by side, or stacked:true. horizontal for long labels.
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: ({x: string|number, y: number, series?: string})[]
+  - stacked?: boolean
+  - horizontal?: boolean
+  - highlight?: string
+- **PieChart**: Part-to-whole. data [{label,value}]; donut:true for a ring with center total.
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: {label: string, value: number}[]
+  - donut?: boolean
+  - centerLabel?: string
+- **ScatterChart**: Relationship between two numbers (price vs rating, effort vs impact). data [{x,y,label?,size?,series?}].
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: {x: number, y: number, label?: string, size?: number, series?: string}[]
+  - xLabel?: string
+  - yLabel?: string
+- **Heatmap**: Matrix of values, e.g. day x hour. data [{x,y,value}] with x,y categories.
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: {x: string, y: string, value: number}[]
+- **Sparkline**: Tiny trend with label and latest value; a compact KPI with history, fits in a Grid instead of Stat. values: numbers.
+  - label?: string
+  - values: number[]
+  - value?: string
+  - delta?: string
+  - tone?: "positive"|"negative"|"default"
+- **RadarChart**: Multi-axis profile (scores per criterion for 2-3 options or people). data [{axis,value,series?}], values on a shared scale.
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: {axis: string, value: number, series?: string}[]
+  - max?: number
+- **CandlestickChart**: OHLC price candles. data [{date,open,high,low,close}].
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: {date: string, open: number, high: number, low: number, close: number}[]
+- **Treemap**: Nested part-to-whole as rectangles. data [{name,value,group?}].
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - data: {name: string, value: number, group?: string}[]
+- **SankeyChart**: Flows between stages, e.g. budget or funnel paths. links [{source,target,value}].
+  - title?: string
+  - subtitle?: string
+  - height?: number
+  - format?: "number"|"currency"|"percent"|"compact"
+  - unit?: string
+  - links: {source: string, target: string, value: number}[]
+- **Gauge**: Half-ring gauge for a single value within min..max (score, utilization).
+  - title?: string
+  - value: number
+  - min?: number
+  - max?: number
+  - label?: string
+  - format?: "number"|"currency"|"percent"|"compact"
+- **MapView**: Interactive map (MapLibre) with numbered markers; fits all markers. markers [{name,lat,lon,description?}].
+  - title?: string
+  - markers: {id?: string, name: string, lat: number, lon: number, description?: string, category?: string}[]
+  - height?: number
+  - zoom?: number
+- **RouteMap**: Map with a route line through coordinates [[lon,lat],...] plus start/end pins and distance/duration.
+  - title?: string
+  - from: string
+  - to: string
+  - coordinates: number[][]
+  - distance?: string
+  - duration?: string
+  - height?: number
+- **LocationCard**: Single place (venue, hotel, office): mini map, name, address, category, rating, actions. Use instead of MapView for one place.
+  - name: string
+  - address?: string
+  - lat: number
+  - lon: number
+  - category?: string
+  - rating?: number
+  - hours?: string
+- **PlaceList**: Split view: ranked list of places linked to a map; hovering/clicking a row highlights its marker. selected (row index) starts with that row highlighted.
+  - title?: string
+  - places: {id?: string, name: string, lat: number, lon: number, description?: string, category?: string, address?: string, distanceKm?: number, rating?: number}[]
+  - source?: string
+  - selected?: number
+  - height?: number
+  - basemap?: "dark"|"streets"|"liberty"
+- **Combobox**: Searchable dropdown for long option lists (countries, cities, timezones).
+  - label?: string
+  - value?: string
+  - options: {value: string, label: string}[]
+  - placeholder?: string
+- **Switch**: On/off toggle with label and description.
+  - label: string
+  - value?: boolean
+  - description?: string
+- **DatePicker**: Date picker with calendar popover; value ISO date bound to a path.
+  - label?: string
+  - value?: string
+  - placeholder?: string
+- **ButtonGroup**: Segmented single-choice control; value bound to a path.
+  - label?: string
+  - value?: string
+  - options: {value: string, label: string}[]
+- **ChipSelect**: Multi-select chips bound to a string-list path: extras, interests, dietary needs.
+  - label?: string
+  - value?: string[]
+  - options: {value: string, label: string}[]
+- **Alert**: Inline alert with icon, title and message.
+  - title: string
+  - message?: string
+  - tone?: "info"|"success"|"warning"|"error"
+- **Callout**: Highlighted tip or note with optional emoji/icon and a call to action.
+  - title?: string
+  - text: string
+  - icon?: string
+  - actionLabel?: string
+  - onAction?: Action: Fires when the call-to-action button is clicked.
+- **Skeleton**: Loading placeholder lines/blocks.
+  - lines?: number
+  - variant?: "text"|"card"|"chart"
+- **EmptyState**: Empty or zero-results state with icon, title, hint and optional action: no matches, nothing scheduled, inbox zero.
+  - title: string
+  - description?: string
+  - icon?: string
+  - actionLabel?: string
+  - onAction?: Action: Fires when the action button is clicked.
+- **WeatherCard**: Current weather hero with condition icon, temp, high/low, details, an hourly strip and daily forecast. icon: sun|cloud-sun|cloud|fog|drizzle|rain|snow|storm.
+  - location: string
+  - temp: number
+  - condition: string
+  - icon?: string
+  - high?: number
+  - low?: number
+  - feels?: number
+  - humidity?: number
+  - wind?: number
+  - unit?: "C"|"F"
+  - hourly?: {label: string, temp: number, icon?: string, precip?: number}[]
+  - daily?: {label: string, min: number, max: number, icon?: string, precip?: number}[]
+- **ProfileCard**: Person card: avatar, name, role, company, location, bio, contacts, tags, stats. Use for team members, speakers, candidates.
+  - name: string
+  - role?: string
+  - company?: string
+  - avatar?: string
+  - location?: string
+  - bio?: string
+  - email?: string
+  - phone?: string
+  - website?: string
+  - tags?: string[]
+  - stats?: {label: string, value: string}[]
+- **ReceiptCard**: Order receipt: merchant, order id, date, line items with qty and price, subtotal/tax/total, status.
+  - merchant: string
+  - orderId?: string
+  - date?: string
+  - status?: string
+  - items: {name: string, qty?: number, price: number, note?: string}[]
+  - currency?: string
+  - tax?: number
+  - shipping?: number
+  - discount?: number
+  - payment?: string
+- **EventCard**: Event: date block, title, time, venue, host, attendees count, tags, RSVP action. Lead an event or conference with it.
+  - title: string
+  - date: string
+  - time?: string
+  - venue?: string
+  - host?: string
+  - description?: string
+  - attendees?: number
+  - image?: string
+  - tags?: string[]
+  - actionLabel?: string
+  - onAction?: Action: Fires when the RSVP button is clicked.
+- **StockTicker**: Stock quote header: symbol, name, price, change and % change, sparkline, key stats. sample:true labels illustrative data.
+  - symbol: string
+  - name?: string
+  - price: number
+  - change?: number
+  - changePct?: number
+  - currency?: string
+  - series?: number[]
+  - stats?: {label: string, value: string}[]
+  - sample?: boolean
+- **RecipeCard**: Recipe: title, time/servings/difficulty, ingredient checklist and numbered steps. Use for any recipe or cooking how-to.
+  - title: string
+  - image?: string
+  - time?: string
+  - servings?: number
+  - difficulty?: string
+  - ingredients: string[]
+  - steps: string[]
+  - tags?: string[]
+- **FlightCard**: Flight itinerary: airline, flight number, origin and destination codes with times, duration, stops, price and a select button. One per flight option. Macro: expands into standard components.
+  - airline: string
+  - flightNumber?: string
+  - from: string
+  - to: string
+  - fromCity?: string
+  - toCity?: string
+  - depart: string
+  - arrive: string
+  - duration?: string
+  - stops?: number
+  - price?: string
+  - cabin?: string
+  - date?: string
+  - badge?: string
+  - actionLabel?: string
+  - onAction?: Action: Fires when the flight is selected.
+- **ProductCard**: Product tile: name, price (and compare-at), rating, short specs, badge, buy button. One per item when comparing products. price and compareAt are display text like "$399"; specs is a list of short strings. Macro: expands into standard components.
+  - name: string
+  - price: string
+  - compareAt?: string
+  - image?: string
+  - rating?: number
+  - reviews?: number
+  - badge?: string
+  - specs?: string[]
+  - actionLabel?: string
+  - onAction?: Action: Fires when the buy button is clicked.
+- **WeatherReport**: Live weather for a place: current conditions, the next 12 hours as a chart and a 7-day forecast. Write only the place, for example WeatherReport("Lisbon"): the server fetches the forecast. Macro: expands into standard components.
+  - location: string
+  - unit?: "C"|"F"
+
+## Functions (16)
+
+Called as `{"@call": "name", "args": {...}}` wherever a value goes; they run in the renderer.
+
+- `required(value: any)` -> validationResult: Valid when the value is not empty
+- `regex(value: string, pattern: string)` -> validationResult: Valid when the value matches the pattern
+- `length(value: string, min?: number, max?: number)` -> validationResult: Valid when the length of the value is within min and max
+- `numeric(value: number, min?: number, max?: number)` -> validationResult: Valid when the value is a number within min and max
+- `email(value: string)` -> validationResult: Valid when the value is an email address
+- `formatString(value: string)` -> string: Interpolates ${/path}, ${relative/path} and ${fn(arg: value)} in the value; \${ is a literal
+- `formatNumber(value: number, decimals?: number, grouping?: boolean)` -> string: The number in the locale of the user
+- `formatCurrency(value: number, currency: string, decimals?: number, grouping?: boolean)` -> string: The amount as money, with an ISO 4217 currency code
+- `formatDate(value: string|number, format: string)` -> string: A date or ISO string in a TR35 pattern, for example "MMM d, yyyy" or "HH:mm"
+- `pluralize(value: number, zero?: string, one?: string, two?: string, few?: string, many?: string, other: string)` -> string: The string of the plural category of the value
+- `openUrl(url: string)` -> void: Opens an http(s) URL in a new tab. Only from an event
+- `and(values: boolean[])` -> boolean: True when every value is true
+- `or(values: boolean[])` -> boolean: True when any value is true
+- `not(value: boolean)` -> boolean: The negated value
+- `calc(expression: string)` -> any: The value of an arithmetic expression over the other args, by name: + - * / % ( ), x ^ y (power), comparisons, && || !, cond ? a : b, min max round floor ceil abs pow sqrt exp ln log10, the constants pi and e, 'text' + name
+- `series(count: number, item: any, variable?: string, start?: number)` -> array: A list of count copies of item, for chart data and template lists. Put arithmetic in ${expression} strings in item, using the loop variable (default i, counting from start, default 1) and other named args. A whole-expression string retains the result type, so "${i * monthlyCost}" yields a number. Arguments, including nested calc or formatString calls in item, resolve before the series loop; those calls cannot use the loop variable. Example: {"@call":"series","args":{"count":6,"item":{"month":"${i}","cost":"${i * monthlyCost}"},"monthlyCost":{"@path":"/monthlyCost"}}}. Omit variable to use i.

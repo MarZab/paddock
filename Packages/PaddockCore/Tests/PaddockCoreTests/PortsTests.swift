@@ -32,7 +32,7 @@ struct PortsTests {
             try Ports.mapping(for: sandbox, hostPort: host, sandbox: "paddock-app", published: published, app: app)
         }
         #expect(try mapping(3000, 18500) == .init(sandboxPort: 3000, hostPort: 18500))
-        #expect(throws: PortsError.outsidePublishRange(3000, 18000...18999)) { try mapping(3000, 3000) }
+        #expect(try mapping(3000, 8123) == .init(sandboxPort: 3000, hostPort: 8123))  // outside publishRange
         #expect(throws: PortsError.hostPortTaken(18010, by: "paddock-other")) { try mapping(3000, 18010) }
         #expect(throws: PortsError.hostPortTaken(18020, by: "paddock-app")) { try mapping(3000, 18020) }
         #expect(throws: PortsError.sandboxPortPublished(4000)) { try mapping(4000, 18500) }
@@ -44,10 +44,18 @@ struct PortsTests {
         func check(_ host: Int, _ sandbox: Int = 3000) throws(PortsError) {
             try Ports.check(.init(sandboxPort: sandbox, hostPort: host), sandbox: "paddock-app", published: published, app: app)
         }
-        #expect(throws: PortsError.outsidePublishRange(8080, 18000...18999)) { try check(8080) }
+        try check(8080)  // outside publishRange
         #expect(throws: PortsError.hostPortTaken(18010, by: "paddock-other")) { try check(18010) }
         #expect(throws: PortsError.invalidPort(0)) { try check(18020, 0) }
         try check(18020)
+    }
+
+    @Test(arguments: [(17434, PortsError.reserved(17434)), (17480, .reserved(17480)), (17579, .reserved(17579)),
+                      (2375, .dockerAPI(2375)), (2376, .dockerAPI(2376))])
+    func aChosenHostPortIsNeverPaddocksOrDockers(port: Int, error: PortsError) {
+        #expect(throws: error) {
+            try Ports.mapping(for: 3000, hostPort: port, sandbox: "paddock-app", published: [:], app: app)
+        }
     }
 
     @Test(arguments: [17434, 17480, 17579, 0, 70000])

@@ -17,6 +17,14 @@ struct SbxProcessesView: View {
         let group: Int
         let kind: String
         let title: String
+        /// The sandbox it works on (PAD-154): for Paddock, its project; empty when none is known.
+        let project: String
+        /// Whether that sandbox is a Paddock project.
+        let isProject: Bool
+        /// A sandbox's machine: sbx does not say which sandbox it runs (PAD-31).
+        var isMachine: Bool {
+            if case .sandboxVM = entry.kind { true } else { false }
+        }
         let cpu: Double
         let memory: Int
         let age: Int
@@ -25,8 +33,10 @@ struct SbxProcessesView: View {
         var id: Int32 { entry.process.pid }
         var pid: Int32 { entry.process.pid }
 
-        init(_ entry: SbxProcess) {
+        init(_ entry: SbxProcess, projects: Set<String>) {
             self.entry = entry
+            project = entry.sandbox ?? ""
+            isProject = projects.contains(project)
             let kind = SbxProcessText.kind(entry.kind)
             group = kind.order
             self.kind = kind.name
@@ -39,7 +49,8 @@ struct SbxProcessesView: View {
     }
 
     var body: some View {
-        let rows = model.hostProcesses.map(Row.init).sorted(using: sortOrder)
+        let projects = Set(model.projects.projects.map(\.name))
+        let rows = model.hostProcesses.map { Row($0, projects: projects) }.sorted(using: sortOrder)
         let orphans = model.orphanedSbxTools
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
@@ -67,6 +78,14 @@ struct SbxProcessesView: View {
                     Text(row.title).lineLimit(1)
                 }
                 .width(min: 140, ideal: 200)
+                TableColumn("Project", value: \.project) { row in
+                    Text(row.project.isEmpty ? "-" : row.project)
+                        .lineLimit(1)
+                        .foregroundStyle(row.isProject ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                        .help(row.project.isEmpty ? (row.isMachine ? "sbx does not say which sandbox a machine runs" : "Works on no sandbox")
+                              : row.isProject ? "Sandbox of project \(row.project)" : "Sandbox \(row.project), not a Paddock project")
+                }
+                .width(min: 90, ideal: 130)
                 TableColumn("PID", value: \.pid) { row in
                     Text(String(row.pid)).monospacedDigit().foregroundStyle(.secondary)
                 }

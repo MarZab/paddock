@@ -4,7 +4,7 @@ public enum PortsError: Error, Equatable, CustomStringConvertible {
     case invalidPort(Int)
     /// llmman or a gateway port: a Paddock service, never reachable from or published by a sandbox.
     case reserved(Int)
-    case outsidePublishRange(Int, ClosedRange<Int>)
+    case dockerAPI(Int)
     case hostPortTaken(Int, by: String)
     case sandboxPortPublished(Int)
     case publishRangeFull
@@ -13,7 +13,7 @@ public enum PortsError: Error, Equatable, CustomStringConvertible {
         switch self {
         case .invalidPort(let port): "\(port) is not a port"
         case .reserved(let port): "port \(port) is a Paddock service (llmman or a gateway)"
-        case .outsidePublishRange(let port, let range): "host port \(port) is outside ports.publishRange (\(range.lowerBound)-\(range.upperBound))"
+        case .dockerAPI(let port): "port \(port) is the Docker API's"
         case .hostPortTaken(let port, let name): "host port \(port) is already used by \(name)"
         case .sandboxPortPublished(let port): "sandbox port \(port) is already published"
         case .publishRangeFull: "every port in ports.publishRange is taken"
@@ -21,8 +21,9 @@ public enum PortsError: Error, Equatable, CustomStringConvertible {
     }
 }
 
-/// The Ports panel's rules (backlog doc UI, Ports). Published ports bind loopback only, from
-/// `ports.publishRange`; host services are loopback ports on the Mac a sandbox may reach.
+/// The Ports panel's rules (backlog doc UI, Ports). Published ports bind loopback only, on a port
+/// Paddock picks from `ports.publishRange` or one the operator chooses; host services are loopback
+/// ports on the Mac a sandbox may reach.
 public enum Ports {
     /// Published ports bind here, never on a LAN address.
     public static let hostIP = "127.0.0.1"
@@ -72,14 +73,16 @@ public enum Ports {
         return .init(sandboxPort: sandboxPort, hostPort: port)
     }
 
-    /// Checks a mapping the operator typed.
+    /// Checks a mapping the operator typed. Its host port may be outside `ports.publishRange`,
+    /// which only limits Paddock's own picks.
     public static func check(_ mapping: Project.PortMapping, sandbox: String, published: [String: [SbxPort]],
                              app: AppConfig) throws(PortsError) {
         for port in [mapping.sandboxPort, mapping.hostPort] where !(1...65535).contains(port) {
             throw .invalidPort(port)
         }
         guard !isReserved(mapping.hostPort, app: app) else { throw .reserved(mapping.hostPort) }
-        guard app.ports.publishRange.contains(mapping.hostPort) else { throw .outsidePublishRange(mapping.hostPort, app.ports.publishRange) }
+        // llmman's port is refused above, so what is left of the reserved ports is Docker's.
+        guard !AppConfig.reservedPorts.contains(mapping.hostPort) else { throw .dockerAPI(mapping.hostPort) }
         for (name, ports) in published.sorted(by: { $0.key < $1.key })
         where name != sandbox && ports.contains(where: { $0.hostPort == mapping.hostPort }) {
             throw .hostPortTaken(mapping.hostPort, by: name)

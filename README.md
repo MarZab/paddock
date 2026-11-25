@@ -70,4 +70,4 @@ Every change has a ticket in `backlog/tasks` and every commit message starts wit
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Third-party code keeps its own license: the vendored OpenUI renderer in `App/OpenUI/vendor` (its `LICENSE` is next to it) and the Swift packages in `Package.resolved`.
+MIT, see [LICENSE](LICENSE). Third-party code keeps its own license: the A2UI tab page built from CopilotKit's A2UI Playground in `App/A2UI` (its `THIRD_PARTY_LICENSES.txt` is next to it) and the Swift packages in `Package.resolved`.

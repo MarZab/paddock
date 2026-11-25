@@ -157,10 +157,12 @@ public enum BrowserActivity {
         exit $status
         """#
 
-    /// The watcher (Node, which playwright-cli needs anyway, so its JSON is always valid).
+    /// The watcher (Node, so its JSON is always valid). The base kit installs it (PAD-147); without
+    /// the browser kit it reports show tabs and no sessions.
     public static let watcher = NodeScript.wrap(#"""
-        // Written by Paddock's browser kit: reports the agent's playwright-cli sessions, their tabs, and
-        // when it runs a command in one, as JSON lines for Paddock (sbx exec N paddock-browser-watch).
+        // Written by Paddock's base kit: reports the tabs the agent shows with paddock, and where the
+        // browser kit is, its playwright-cli sessions, their tabs, and when it runs a command in one,
+        // as JSON lines for Paddock (sbx exec N paddock-browser-watch; the name is from before PAD-147).
         'use strict';
         const fs = require('fs');
         const path = require('path');
@@ -230,6 +232,8 @@ public enum BrowserActivity {
         function out(object) { process.stdout.write(JSON.stringify(object) + '\n'); }
         function run(args, cwd) {
           return new Promise((resolve) => {
+            // No browser kit in this sandbox (PAD-147): no sessions, and nothing to start.
+            if (!fs.existsSync(REAL)) return resolve(null);
             execFile(REAL, args, { cwd, timeout: 15000, encoding: 'utf8', env: { ...process.env, PWTEST_SOCKETS_DIR: '/tmp/paddock-browser/sockets' } },
               (error, stdout) => resolve(error ? null : stdout));
           });
@@ -435,8 +439,8 @@ public struct BrowserSessions: Sendable, Equatable {
             case page(url: String)
             /// A file rendered on the operator's Mac (`NativeShowPolicy`).
             case native(path: String)
-            /// An OpenUI Lang document, rendered by Paddock's renderer (`OpenUIPolicy`); its copy
-            /// in the sandbox.
+            /// An interactive tab: A2UI messages, drawn by Paddock (`A2UIWebPolicy`); their log in
+            /// the sandbox.
             case ui(path: String)
         }
 

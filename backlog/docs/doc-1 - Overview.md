@@ -3,7 +3,7 @@ id: doc-1
 title: Overview
 type: specification
 created_date: '2026-10-25 15:55'
-updated_date: '2026-11-06 08:33'
+updated_date: '2026-11-25 08:10'
 ---
 ## Goal
 
@@ -53,7 +53,7 @@ paddock/
   CLAUDE.md                   Agent instructions
   backlog/                    Backlog.md: these docs, tickets (PAD-N), milestones
   App/                        SwiftUI views and view models (AppModel), app entry, windows
-    OpenUI/                   Host page and vendored OpenUI renderer for interactive tabs
+    A2UI/                     Interactive tabs' page: CopilotKit's A2UI renderer and the playground catalog (vendor:a2ui-web)
   Packages/PaddockCore/       All logic, no UI, unit-tested with `swift test`
     Sources/PaddockCore/
       Process/                ProcessRunner, BinaryLocator, LineStreamer
@@ -67,12 +67,13 @@ paddock/
                               PaddockOverlay, SandboxFiles, ProjectKitFile, SbxKitDescriptor
       Projects/               ProjectStore, NewProject, ProjectRunner, SandboxSync, Ports, PortsTable,
                               RulesTable, HostRules, ApprovalRequests, ActivityTimeline, ExternalShell
-      Agents/                 AgentLaunch, ClaudeGateway, KitFile, NodeKit, BrowserKit, BrowserActivity, VoiceKit,
-                              BrowserShow, BrowserCapture, BrowserWebPolicy, NativeShowPolicy, OpenUIPolicy
+      Agents/                 AgentLaunch, ClaudeGateway, KitFile, NodeKit, BaseKit, BrowserKit, BrowserMCPKit, BrowserActivity, VoiceKit,
+                              BrowserShow, BrowserCapture, BrowserWebPolicy, NativeShowPolicy,
+                              A2UIPolicy, A2UIWebPolicy, A2UIMedia, A2UILink
       Voice/                  VoiceMessage, SpokenText, VoiceKeywords (and VoiceChoice, BracketedPaste), SpeechQueue
       Security/               FolderPolicy, ExtraFolders
       Support/                JSON and YAML coding, SemanticVersion, LogEntry
-      Resources/              openui-reference.md (installed in sandboxes)
+      Resources/              a2ui-reference.md (installed in sandboxes)
     Tests/PaddockCoreTests/
       Fixtures/               Real sbx, sandboxd, and llmman output from the operator's Mac (sanitized)
   Packages/PaddockShell/      Reusable sandbox shell SDK: PaddockShellCore, PaddockShellUI, CPaddockPTY
@@ -101,7 +102,7 @@ What works today, by the original milestones:
 | M3.5 | A project's own setup, approval on change | Since PAD-73: sbx's `sbxenv.yaml` and the project's own v3 kits, confirmed in a sheet (each host may be declined), created with `sbx env create` and Paddock's overlay. Paddock's image builds and `.paddock.toml` are gone. Written and tested on Linux; the app side is not built on the Mac yet (PAD-73.3) |
 | M4 | Agent pane and PaddockShell (SDK and terminal tabs) | Done 2026-10-24, with split view, tab drag, titles, Open in Terminal |
 | M5 | Claude Code and OpenCode, agent default and local through the gateway | Claude Code through the gateway verified with the trial; OpenCode end to end is PAD-3, model quality PAD-4, thinking variants PAD-5 |
-| M5.5 | Kits per project and the browser tab | Written, fixture-tested, and used live (Playwright tab, show tabs, captures, annotations, interactive OpenUI tabs). Open checks: PAD-6, kit hosts before create PAD-7, kit arguments PAD-8 |
+| M5.5 | Kits per project and the browser tab | Written, fixture-tested, and used live (Playwright tab, show tabs, captures, annotations, interactive tabs, OpenUI until PAD-152 and A2UI since; A2UI checked live in PAD-152.5). Open checks: PAD-6, kit hosts before create PAD-7, kit arguments PAD-8 |
 | M6 | Polish | Crash Reports in the status popover exists. Open: login item PAD-9, menu bar extra PAD-10, log drawer PAD-11, settings PAD-12, prompt history off PAD-13, README PAD-14, PaddockShell DocC PAD-15, crash analysis PAD-16 to PAD-18 |
 | M7 | OpenHands | Deferred: PAD-21 |
 | M8 | Voice: push-to-talk, agents that speak and ask, dictation words | PaddockCore and the voice kit written and tested on Linux; the app side written, not built yet. Mac checks PAD-34; hands-free PAD-38, announcements PAD-39 |

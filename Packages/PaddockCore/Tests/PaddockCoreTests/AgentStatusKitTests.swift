@@ -353,12 +353,31 @@ struct AgentStatusKitTests {
         #expect(spec.contains("/home/agent/.config/opencode/plugins/paddock-status.js"))
         #expect(spec.contains(Data(AgentStatusKit.stateScript.utf8).base64EncodedString()))
         #expect(spec.contains(Data(AgentStatusKit.opencodePlugin.utf8).base64EncodedString()))
-        // the project guide (PAD-71): an agent-context whose every line sits under `content: |`
+        // the project guide went to the base kit (PAD-147): the status kit is agent state only
+        #expect(!spec.contains("com.docker.sandbox/agent-context@1") && !spec.contains("### What Paddock refuses"))
+        #expect(AgentStatusKit.watchArguments(sandbox: "paddock-app")
+                == ["exec", "-i", "paddock-app", "sh", "-c", SandboxWatchers.replaceScript, "paddock-watch", "paddock-agent-watch", SandboxWatchers.owner])
+    }
+
+    /// The base kit (PAD-147): the project guide (PAD-71) and the tabs guide, in an agent-context
+    /// whose every line sits under `content: |`, and paddock, the watcher, and the A2UI reference.
+    @Test func theBaseKitHoldsTheGuideAndThePaddockTools() throws {
+        let dir = try scratch()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let paths = PaddockPaths(configDirectory: dir.path)
+        let kit = try BaseKit.install(in: paths)
+        #expect(kit == dir.path + "/kits/paddock-base")
+        let spec = try String(contentsOfFile: KitFile.file(in: kit), encoding: .utf8)
+        #expect(spec.contains("provides: [paddock-base]") && spec.contains("kind: mixin"))
+        #expect(spec.contains("> /usr/local/bin/paddock\n") && spec.contains("> /usr/local/bin/paddock-browser-watch\n"))
+        // nothing downloaded: no network rules, no npm, no apt
+        #expect(!spec.contains("type: com.docker.sandbox/network-policy") && !spec.contains("npm install --global") && !spec.contains("apt-get"))
         let guide = try #require(spec.components(separatedBy: "      content: |\n").last)
         #expect(spec.contains("com.docker.sandbox/agent-context@1") && guide.contains("### What Paddock refuses"))
+        #expect(guide.contains("## Showing the operator things and asking them (Paddock)"))
         // blank lines stay empty on purpose (YAML allows it); every other line is indented
         #expect(guide.split(separator: "\n").allSatisfy { $0.hasPrefix("                ") })
-        // the written kit is valid YAML and its agent-context content is the guide (PAD-111)
+        // the written kit is valid YAML and its agent-context content is the two guides (PAD-111)
         guard case .object(let root) = try YAMLCoding.value(fromYAML: Data(spec.utf8)),
               case .array(let capabilities)? = root["capabilities"] else {
             Issue.record("the kit is not a YAML object with capabilities")
@@ -370,8 +389,6 @@ struct AgentStatusKitTests {
             return text
         }
         #expect(contents.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                == [SandboxGuide.context.trimmingCharacters(in: .whitespacesAndNewlines)])
-        #expect(AgentStatusKit.watchArguments(sandbox: "paddock-app")
-                == ["exec", "-i", "paddock-app", "sh", "-c", SandboxWatchers.replaceScript, "paddock-watch", "paddock-agent-watch", SandboxWatchers.owner])
+                == [SandboxGuide.context.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n" + BaseKit.tabsGuide])
     }
 }

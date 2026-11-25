@@ -13,7 +13,7 @@ import Foundation
 /// argv. Everything the kit sends is untrusted: `VoiceMessage` checks it, and nothing of it is used
 /// for any decision.
 ///
-/// Named `paddock-voice`, not `paddock voice`: `paddock` belongs to the browser kit, and this kit
+/// Named `paddock-voice`, not `paddock voice`: `paddock` belongs to the base kit, and this kit
 /// needs only the status kit.
 public enum VoiceKit {
     /// sbx names a local kit after its folder, and the names in one sandbox must differ, so not

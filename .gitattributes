@@ -1,2 +1,2 @@
-# OpenUI's prebuilt renderer, vendored by tools/tasks/vendor/openui.sh: no diffs of minified files.
-App/OpenUI/vendor/** -diff linguist-vendored
+# A2UI tabs' page, built by tools/tasks/vendor/a2ui-web.sh: no diffs of minified files.
+App/A2UI/** -diff linguist-vendored

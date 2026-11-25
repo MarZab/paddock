@@ -227,6 +227,15 @@ struct ClaudeSessionsTests {
         #expect(try make("claude", true))
         #expect(try !make("claude", false))
         #expect(try !make("opencode", true))
+        // on unless the operator turns it off (PAD-148), and still only for Claude Code
+        let fresh = ProjectDraft(folder: folder, name: "app", agent: "claude", provider: "agent-default")
+        #expect(fresh.keepsClaudeSessions)
+        var openCode = ProjectDraft(folder: folder, name: "app", agent: "opencode", provider: "agent-default")
+        openCode.agentChanged(app: app)
+        #expect(try !NewProject.make(openCode, app: app, existing: ProjectList(), sandboxes: [], folderPolicy: folders.policy).keepsClaudeSessions)
+        // a new project records that its kits were chosen with the base kit offered (PAD-147)
+        #expect(try NewProject.make(fresh, app: app, existing: ProjectList(), sandboxes: [], folderPolicy: folders.policy).kitChoice
+            == KitSelection.choiceRevision)
     }
 
     private func listMounts(_ setup: ProjectRunnerTests.Setup, _ mounts: [String]) {

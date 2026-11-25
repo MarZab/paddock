@@ -4,6 +4,15 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-154 System > Processes shows the project of each sbx command.
+- PAD-153 Quitting while agents run asks first.
+- PAD-153 Info shows the sandbox's processes, and a process can be stopped.
+- PAD-153 Info lists the sandbox's running agents, including ones left running or in another Paddock, to take over or stop; closing an agent tab stops its agent.
+- PAD-152 Interactive tabs draw A2UI with CopilotKit's full catalog (charts, maps, media through the sandbox); links open in the sandbox.
+- PAD-139 A Mac port you type when publishing may be outside ports.publishRange.
+- PAD-148 New projects keep Claude's sessions and get sbxenv.yaml and a kit, unless turned off.
+- PAD-147 Paddock's small base kit (tabs, wait, the sandbox guide) is a kit of its own, on by default; the browser kit is only the browser, and Playwright MCP is its own kit.
+
 ## 261122
 
 - PAD-145 Projects can be put in groups in Info, and each group folds from its title in the sidebar.
