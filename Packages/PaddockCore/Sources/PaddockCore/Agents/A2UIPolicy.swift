@@ -42,8 +42,11 @@ public enum A2UIPolicy {
         }
         switch kind {
         case "createSurface":
-            guard object[kind]?["catalogId"]?.stringValue == catalogID else {
-                return "createSurface uses the playground catalog, \"catalogId\": \"\(catalogID)\""
+            let named = object[kind]?["catalogId"]?.stringValue
+            guard named == catalogID else {
+                // What the agent sent, so it sees its mistake, and where the catalog is described.
+                let sent = named.map { "names the catalog \"\(String($0.prefix(200)))\"" } ?? "names no catalog"
+                return "createSurface \(sent); Paddock draws only the playground catalog, \"catalogId\": \"\(catalogID)\" (its components: \(BaseKit.a2uiReferencePath))"
             }
         case "callRendererFunction":
             // The catalog is optional there; when named, it is the tab's.

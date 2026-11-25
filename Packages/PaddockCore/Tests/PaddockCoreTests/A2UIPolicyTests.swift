@@ -67,6 +67,9 @@ struct A2UIPolicyTests {
         #expect(intake.refusals[0].reason.contains("not JSON"))
         #expect(intake.refusals[1].reason.contains(#""version": "1.0""#))
         #expect(intake.refusals[4].reason.contains(A2UIPolicy.catalogID))
+        // The agent sees what it sent and where the catalog is described.
+        #expect(intake.refusals[4].reason.contains(#"names the catalog "https://example.com/catalog.json""#))
+        #expect(intake.refusals[4].reason.contains(BaseKit.a2uiReferencePath))
         #expect(inbox.lines == 10)
     }
 
