@@ -232,6 +232,22 @@ extension AppModel {
         }
     }
 
+    /// The agents running in this Paddock's tabs, per project, for the question before quitting:
+    /// every agent tab whose session has not exited, and every shell tab an agent reports from.
+    func runningAgents() -> [QuitWarning.Running] {
+        terminals.compactMap { name, terminals in
+            var agents = 0
+            var busy = 0
+            for tab in terminals.tabs.tabs + terminals.rightTabs.tabs where terminals.sessions[tab.id] != nil && terminals.exits[tab.id] == nil {
+                let state = terminals.agents.state(ofTab: tab.id)
+                guard tab.kind == .agent || (tab.kind == .shell && state.map { $0.kind != .ended } == true) else { continue }
+                agents += 1
+                if let state, AgentActivity(state.kind) != .none { busy += 1 }
+            }
+            return agents > 0 ? QuitWarning.Running(project: name, agents: agents, busy: busy) : nil
+        }
+    }
+
     /// Shows an agent's tab: its own, or its left-running one.
     func show(_ row: AgentSessionRow) {
         switch row.place {

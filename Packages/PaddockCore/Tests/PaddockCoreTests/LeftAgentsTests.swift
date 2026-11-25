@@ -185,3 +185,23 @@ struct LeftAgentsTests {
     }
     #endif
 }
+
+/// PAD-153.4: what Paddock asks before it quits while agents run.
+@Suite("Quit warning")
+struct QuitWarningTests {
+    @Test func quitsWithoutAskingWhenNoAgentRuns() {
+        #expect(QuitWarning.text([]) == nil)
+        #expect(QuitWarning.text([.init(project: "web", agents: 0, busy: 0)]) == nil)
+    }
+
+    @Test func namesTheProjectsAndTheWorkingAgents() throws {
+        let one = try #require(QuitWarning.text([.init(project: "web", agents: 1, busy: 0)]))
+        #expect(one.title == "Quit Paddock while an agent runs?")
+        #expect(one.message.hasPrefix("In web. It keeps running in its sandbox"))
+        let several = try #require(QuitWarning.text([.init(project: "learn", agents: 2, busy: 1), .init(project: "api", agents: 1, busy: 1),
+                                                     .init(project: "idle", agents: 0, busy: 0)]))
+        #expect(several.title == "Quit Paddock while 3 agents run?")
+        #expect(several.message.hasPrefix("In api (1 working), learn: 2 (1 working). They keep running in their sandboxes"))
+        #expect(several.message.contains("left running"))
+    }
+}
