@@ -275,8 +275,8 @@ final class ProjectTerminals {
                 SidebarAgents.Tab(id: tab.id, title: tab.title, label: tab.terminalTitle == nil ? nil : tab.label.text,
                                   isAgent: tab.kind == .agent)
             }
-        return SidebarAgents.rows(tabs: sessionTabs, marks: { self.agentMarks.mark(of: $0) }, states: agents, left: leftAgents,
-                                  others: otherAgents, now: now)
+        // Another Paddock's agents are only on Info's Running Agents card (PAD-153.5).
+        return SidebarAgents.rows(tabs: sessionTabs, marks: { self.agentMarks.mark(of: $0) }, states: agents, left: leftAgents, now: now)
     }
 
     /// Shows a tab from the sidebar: selects it in its half, which focuses its terminal and clears
