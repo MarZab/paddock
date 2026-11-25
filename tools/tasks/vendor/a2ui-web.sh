@@ -34,8 +34,8 @@ echo "==> CopilotKit $COMMIT"
 cd "$PLAYGROUND"
 git checkout --quiet -- package.json pnpm-lock.yaml
 rm -rf paddock-host
-npx --yes "$PNPM" install --frozen-lockfile --ignore-scripts --reporter=silent
-npx --yes "$PNPM" add --save-dev --ignore-scripts --reporter=silent "$VITE" "$VITE_REACT"
+npx --yes "$PNPM" install --frozen-lockfile --ignore-scripts --reporter=silent --store-dir "$WORK/pnpm-store"
+npx --yes "$PNPM" add --save-dev --ignore-scripts --reporter=silent --store-dir "$WORK/pnpm-store" "$VITE" "$VITE_REACT"
 cp -R "$ROOT/tools/tasks/lib/a2ui-web" paddock-host
 NODE_OPTIONS=--max-old-space-size=6144 npx vite build --config paddock-host/vite.config.mts --logLevel warn
 

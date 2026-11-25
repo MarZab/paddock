@@ -53,6 +53,7 @@ let package = Package(
                 .copy("Fixtures/voice"),
                 .copy("Fixtures/agent"),
                 .copy("Fixtures/markdown"),
+                .copy("Fixtures/a2ui-web"),
             ]
         ),
     ]

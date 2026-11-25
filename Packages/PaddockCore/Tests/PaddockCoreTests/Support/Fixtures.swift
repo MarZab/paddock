@@ -28,6 +28,7 @@ final class FakeRunner: ProcessRunner, @unchecked Sendable {
     private var matchedResponses: [(matches: @Sendable ([String]) -> Bool, result: ProcessResult)] = []
     private(set) var calls: [[String]] = []
     private(set) var environments: [[String: String]?] = []
+    private(set) var stdins: [Data?] = []
     /// Answer commands without a canned response with exit 0 and no output.
     var succeedByDefault = false
 
@@ -57,6 +58,7 @@ final class FakeRunner: ProcessRunner, @unchecked Sendable {
         let (result, triggered) = lock.withLock {
             calls.append(arguments)
             environments.append(environment)
+            stdins.append(stdin)
             let triggered = effects.filter { $0.matches(arguments) }.map(\.effect)
             if let response = responses[arguments] { return (response, triggered) }
             if let match = matchedResponses.last(where: { $0.matches(arguments) }) { return (match.result, triggered) }
