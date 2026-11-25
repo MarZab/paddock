@@ -57,11 +57,6 @@ struct SbxProcessesView: View {
             }
             .padding(12)
             Divider()
-            // Every agent in every running sandbox (PAD-153); the Mac's sbx processes below.
-            AgentSessionsTable()
-                .frame(height: 220)
-            Divider()
-            Text("sbx on this Mac").font(.headline).padding(.horizontal, 12).padding(.vertical, 8)
             Table(rows, selection: $selection, sortOrder: $sortOrder) {
                 TableColumn("Kind", value: \.group) { row in
                     Text(row.kind)

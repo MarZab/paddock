@@ -70,15 +70,14 @@ final class ProjectTerminals {
     /// Native Markdown tabs the operator switched to the file's source (backlog doc Browser).
     var sourceShows: Set<String> = []
 
-    /// Agents Paddock left running (PAD-153, `ProjectTerminals+LeftAgents`): the tabs this app
-    /// opened (from `AppModel`, which keeps them), who hears of a new one, the sessions being
-    /// stopped (their tabs go at once), and the ones placed in the tab bars.
+    /// Agents Paddock left running (PAD-153, `LeftAgentsViews`): the tabs this app opened (from
+    /// `AppModel`, which keeps them), who hears of a new one, and the sessions being stopped (their
+    /// rows go at once).
     var opened = OpenedTabs()
     var onOpened: ((UUID) -> Void)?
     /// A tab with agents in it closed: `AppModel` stops them.
     var onClosedWithAgents: (([AgentState]) -> Void)?
     var leftStopping: Set<String> = []
-    var leftPlaced: Set<String> = []
 
     /// Whether the operator's last answer in an interactive tab reached the sandbox, for the
     /// confirmation the tab shows (a serial, so each answer shows once).
@@ -226,13 +225,13 @@ final class ProjectTerminals {
     func receiveAgent(_ line: String) {
         agents.apply(line: line)
         showAgentActivity()
-        placeLeftAgents()
+        forgetStopped()
     }
 
     func clearAgent() {
         agents = AgentStates()
         showAgentActivity()
-        placeLeftAgents()
+        forgetStopped()
     }
 
     /// The watcher starts again: keep what is shown until it reported every session (`AgentStates`).
@@ -243,7 +242,7 @@ final class ProjectTerminals {
     func endAgentResync() {
         agents.endResync()
         showAgentActivity()
-        placeLeftAgents()
+        forgetStopped()
     }
 
     private var agentMarks = AgentTabMarks()
@@ -276,7 +275,8 @@ final class ProjectTerminals {
                 SidebarAgents.Tab(id: tab.id, title: tab.title, label: tab.terminalTitle == nil ? nil : tab.label.text,
                                   isAgent: tab.kind == .agent)
             }
-        return SidebarAgents.rows(tabs: sessionTabs, marks: { self.agentMarks.mark(of: $0) }, states: agents, left: leftAgents, now: now)
+        return SidebarAgents.rows(tabs: sessionTabs, marks: { self.agentMarks.mark(of: $0) }, states: agents, left: leftAgents,
+                                  others: otherAgents, now: now)
     }
 
     /// Shows a tab from the sidebar: selects it in its half, which focuses its terminal and clears
@@ -329,7 +329,7 @@ final class ProjectTerminals {
         tabs.close(tab.id)
         rightTabs.close(tab.id)
         if activeTab == tab.id { activeTab = tabs.selection ?? rightTabs.selection }
-        placeLeftAgents()
+        forgetStopped()
     }
 
     /// Moves a tab to the other half, from its context menu or a drag; before `target` when it
@@ -343,8 +343,7 @@ final class ProjectTerminals {
             setTabs(source, half.other)
             setTabs(destination, half)
         case .host(let id):
-            guard id == Self.playwrightTab || id == Self.processesTab || Self.showID(id).map({ show in browser.shows.contains { $0.id == show } }) == true
-                || LeftAgents.session(ofHostTab: id).map({ session in leftAgents.contains { $0.session == session } }) == true else { return }
+            guard id == Self.playwrightTab || id == Self.processesTab || Self.showID(id).map({ show in browser.shows.contains { $0.id == show } }) == true else { return }
             hostHalves[id] = half
             var source = tabs(half.other), destination = tabs(half)
             if source.shownHostTab(offered: [id]) == id { source.selectHost(nil) }
@@ -412,7 +411,6 @@ final class ProjectTerminals {
                 activity: waiting ? .attention : busy ? .busy : unseen.contains(Self.playwrightTab) ? .unseen : .none,
                 actions: [Self.refresh]))
         }
-        result += leftAgentHostTabs(half)
         for show in browser.shows where !closedShows.contains(show.id) && self.half(of: Self.showTab(show.id)) == half {
             let tab = Self.showTab(show.id)
             let place = show.isInteractive ? "Asks you for an answer; the agent gets your clicks and form values"
@@ -490,9 +488,6 @@ final class ProjectTerminals {
         } else if let id = Self.showID(tab) {
             closedShows.insert(id)
             resetA2UI(id)
-        } else if let session = LeftAgents.session(ofHostTab: tab) {
-            // Closing it stops the agent (`AppModel.closeHostTab`); its tab goes at once.
-            leftStopping.insert(session)
         }
         unseen.remove(tab)
         webViews.release(tab)
@@ -695,8 +690,6 @@ struct ProjectTabs<Info: View>: View {
             BrowserTab(project: project, content: .dashboard)
         } else if tab == ProjectTerminals.processesTab {
             SandboxProcessesTab(project: project)
-        } else if let session = LeftAgents.session(ofHostTab: tab), let state = terminals.leftAgents.first(where: { $0.session == session }) {
-            LeftAgentView(project: project, state: state)
         } else if let id = ProjectTerminals.showID(tab), let show = terminals.browser.shows.first(where: { $0.id == id }) {
             if show.isInteractive {
                 A2UIShowView(project: project, show: show)

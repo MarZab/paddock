@@ -10,6 +10,8 @@ public struct SidebarAgentRow: Sendable, Equatable, Identifiable {
         case shellTab
         /// An agent this app left running (`LeftAgents`, PAD-153): its row opens its host tab.
         case leftRunning
+        /// An agent in another Paddock's tab (`LeftAgents.others`): its row opens its host tab.
+        case otherPaddock
         /// A session in no open tab: started outside Paddock, or its tab is gone. Nothing to open.
         case elsewhere
     }
@@ -70,7 +72,7 @@ public enum SidebarAgents {
     /// `LeftAgents.find` orders them), then the sessions started outside Paddock by session
     /// (`isShownElsewhere`).
     public static func rows(tabs: [Tab], marks: (UUID) -> AgentTabMark, states: AgentStates, left: [AgentState] = [],
-                            now: Date) -> [SidebarAgentRow] {
+                            others: [AgentState] = [], now: Date) -> [SidebarAgentRow] {
         var rows: [SidebarAgentRow] = []
         for tab in tabs {
             let state = states.state(ofTab: tab.id)
@@ -87,6 +89,10 @@ public enum SidebarAgents {
             rows.append(SidebarAgentRow(id: "left:" + state.session, tab: nil, hostTab: LeftAgents.hostTab(state), title: name(state.agent),
                                         place: .leftRunning, mark: mark(state), since: state.time))
         }
+        for state in others {
+            rows.append(SidebarAgentRow(id: "left:" + state.session, tab: nil, hostTab: LeftAgents.hostTab(state), title: name(state.agent),
+                                        place: .otherPaddock, mark: mark(state), since: state.time))
+        }
         let elsewhere = states.sessions.values
             .filter(isShownElsewhere)
             .filter { state in !(AgentActivity(state.kind) == .none && now.timeIntervalSince(state.time) > idleElsewhereShownFor) }
@@ -99,7 +105,7 @@ public enum SidebarAgents {
     }
 
     /// A session's mark without a tab: what it says it does.
-    static func mark(_ state: AgentState) -> AgentTabMark {
+    public static func mark(_ state: AgentState) -> AgentTabMark {
         switch AgentActivity(state.kind) {
         case .working: .working
         case .waiting: .waiting
@@ -148,6 +154,7 @@ public enum SidebarAgents {
         let place = switch row.place {
         case .agentTab, .shellTab: ""
         case .leftRunning: "; left running in the sandbox by an earlier Paddock or a closed tab: open it to take it over or stop it"
+        case .otherPaddock: "; in another Paddock's tab (Paddock Dev, the installed Paddock, or one from before it remembered its tabs)"
         case .elsewhere: "; started outside Paddock or in a closed tab"
         }
         let tab = row.tabName.map { $0 == row.title ? "" : " (\($0))" } ?? ""

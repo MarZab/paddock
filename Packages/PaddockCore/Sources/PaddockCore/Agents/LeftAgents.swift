@@ -56,6 +56,18 @@ public enum LeftAgents {
         tab.hasPrefix("left:") ? String(tab.dropFirst("left:".count)) : nil
     }
 
+    /// The agents in another Paddock's tabs (Paddock Dev and the installed Paddock share sandboxes;
+    /// a Paddock from before `OpenedTabs` is another too): a tab this app neither has open nor
+    /// opened, and a known process. They get tabs as well (PAD-153.5), saying so. Oldest state first.
+    public static func others(states: AgentStates, openTabs: Set<UUID>, opened: OpenedTabs, project: String) -> [AgentState] {
+        states.sessions.values
+            .filter { state in
+                state.kind != .ended && state.pid != nil
+                    && place(of: state, openTabs: openTabs, opened: opened, project: project) == .otherApp
+            }
+            .sorted { ($0.time, $0.session) < ($1.time, $1.session) }
+    }
+
     /// The agent's arguments for a new agent tab that takes the session over (`sbx run --name N --
     /// ARGS`): Claude's own session by its id, else the agent's most recent one. Only a Claude
     /// session id that is a UUID is passed on, so nothing from the sandbox becomes an option.

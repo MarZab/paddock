@@ -7,7 +7,8 @@ enum SidebarSelection: Hashable {
     case project(String)
     /// An agent's row under its project: selecting it shows the project with that tab (PAD-63).
     case agent(String, UUID)
-    /// An agent Paddock left running: selecting it shows the project with its host tab (PAD-153).
+    /// An agent Paddock left running, or another Paddock's: selecting it shows the project's Info,
+    /// whose Running Agents card has it (PAD-153.5).
     case leftAgent(String, String)
     case models
     case network
@@ -134,9 +135,10 @@ struct ContentView: View {
             case .agent(let name, let tab)?:
                 model.shownProject = name
                 model.showAgentTab(tab, of: name)
-            case .leftAgent(let name, let tab)?:
+            case .leftAgent(let name, _)?:
+                // Its Take Over and Stop are on Info's Running Agents card (PAD-153.5).
                 model.shownProject = name
-                model.terminals[name]?.showHostTab(tab)
+                model.terminals[name]?.showInfo()
             case .project(let name)?:
                 model.shownProject = name
             default:

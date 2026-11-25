@@ -1482,10 +1482,7 @@ final class AppModel {
     func closeHostTab(_ tab: String, of project: Project) {
         guard let terminals = terminals[project.name] else { return }
         let show = ProjectTerminals.showID(tab).flatMap { id in terminals.browser.shows.first { $0.id == id } }
-        // A left-running agent's tab: closing it stops the agent (PAD-153).
-        let left = LeftAgents.session(ofHostTab: tab).flatMap { session in terminals.leftAgents.first { $0.session == session } }
         terminals.closeHostTab(tab)
-        if let left { stopLeftAgent(left, of: project) }
         guard let show else { return }
         let opened = show.opened || openedShows.contains("\(project.name)/\(show.id)")
         sendShowEvent(opened ? .closed : .dismissed, show: show.id, of: project)

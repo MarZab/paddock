@@ -82,6 +82,17 @@ struct LeftAgentsTests {
         #expect(SidebarAgents.help(row, now: Self.now).contains("left running"))
     }
 
+    /// PAD-153.5: an agent in another Paddock's tab is offered too, in its own place.
+    @Test func anotherPaddocksAgentsGetTabsOfTheirOwn() throws {
+        let states = try states()
+        let others = LeftAgents.others(states: states, openTabs: [Self.openTab], opened: opened(Self.openTab), project: "paddock")
+        #expect(others.map(\.session) == ["59fd5a55-8be1-411c-b27f-9fb066a30387"])
+        #expect(LeftAgents.others(states: states, openTabs: [Self.openTab], opened: opened(Self.leftTab, Self.openTab), project: "paddock").isEmpty)
+        let rows = SidebarAgents.rows(tabs: [], marks: { _ in .none }, states: states, others: others, now: Self.now)
+        #expect(rows.map(\.place) == [.otherPaddock])
+        #expect(rows.first?.hostTab == "left:59fd5a55-8be1-411c-b27f-9fb066a30387")
+    }
+
     @Test func everySessionHasAPlace() throws {
         let states = try states()
         let left = try #require(states.sessions["59fd5a55-8be1-411c-b27f-9fb066a30387"])

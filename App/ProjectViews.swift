@@ -414,6 +414,11 @@ struct ProjectDetailView: View {
                     if model.appConfig.agents[project.agent] != nil {
                         ProjectKitsCard(project: project)
                     }
+                    // What runs in the sandbox (PAD-153.5).
+                    ProjectAgentsCard(project: project)
+                    if model.mayPoll(project) {
+                        ProjectProcessesCard(project: project)
+                    }
                     RecentActivity(entries: model.timeline[project.name])
                 }
                 VStack(alignment: .leading, spacing: 12) {

@@ -123,6 +123,8 @@ struct SandboxResourcesMeters: View {
 struct SandboxProcessesTab: View {
     @Environment(AppModel.self) private var model
     let project: Project
+    /// Off in Info's Processes card, whose title says it (PAD-153.5).
+    var showsHeader = true
     @State private var sample: SandboxSample?
     @State private var problem: String?
     @State private var sortOrder = [KeyPathComparator(\ProcessRow.cores, order: .reverse)]
@@ -171,10 +173,12 @@ struct SandboxProcessesTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            Divider()
+            if showsHeader {
+                header
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                Divider()
+            }
             if !model.mayPoll(project) {
                 ContentUnavailableView("Shown while the sandbox runs", systemImage: "cpu")
             } else if let sample {
