@@ -4,7 +4,8 @@
 # renderer and the A2UI Playground's catalog (121 components), which only exist as React code. This
 # builds them into a static page the app loads offline in a web view: the playground's MIT source at
 # one CopilotKit commit, its pnpm lockfile, and Paddock's host (tools/tasks/lib/a2ui-web), with Vite.
-# Run from the repo root when bumping COMMIT; needs Node and network to GitHub and npm. The checkout
+# It also writes the reference agents read (PaddockCore Resources/a2ui-reference.md). Run from the
+# repo root when bumping COMMIT; needs Node, Python, and network to GitHub and npm. The checkout
 # and the build are in .tmp/vendor/a2ui-web (gitignored). Install-time analytics and telemetry are off.
 #
 #   mise run vendor:a2ui-web           # build and write App/A2UI
@@ -48,6 +49,11 @@ npx tsx --tsconfig tsconfig.json paddock-host/export-samples.ts "$ROOT/Packages/
 npx tsx --tsconfig tsconfig.json scripts/export-catalog.ts >/dev/null
 cp src/a2ui/export/catalog.json "$ROOT/Packages/PaddockCore/Tests/PaddockCoreTests/Fixtures/a2ui-web/catalog.json"
 cp src/a2ui/export/inference-catalog.json "$WORK/inference-catalog.json"
+# What agents read before their first tab (BaseKit installs it), with its example as a fixture.
+python3 -I "$ROOT/tools/tasks/lib/a2ui-web/reference.py" "$WORK/inference-catalog.json" \
+  "$ROOT/tools/tasks/lib/a2ui-web/reference-head.md" \
+  "$ROOT/Packages/PaddockCore/Sources/PaddockCore/Resources/a2ui-reference.md" \
+  "$ROOT/Packages/PaddockCore/Tests/PaddockCoreTests/Fixtures/a2ui-web/agent/paddock-reference.jsonl"
 # What the page is built from, and every license of what is in it.
 react_core="$(node -p "require('./node_modules/@copilotkit/react-core/package.json').version")"
 printf 'CopilotKit %s (examples/showcases/a2ui-playground), @copilotkit/react-core %s, built by tools/tasks/vendor/a2ui-web.sh\n' "$COMMIT" "$react_core" > "$OUT/VERSION"

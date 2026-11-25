@@ -10,6 +10,7 @@ CopilotKit at the commit in `App/A2UI/VERSION` (MIT; `App/A2UI/THIRD_PARTY_LICEN
 | `catalog.json` | the playground's catalog as it serves it at `/catalog.json` (`scripts/export-catalog.ts`): 121 components, 16 functions |
 | `agent/samples-<group>.jsonl` | the playground's own preview of every component (`src/a2ui/catalog/samples`), one `createSurface` with its components and data model each, as its component docs render them (`sampleOps`) |
 | `agent/paddock-dashboard.jsonl` | written for Paddock: a Sankey, a bar chart, a bound text field, and a button whose action carries the field's value |
+| `agent/paddock-reference.jsonl` | the example in the agents' A2UI reference (`tools/tasks/lib/a2ui-web/reference-head.md`), written by `vendor:a2ui-web`: a form with a radio group, a text field, and a button whose action carries both |
 | `renderer/<fixture>.jsonl` | what the page sent back when `vendor:a2ui-web --check` rendered that fixture offline in Chromium and clicked every button: A2UI action messages, as CopilotKit's renderer builds them |
 
 `--check` fails when a request leaves the page's own files, the page reports an error, or a surface

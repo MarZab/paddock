@@ -360,7 +360,7 @@ struct AgentStatusKitTests {
     }
 
     /// The base kit (PAD-147): the project guide (PAD-71) and the tabs guide, in an agent-context
-    /// whose every line sits under `content: |`, and paddock, the watcher, and the OpenUI Lang reference.
+    /// whose every line sits under `content: |`, and paddock, the watcher, and the A2UI reference.
     @Test func theBaseKitHoldsTheGuideAndThePaddockTools() throws {
         let dir = try scratch()
         defer { try? FileManager.default.removeItem(at: dir) }

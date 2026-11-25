@@ -439,8 +439,8 @@ public struct BrowserSessions: Sendable, Equatable {
             case page(url: String)
             /// A file rendered on the operator's Mac (`NativeShowPolicy`).
             case native(path: String)
-            /// An OpenUI Lang document, rendered by Paddock's renderer (`OpenUIPolicy`); its copy
-            /// in the sandbox.
+            /// An interactive tab: A2UI messages, drawn by Paddock (`A2UIWebPolicy`); their log in
+            /// the sandbox.
             case ui(path: String)
         }
 

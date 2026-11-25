@@ -30,8 +30,8 @@ let package = Package(
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "Yams", package: "Yams"),
             ],
-            // The OpenUI Lang reference agents get (tools/tasks/vendor/openui.sh).
-            resources: [.copy("Resources/openui-reference.md")]
+            // The A2UI reference agents get (tools/tasks/vendor/a2ui-web.sh).
+            resources: [.copy("Resources/a2ui-reference.md")]
         ),
         .testTarget(
             name: "PaddockCoreTests",

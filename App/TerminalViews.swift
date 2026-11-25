@@ -46,15 +46,6 @@ final class ProjectTerminals {
     private var playwrightShown = false
     /// The Processes tab is open (backlog doc UI, Resources); opened from Info, closed by the operator.
     private var processesOpen = false
-    /// The renderer's form state for each interactive tab (`OpenUIMessage.state`), kept for the
-    /// next view of it, and the last problems sent to the sandbox, so the same ones go once.
-    private(set) var uiStates: [String: String] = [:]
-    var uiProblemsSent: [String: String] = [:]
-
-    func keepUIState(_ state: String, for id: String) {
-        uiStates[id] = state
-    }
-
     /// Each interactive tab's A2UI tab (backlog doc Browser, interactive tabs), kept while it is
     /// hidden so its web view keeps what the operator did; what reads it (`AppModel.syncA2UI`):
     /// the last Refresh it took, the tabs being read, and the ones to read again after.
@@ -445,8 +436,6 @@ final class ProjectTerminals {
             }
             for id in gone {
                 let tab = Self.showTab(id)
-                uiStates[id] = nil
-                uiProblemsSent[id] = nil
                 resetA2UI(id)
                 a2uiRedrawn[id] = nil
                 sourceShows.remove(id)

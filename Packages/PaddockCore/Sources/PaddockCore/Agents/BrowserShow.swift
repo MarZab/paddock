@@ -33,20 +33,6 @@ public enum BrowserShow {
         isShowID(id) ? ["exec", sandbox, "paddock", "--operator", id, event.rawValue] : nil
     }
 
-    /// What an interactive tab reports to the sandbox (`OpenUIMessage`): an action, or the
-    /// renderer's problems.
-    public enum UIEvent: String, Sendable {
-        case action, problems
-    }
-
-    /// `sbx exec` command that hands an interactive tab's action or problems to the sandbox, where
-    /// `paddock wait` prints them. `json` comes checked from `OpenUIMessage`. Nil for an id
-    /// `paddock` would not make.
-    public static func uiEventCommand(sandbox: String, id: String, _ event: UIEvent, json: String) -> [String]? {
-        guard isShowID(id), json.utf8.count <= OpenUIMessage.maxActionBytes else { return nil }
-        return ["exec", sandbox, "paddock", "--operator", id, event.rawValue, json]
-    }
-
     /// The operator's Refresh or Back on a tab rendered in the sandbox.
     public enum Navigation: String, Sendable {
         case reload, back

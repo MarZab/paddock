@@ -12,13 +12,12 @@ mise file tasks (`[task_config]` in `mise.toml`): run them with `mise run <task>
 | `capture:cli` | the operator's Mac | raw sbx and llmman captures in `.tmp/captures/`, throwaway projects in `.tmp/capture-projects/` |
 | `capture:socket` | the Mac | sandboxd socket captures in `.tmp/captures/socket/` |
 | `capture:fixtures` | the Mac, after a capture | sanitized copies in `Packages/PaddockCore/Tests/PaddockCoreTests/Fixtures/` |
-| `vendor:a2ui-web` | a dev machine with Node (`--check` also needs a Chromium: `CHROMIUM`, or Debian's `chromium`) | `App/A2UI/` (the A2UI tab page) and `Fixtures/a2ui-web` (the playground's samples, the catalog, and with `--check` the actions the page sends back) |
-| `vendor:openui` | a dev machine with Node | `App/OpenUI/vendor/` and the OpenUI reference resource |
+| `vendor:a2ui-web` | a dev machine with Node (`--check` also needs a Chromium: `CHROMIUM`, or Debian's `chromium`) | `App/A2UI/` (the A2UI tab page), the agents' A2UI reference (PaddockCore `Resources/a2ui-reference.md`), and `Fixtures/a2ui-web` (the playground's samples, the catalog, and with `--check` the actions the page sends back) |
 | `icon` | a dev machine with Node | `App/Assets.xcassets` |
 | `sandbox:plan`, `sandbox:create`, `sandbox:run`, `sandbox:rm` | the Mac (sbx) | this repo's sandbox from `sbxenv.yaml`, through `tools/sandbox/run.sh` (the script Paddock writes into every project); `sandbox:create --replace` removes it first, which a kit change needs (`--force` while it is in use) |
 | `clean` | anywhere | removes `.tmp/build`, `.tmp/test-runs`, `.tmp/lint-runs`, `.tmp/build-runs`, `.tmp/capture-projects`, the packages' `.build`, and an old `build/`; `--all` also `.tmp/captures` and `.tmp/hangs`; `-n` only lists |
 | `version` | anywhere with git | nothing; prints `yymmdd.N` (or `build`, `commit`), which `build` and `install` put into the app |
 
-Helpers a task uses but that are no task are in `lib/`, not executable, so mise does not list them: `render-icon.js` (for `icon`), `fake-anthropic.py` (a stand-in model server for `capture:cli kits`), and `a2ui-web/` (`vendor:a2ui-web`'s host page, Vite config, sample export, license list, manifest, and headless check).
+Helpers a task uses but that are no task are in `lib/`, not executable, so mise does not list them: `render-icon.js` (for `icon`), `fake-anthropic.py` (a stand-in model server for `capture:cli kits`), and `a2ui-web/` (`vendor:a2ui-web`'s host page, Vite config, sample export, license list, manifest, agent reference, and headless check).
 
 Everything a task writes for local use is under `.tmp/` (gitignored). The M0 capture's findings are backlog doc M0 findings; its sanitized output is the test fixtures. The icon's source is `App/AppIcon.svg`.

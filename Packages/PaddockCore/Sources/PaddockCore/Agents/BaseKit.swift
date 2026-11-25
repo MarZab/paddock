@@ -4,7 +4,7 @@ import Foundation
 /// this sandbox and Paddock's rules (`SandboxGuide`), and the tabs it can fill next to its terminal
 /// (backlog doc Browser): `paddock` (`BrowserShow`) for interactive tabs, native tabs, and
 /// everything about a tab, the watcher Paddock follows for them (`BrowserActivity.watcher`, which
-/// also reports the browser kit's sessions where that kit is), and the OpenUI Lang reference. Small Node
+/// also reports the browser kit's sessions where that kit is), and the A2UI reference. Small Node
 /// scripts and text, nothing downloaded: live pages and the browser are the browser kit's.
 ///
 /// The helper and the watcher keep the names they had in the browser kit (PAD-147), so a sandbox
@@ -12,11 +12,13 @@ import Foundation
 public enum BaseKit {
     /// sbx names a local kit after its folder, and the names in one sandbox must differ.
     public static let directoryName = "paddock-base"
-    /// The OpenUI Lang reference agents read before their first interactive tab (`tools/tasks/vendor/openui.sh`).
-    public static let openUIReferencePath = "/usr/local/share/paddock/openui.md"
+    /// The A2UI reference agents read before their first interactive tab: Paddock's rules and the
+    /// playground catalog's design rules, components, and functions (`tools/tasks/vendor/a2ui-web.sh`).
+    /// `paddock` names the same path.
+    public static let a2uiReferencePath = "/usr/local/share/paddock/a2ui.md"
 
-    public static var openUIReference: String {
-        guard let url = Bundle.module.url(forResource: "openui-reference", withExtension: "md"),
+    public static var a2uiReference: String {
+        guard let url = Bundle.module.url(forResource: "a2ui-reference", withExtension: "md"),
               let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
         return text
     }
@@ -47,7 +49,7 @@ public enum BaseKit {
     public static var spec: String {
         let watcher = Data(BrowserActivity.watcher.utf8).base64EncodedString()
         let show = Data(BrowserShow.script.utf8).base64EncodedString()
-        let reference = Data(openUIReference.utf8).base64EncodedString()
+        let reference = Data(a2uiReference.utf8).base64EncodedString()
         return #"""
         # syntax=docker/sandbox-kit:3
         # Written by Paddock. Changes are overwritten when Paddock creates a sandbox.
@@ -67,10 +69,10 @@ public enum BaseKit {
                     printf '%s' '\#(show)' | base64 -d > /usr/local/bin/paddock
                     printf '%s' '\#(watcher)' | base64 -d > /usr/local/bin/\#(BrowserActivity.watchName)
                     chmod 755 /usr/local/bin/paddock /usr/local/bin/\#(BrowserActivity.watchName)
-                    mkdir -p "$(dirname \#(openUIReferencePath))"
-                    printf '%s' '\#(reference)' | base64 -d > \#(openUIReferencePath)
+                    mkdir -p "$(dirname \#(a2uiReferencePath))"
+                    printf '%s' '\#(reference)' | base64 -d > \#(a2uiReferencePath)
                   user: "0"
-                  description: Install paddock, the tab watcher, and the OpenUI Lang reference
+                  description: Install paddock, the tab watcher, and the A2UI reference
 
           # What the agent should know about this sandbox and Paddock's rules, so a project's own
           # files need not say it (PAD-71, backlog doc Kits), and how to use the tabs. @1, as sbx's
@@ -96,7 +98,7 @@ public enum BaseKit {
         ### Reach for it when
         | Situation | Run |
         |---|---|
-        | You need a decision, an approval, or values | `paddock ui question.oui --title "Deploy target"` |
+        | You need a decision, an approval, or values | `paddock ui question.jsonl --title "Deploy target"` |
         | A document, plan, or report they should read | `paddock open plan.md --native` (on their screen, sharp text) |
         | Playwright's test report | `paddock open playwright-report/index.html --native` |
         | You built or changed a page they should see | `paddock open http://localhost:3000 --title "Checkout"` (needs the browser kit) |
@@ -112,20 +114,18 @@ public enum BaseKit {
            comments and file paths; `paddock status tab-a3f9` the whole history.
 
         ### paddock, in detail
-        - `ui FILE` (or `ui -` with the document on stdin): an interactive tab from an OpenUI Lang
-          document: forms, choices, tables, charts, buttons. Read
-          \#(openUIReferencePath) before your first one. A small one:
+        - `ui FILE` (or `ui -` with the messages on stdin): an interactive tab from A2UI v1.0
+          messages, one JSON object per line: forms, choices, tables, charts, maps, cards,
+          buttons. Read \#(a2uiReferencePath) before your first one (the components and
+          how answers come back). A small one:
           ```
-          root = Card([header, form])
-          header = CardHeader("Deploy", "Choose how to roll out")
-          form = Form("deploy", buttons, [env])
-          env = FormControl("Environment", Select("env", [SelectItem("staging", "Staging"), SelectItem("prod", "Production")], "Select...", {required: true}))
-          buttons = Buttons([Button("Deploy", @ToAssistant("Deploy", {step: "deploy"}), "primary")])
+          {"version":"1.0","createSurface":{"surfaceId":"deploy","catalogId":"\#(A2UIPolicy.catalogID)","dataModel":{"env":"staging"},"components":[{"id":"root","component":"Column","children":["env","go"]},{"id":"env","component":"RadioGroup","label":"Environment","value":{"@path":"/env"},"options":[{"label":"Staging","value":"staging"},{"label":"Production","value":"prod"}]},{"id":"go","component":"Button","label":"Deploy","variant":"primary","onClick":{"event":{"name":"deploy","context":{"env":{"@path":"/env"}}}}}]}}
           ```
-          Its answer: `{"type":"continue_conversation","message":"Deploy","context":{"step":"deploy"},"form":"deploy","values":{"env":"staging"}}`.
-          If part of it cannot be drawn, `paddock wait` says what (with the component's
-          signature); fix the file and run `paddock goto tab-a3f9 question.oui`. The tab is
-          offline (no images or internet links). Never ask for passwords or keys.
+          Its answer, from `paddock wait`: `{"version":"1.0","action":{"name":"deploy",...,"context":{"env":"staging"}}}`.
+          If part of it cannot be drawn, `paddock wait` says what (an A2UI `error`); send the
+          fix to the same tab: `paddock ui tab-a3f9 fix.jsonl` (more messages, same ids). The
+          tab draws on the operator's Mac: pictures and links go through this sandbox.
+          Never ask for passwords or keys.
         - `open FILE --native [--title T] [--note N]`: a file on their screen, once they click it:
           for documents to read or copy from. `goto ID FILE` points it at another file.
         - `open URL-or-FILE` without `--native`, `annotate ID`, and `reload`/`back` on such a page
