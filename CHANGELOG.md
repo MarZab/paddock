@@ -4,6 +4,7 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-153 System > Processes lists every agent in running sandboxes, and a sandbox's Processes tab can stop a process.
 - PAD-153 Agents left running in a sandbox (Paddock quit, or their tab closed) show as tabs to take over or stop; closing an agent tab stops its agent.
 - PAD-152 Interactive tabs draw A2UI with CopilotKit's full catalog (charts, maps, media through the sandbox); links open in the sandbox.
 - PAD-139 A Mac port you type when publishing may be outside ports.publishRange.

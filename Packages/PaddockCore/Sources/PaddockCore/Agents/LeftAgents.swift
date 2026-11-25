@@ -20,6 +20,34 @@ public enum LeftAgents {
             .sorted { ($0.time, $0.session) < ($1.time, $1.session) }
     }
 
+    /// Where an agent session is, for the list of every agent (System > Processes).
+    public enum Place: String, Sendable, Equatable {
+        /// In a tab this app has open.
+        case tab
+        /// Left running by this app (`find`).
+        case leftRunning
+        /// In a tab another Paddock opened (Paddock Dev and the installed Paddock share sandboxes).
+        case otherApp
+        /// Started outside Paddock (no tab), or from a kit that records no process.
+        case outside
+
+        public var title: String {
+            switch self {
+            case .tab: "In a tab"
+            case .leftRunning: "Left running"
+            case .otherApp: "Another Paddock's tab"
+            case .outside: "Outside Paddock"
+            }
+        }
+    }
+
+    public static func place(of state: AgentState, openTabs: Set<UUID>, opened: OpenedTabs, project: String) -> Place {
+        guard let tab = state.tab else { return .outside }
+        if openTabs.contains(tab) { return .tab }
+        guard opened.contains(tab, in: project) else { return .otherApp }
+        return state.pid == nil ? .outside : .leftRunning
+    }
+
     /// The host tab that shows a left-running session (`left:` and its session).
     public static func hostTab(_ state: AgentState) -> String { "left:" + state.session }
 

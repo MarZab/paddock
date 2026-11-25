@@ -126,6 +126,9 @@ struct SandboxProcessesTab: View {
     @State private var sample: SandboxSample?
     @State private var problem: String?
     @State private var sortOrder = [KeyPathComparator(\ProcessRow.cores, order: .reverse)]
+    @State private var selection: Set<String> = []
+    /// The process the operator asked to stop, waiting for the confirmation (PAD-153).
+    @State private var toStop: ProcessRow?
     static let interval: Duration = .seconds(5)
 
     /// One row: an app (its processes as children when it has more than one) or a process.
@@ -136,6 +139,8 @@ struct SandboxProcessesTab: View {
         let cores: Double
         let bytes: Int
         let command: String
+        /// The kernel's name of its one process (`comm`), which a stop checks; nil for an app of several.
+        let comm: String?
         var children: [ProcessRow]?
 
         /// For sorting by PID: an app of several processes has none and sorts first.
@@ -148,6 +153,7 @@ struct SandboxProcessesTab: View {
             cores = app.cores
             bytes = app.residentBytes
             command = app.processes.count == 1 ? app.processes.first?.command ?? "" : ""
+            comm = app.processes.count == 1 ? app.processes.first?.name : nil
             children = app.processes.count > 1 ? app.processes.map(ProcessRow.init(process:)) : nil
         }
 
@@ -158,6 +164,7 @@ struct SandboxProcessesTab: View {
             cores = process.cores
             bytes = process.residentBytes
             command = process.command
+            comm = process.name
             children = nil
         }
     }
@@ -171,7 +178,8 @@ struct SandboxProcessesTab: View {
             if !model.mayPoll(project) {
                 ContentUnavailableView("Shown while the sandbox runs", systemImage: "cpu")
             } else if let sample {
-                Table(rows(sample), children: \.children, sortOrder: $sortOrder) {
+                let shown = rows(sample)
+                Table(shown, children: \.children, selection: $selection, sortOrder: $sortOrder) {
                     TableColumn("App / process", value: \.name) { row in
                         Text(row.name).lineLimit(1)
                     }
@@ -193,6 +201,11 @@ struct SandboxProcessesTab: View {
                             .help(row.command)
                     }
                 }
+                .contextMenu(forSelectionType: String.self) { ids in
+                    let chosen = (shown + shown.flatMap { $0.children ?? [] }).first { ids.count == 1 && ids.contains($0.id) && $0.pid != nil && $0.comm != nil }
+                    Button("Stop...") { toStop = chosen }
+                        .disabled(chosen == nil || chosen?.pid == 1)
+                }
             } else if let problem {
                 ContentUnavailableView("Could not read the processes", systemImage: "exclamationmark.triangle",
                                        description: Text(problem))
@@ -201,6 +214,18 @@ struct SandboxProcessesTab: View {
             }
         }
         .task(id: project.name) { await poll() }
+        .confirmationDialog("Stop \(toStop?.name ?? "this process")?",
+                            isPresented: Binding(get: { toStop != nil }, set: { if !$0 { toStop = nil } })) {
+            Button("Stop", role: .destructive) {
+                if let row = toStop, let pid = row.pid, let comm = row.comm {
+                    model.stopSandboxProcess(pid: pid, name: comm, of: project)
+                }
+                toStop = nil
+            }
+        } message: {
+            Text("Process \(toStop?.pid.map(String.init) ?? "") gets TERM, then KILL after 5 seconds. Stopping an agent or a shell ends what it is doing.\n"
+                 + (toStop?.command ?? ""))
+        }
     }
 
     private var header: some View {

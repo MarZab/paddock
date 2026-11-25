@@ -114,7 +114,136 @@ extension ProjectTerminals {
     }
 }
 
+/// One agent session in a running sandbox, for System > Processes (PAD-153).
+struct AgentSessionRow: Identifiable {
+    let project: Project
+    let state: AgentState
+    let place: LeftAgents.Place
+
+    var id: String { project.name + "/" + state.session }
+    var name: String { SidebarAgents.name(state.agent) }
+    var stateText: String {
+        switch AgentActivity(state.kind) {
+        case .working: "Working"
+        case .waiting: "Waits for you"
+        case .none: "Idle"
+        }
+    }
+}
+
+/// Every agent in every running sandbox (System > Processes, PAD-153): where it is, what it does,
+/// and Stop or Take Over for the ones this Paddock opened.
+struct AgentSessionsTable: View {
+    @Environment(AppModel.self) private var model
+    @State private var selection: Set<String> = []
+    @State private var toStop: [AgentSessionRow] = []
+
+    var body: some View {
+        let rows = model.agentSessionRows()
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Agents in sandboxes").font(.headline).padding(.horizontal, 12).padding(.vertical, 8)
+            Table(rows, selection: $selection) {
+                TableColumn("Project") { row in Text(row.project.name).lineLimit(1) }
+                    .width(min: 100, ideal: 140)
+                TableColumn("Agent") { row in Text(row.name) }
+                    .width(70)
+                TableColumn("State") { row in
+                    Text(row.stateText)
+                        .foregroundStyle(AgentActivity(row.state.kind) == .waiting ? AnyShapeStyle(.orange) : AnyShapeStyle(.primary))
+                }
+                .width(90)
+                TableColumn("Where") { row in
+                    Text(row.place.title)
+                        .foregroundStyle(row.place == .leftRunning ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+                }
+                .width(min: 110, ideal: 150)
+                TableColumn("For") { row in
+                    TimelineView(.periodic(from: .now, by: 15)) { context in
+                        Text(SidebarAgents.elapsed(context.date.timeIntervalSince(row.state.time))).monospacedDigit().foregroundStyle(.secondary)
+                    }
+                }
+                .width(50)
+                TableColumn("Session") { row in
+                    Text(row.state.session).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                        .help(row.state.session)
+                }
+            }
+            .contextMenu(forSelectionType: String.self) { ids in
+                let chosen = rows.filter { ids.contains($0.id) }
+                if chosen.count == 1, let row = chosen.first {
+                    Button("Show") { model.show(row) }
+                        .disabled(row.place == .otherApp || row.place == .outside)
+                    if row.place == .leftRunning {
+                        Button("Take Over") { model.takeOverLeftAgent(row.state, of: row.project) }
+                    }
+                }
+                let stoppable = chosen.filter(\.isStoppable)
+                Button(stoppable.count > 1 ? "Stop \(stoppable.count)..." : "Stop...") { toStop = stoppable }
+                    .disabled(stoppable.isEmpty)
+            }
+            .overlay {
+                if rows.isEmpty { ContentUnavailableView("No agents in running sandboxes", systemImage: "person.crop.circle.badge.questionmark") }
+            }
+            Text("Only agents this Paddock opened can be stopped here; one in another Paddock's tab or started outside Paddock is left alone.")
+                .font(.caption).foregroundStyle(.secondary).padding(8)
+        }
+        .confirmationDialog("Stop \(toStop.count) agent\(toStop.count == 1 ? "" : "s")?",
+                            isPresented: Binding(get: { !toStop.isEmpty }, set: { if !$0 { toStop = [] } })) {
+            Button("Stop", role: .destructive) {
+                let chosen = toStop
+                toStop = []
+                for row in chosen { model.stopLeftAgent(row.state, of: row.project) }
+            }
+        } message: {
+            Text("What they are doing ends; their conversations stay, and claude --resume can pick them up:\n"
+                 + toStop.map { "\($0.project.name): \($0.name), \($0.stateText.lowercased())" }.joined(separator: "\n"))
+        }
+    }
+}
+
+extension AgentSessionRow {
+    /// Only an agent this Paddock opened, whose process the kit knows.
+    var isStoppable: Bool { (place == .tab || place == .leftRunning) && state.pid != nil && state.tab != nil }
+}
+
 extension AppModel {
+    /// Every agent session the running sandboxes report, by project, then oldest state first.
+    func agentSessionRows() -> [AgentSessionRow] {
+        projects.projects.sorted { $0.name < $1.name }.flatMap { project -> [AgentSessionRow] in
+            guard let terminals = terminals[project.name] else { return [] }
+            let open = Set((terminals.tabs.tabs + terminals.rightTabs.tabs).map(\.id))
+            return terminals.agents.sessions.values
+                .filter { $0.kind != .ended && !terminals.leftStopping.contains($0.session) }
+                .sorted { ($0.time, $0.session) < ($1.time, $1.session) }
+                .map { AgentSessionRow(project: project, state: $0,
+                                       place: LeftAgents.place(of: $0, openTabs: open, opened: openedTabs, project: project.name)) }
+        }
+    }
+
+    /// Stops a process the operator picked in the sandbox's Processes tab (checked by pid and name).
+    func stopSandboxProcess(pid: Int32, name: String, of project: Project) {
+        Task {
+            do {
+                try await runner().stopSandboxProcess(pid: pid, name: name, of: project)
+                appendLog("Stopped \(name) (\(pid)) in \(project.name)", source: project.name)
+            } catch {
+                fail("Could not stop \(name) (\(pid)) in \(project.name): \(String(describing: error))", in: project.name)
+            }
+        }
+    }
+
+    /// Shows an agent's tab: its own, or its left-running one.
+    func show(_ row: AgentSessionRow) {
+        switch row.place {
+        case .tab:
+            if let tab = row.state.tab { requestedSelection = .agent(row.project.name, tab) }
+        case .leftRunning:
+            requestedSelection = .leftAgent(row.project.name, LeftAgents.hostTab(row.state))
+        case .otherApp, .outside:
+            break
+        }
+    }
+
     /// Reads the tabs this app opened (`OpenedTabs`, one file per app), without projects that are
     /// gone and tabs too old to matter.
     func loadOpenedTabs() {

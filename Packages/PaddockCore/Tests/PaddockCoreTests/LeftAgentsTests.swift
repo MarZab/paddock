@@ -82,6 +82,18 @@ struct LeftAgentsTests {
         #expect(SidebarAgents.help(row, now: Self.now).contains("left running"))
     }
 
+    @Test func everySessionHasAPlace() throws {
+        let states = try states()
+        let left = try #require(states.sessions["59fd5a55-8be1-411c-b27f-9fb066a30387"])
+        let open = try #require(states.sessions["3e69f2d3-9a3c-4117-9f23-009a1bc73dd4"])
+        let ours = opened(Self.leftTab, Self.openTab)
+        #expect(LeftAgents.place(of: open, openTabs: [Self.openTab], opened: ours, project: "paddock") == .tab)
+        #expect(LeftAgents.place(of: left, openTabs: [Self.openTab], opened: ours, project: "paddock") == .leftRunning)
+        #expect(LeftAgents.place(of: left, openTabs: [], opened: OpenedTabs(), project: "paddock") == .otherApp)
+        let outside = AgentState(session: "s", kind: .idle, agent: .claude, tab: nil, pid: 40, time: Self.now)
+        #expect(LeftAgents.place(of: outside, openTabs: [], opened: ours, project: "paddock") == .outside)
+    }
+
     @Test func theRunnerStopsThroughSbx() async throws {
         let fake = FakeRunner()
         fake.succeedByDefault = true
