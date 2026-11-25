@@ -4,6 +4,7 @@ One line per change, newest first, grouped by the day of the version (yymmdd, as
 
 ## Unreleased
 
+- PAD-154 System > Processes shows the project of each sbx command.
 - PAD-153 Quitting while agents run asks first.
 - PAD-153 Info shows the sandbox's processes, and a process can be stopped.
 - PAD-153 Info lists the sandbox's running agents, including ones left running or in another Paddock, to take over or stop; closing an agent tab stops its agent.

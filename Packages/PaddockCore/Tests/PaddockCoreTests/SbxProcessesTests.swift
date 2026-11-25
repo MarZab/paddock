@@ -25,6 +25,36 @@ struct SbxProcessesTests {
         for pid: Int32 in [36688, 29192, 2337, 405, 1, 1306, 37253] { #expect(kinds[pid] == nil) }
     }
 
+    /// PAD-154: the sandbox each sbx command works on, from the capture's command lines.
+    @Test func readsEachCommandsSandbox() throws {
+        let processes = HostProcesses.parse(String(decoding: try Fixture.data("host", "ps.txt"), as: UTF8.self))
+        let sandboxes = Dictionary(uniqueKeysWithValues: SbxProcesses.classify(processes, user: "operator").map { ($0.process.pid, $0.sandbox) })
+        #expect(sandboxes[36710] == "paddock-project-a" && sandboxes[36711] == "paddock-project-a")  // watchers
+        #expect(sandboxes[20203] == "paddock-project-a")  // sbx --ui-origin=tui exec -it -w FOLDER SANDBOX bash -l
+        #expect(sandboxes[19782] == "paddock-project-b")  // sbx --ui-origin=tui run --name SANDBOX
+        // the daemon, a dashboard, and a sandbox machine have none
+        for pid: Int32 in [81351, 90476, 20206, 81365] { #expect(sandboxes[pid] == .some(nil), "\(pid)") }
+    }
+
+    @Test(arguments: [
+        ("sbx exec web bash", "web"),
+        ("/opt/homebrew/bin/sbx -D exec -e A=1 --env B=2 --env-file f -u root --user=root -w /w --detach-keys ctrl-x -it web sh", "web"),
+        ("sbx exec -iu root web id", "web"),
+        ("sbx run claude --name=api . -- --resume x", "api"),
+        ("sbx run --name api", "api"),
+        ("sbx run claude .", nil),
+        ("sbx run claude -- --name x", nil),
+        ("sbx --cloud exec -it sbx_abc bash", nil),
+        ("sbx ls --json", nil),
+        ("sbx", nil),
+        ("sbx exec -it", nil),
+        ("sbx exec -it $(rm) x", nil),
+        ("/usr/bin/other exec web", nil),
+    ] as [(String, String?)])
+    func findsTheSandboxInACommandLine(command: String, sandbox: String?) {
+        #expect(SbxProcesses.sandbox(of: command) == sandbox)
+    }
+
     @Test func onlyOrphansAndLeftoverWatchersAreStoppable() {
         #expect(SbxProcessKind.orphanedTool.isStoppable && SbxProcessKind.leftoverWatcher.isStoppable)
         for kind: SbxProcessKind in [.watcher, .toolInUse, .daemon, .llmman, .sandboxVM(containerID: "x"), .helper("y")] {
