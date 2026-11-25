@@ -52,8 +52,13 @@ class PaddockAgent extends AbstractAgent {
 }
 const AGENTS = { default: new PaddockAgent() };
 
-/** The tab's messages so far. */
-let messages: Message[] = [];
+/**
+ * The tab's surfaces, each with its messages so far. Paddock only ever adds messages, so a render
+ * applies the ones past `taken`, and a surface no new message is about keeps its array: CopilotKit
+ * sees nothing new there, and what the operator typed stays.
+ */
+let taken = 0;
+let surfaces = new Map<string, Message[]>();
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
@@ -61,12 +66,22 @@ const subscribe = (listener: () => void) => {
 };
 
 (window as unknown as { paddockA2UI: unknown }).paddockA2UI = Object.freeze({
-  /** Every message of the tab so far, as a JSON array; a longer list applies what is new. */
+  /** Every message of the tab so far, as a JSON array; what is past the last render is applied. */
   render(json: string) {
     try {
       const parsed: unknown = JSON.parse(json);
       if (!Array.isArray(parsed)) throw new Error("not an array of messages");
-      messages = parsed.filter((m): m is Message => !!m && typeof m === "object" && !Array.isArray(m));
+      if (parsed.length <= taken) return;
+      const next = new Map(surfaces);
+      for (const message of parsed.slice(taken)) {
+        if (!message || typeof message !== "object" || Array.isArray(message)) continue;
+        const id = surfaceOf(message as Message);
+        if (!id) continue;
+        if ("deleteSurface" in message) next.delete(id);
+        else next.set(id, [...(next.get(id) ?? []), message as Message]);
+      }
+      taken = parsed.length;
+      surfaces = next;
       for (const listener of listeners) listener();
     } catch (error) {
       post("problem", { text: String(error).slice(0, 500) });
@@ -85,21 +100,11 @@ function surfaceOf(message: Message): string | undefined {
 }
 
 function Surfaces() {
-  const all = useSyncExternalStore(subscribe, () => messages);
+  const bySurface = useSyncExternalStore(subscribe, () => surfaces);
   const { copilotkit } = useCopilotKit();
   const Base = copilotkit.renderActivityMessages.find((r) => r.activityType === GENERATIVE_UI_ACTIVITY_TYPE)?.render as
     | ComponentType<Record<string, unknown>>
     | undefined;
-  const bySurface = useMemo(() => {
-    const groups = new Map<string, Message[]>();
-    for (const message of all) {
-      const id = surfaceOf(message);
-      if (!id) continue;
-      if ("deleteSurface" in message) groups.delete(id);
-      else groups.set(id, [...(groups.get(id) ?? []), message]);
-    }
-    return groups;
-  }, [all]);
   if (!Base) return null;
   return (
     <>

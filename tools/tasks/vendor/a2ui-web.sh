@@ -34,8 +34,8 @@ echo "==> CopilotKit $COMMIT"
 cd "$PLAYGROUND"
 git checkout --quiet -- package.json pnpm-lock.yaml
 rm -rf paddock-host
-npx --yes "$PNPM" install --frozen-lockfile --ignore-scripts --reporter=silent --store-dir "$WORK/pnpm-store"
-npx --yes "$PNPM" add --save-dev --ignore-scripts --reporter=silent --store-dir "$WORK/pnpm-store" "$VITE" "$VITE_REACT"
+npx --yes "$PNPM" install --config.confirm-modules-purge=false --frozen-lockfile --ignore-scripts --reporter=silent --store-dir "$WORK/pnpm-store"
+npx --yes "$PNPM" add --config.confirm-modules-purge=false --save-dev --ignore-scripts --reporter=silent --store-dir "$WORK/pnpm-store" "$VITE" "$VITE_REACT"
 cp -R "$ROOT/tools/tasks/lib/a2ui-web" paddock-host
 NODE_OPTIONS=--max-old-space-size=6144 npx vite build --config paddock-host/vite.config.mts --logLevel warn
 
@@ -51,7 +51,7 @@ cp src/a2ui/export/inference-catalog.json "$WORK/inference-catalog.json"
 # What the page is built from, and every license of what is in it.
 react_core="$(node -p "require('./node_modules/@copilotkit/react-core/package.json').version")"
 printf 'CopilotKit %s (examples/showcases/a2ui-playground), @copilotkit/react-core %s, built by tools/tasks/vendor/a2ui-web.sh\n' "$COMMIT" "$react_core" > "$OUT/VERSION"
-node "$ROOT/tools/tasks/lib/a2ui-web/licenses.mjs" "$PLAYGROUND" "$OUT/THIRD_PARTY_LICENSES.txt"
+node "$ROOT/tools/tasks/lib/a2ui-web/licenses.mjs" "$PLAYGROUND" "$OUT/THIRD_PARTY_LICENSES.txt" "$WORK/pnpm-store"
 # The files the app may serve: the page loads nothing else (A2UIWebPolicy).
 python3 -I "$ROOT/tools/tasks/lib/a2ui-web/manifest.py" "$OUT"
 echo "==> $(du -sh "$OUT" | cut -f1) in $OUT ($(wc -c < "$OUT/host.js") bytes of host.js)"

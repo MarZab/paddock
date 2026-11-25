@@ -1,6 +1,6 @@
 // The A2UI tab's page in a headless browser, offline (tools/tasks/vendor/a2ui-web.sh --check):
 // only App/A2UI's own files load and every other request is blocked and reported. Each fixture in
-// FIXTURES/agent (a JSONL stream of A2UI messages) is rendered, every enabled button is clicked once,
+// FIXTURES/agent (a JSONL stream of A2UI messages) is rendered (in two reads, as the app does), every enabled button is clicked once,
 // and what the page sends back is written to FIXTURES/renderer/<fixture>.jsonl. Fails when a page
 // error happens, a request leaves the bundle, or a surface draws nothing.
 //
@@ -45,7 +45,11 @@ for (const name of fs.readdirSync(path.join(fixtures, "agent")).filter((f) => f.
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 300)); });
   await page.goto(ORIGIN + "index.html");
   await page.waitForFunction(() => window.paddockA2UI);
-  await page.evaluate((json) => window.paddockA2UI.render(json), JSON.stringify(lines.map((l) => JSON.parse(l))));
+  // As the app does: every message so far at each read, here the first half and then all.
+  const all = lines.map((l) => JSON.parse(l));
+  await page.evaluate((json) => window.paddockA2UI.render(json), JSON.stringify(all.slice(0, Math.ceil(all.length / 2))));
+  await page.waitForTimeout(300);
+  await page.evaluate((json) => window.paddockA2UI.render(json), JSON.stringify(all));
   await page.waitForTimeout(2500);
   const drawn = await page.evaluate(() => [...document.querySelectorAll(".paddock-surface")].map((s) => s.getBoundingClientRect().height));
   const buttons = await page.locator(".paddock-surface button:not([disabled])").all();

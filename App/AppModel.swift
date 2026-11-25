@@ -568,7 +568,7 @@ final class AppModel {
 
     // MARK: - Ports
 
-    private func runner() async throws -> ProjectRunner {
+    func runner() async throws -> ProjectRunner {
         guard let sbx = await probe.sbxPath() else { throw AppError("sbx is not installed") }
         return ProjectRunner(sbx: SbxService(runner: FoundationProcessRunner(), sbx: sbx, reads: await probe.reads(for: sbx)), paths: paths,
                              log: activityLog(for: nil))

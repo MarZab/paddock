@@ -55,6 +55,27 @@ final class ProjectTerminals {
         uiStates[id] = state
     }
 
+    /// Each interactive tab's A2UI tab (backlog doc Browser, interactive tabs), kept while it is
+    /// hidden so its web view keeps what the operator did; what reads it (`AppModel.syncA2UI`):
+    /// the last Refresh it took, the tabs being read, and the ones to read again after.
+    private(set) var a2uiTabs: [String: A2UIWebTab] = [:]
+    var a2uiRedrawn: [String: Int] = [:]
+    var a2uiReading: Set<String> = []
+    var a2uiAgain: Set<String> = []
+
+    /// The tab's A2UI tab, made the first time.
+    func a2uiTab(_ id: String, make: () -> A2UIWebTab) -> A2UIWebTab {
+        if let tab = a2uiTabs[id] { return tab }
+        let tab = make()
+        a2uiTabs[id] = tab
+        return tab
+    }
+
+    /// Ends an A2UI tab: the next read makes a new one, from the first message.
+    func resetA2UI(_ id: String) {
+        a2uiTabs.removeValue(forKey: id)?.dispose()
+    }
+
     /// Native Markdown tabs the operator switched to the file's source (backlog doc Browser).
     var sourceShows: Set<String> = []
 
@@ -426,6 +447,8 @@ final class ProjectTerminals {
                 let tab = Self.showTab(id)
                 uiStates[id] = nil
                 uiProblemsSent[id] = nil
+                resetA2UI(id)
+                a2uiRedrawn[id] = nil
                 sourceShows.remove(id)
                 closedShows.remove(id)
                 unseen.remove(tab)
@@ -452,6 +475,7 @@ final class ProjectTerminals {
             processesOpen = false
         } else if let id = Self.showID(tab) {
             closedShows.insert(id)
+            resetA2UI(id)
         }
         unseen.remove(tab)
         webViews.release(tab)
@@ -464,6 +488,7 @@ final class ProjectTerminals {
         for show in browser.shows { deselect(Self.showTab(show.id)) }
         browser = BrowserSessions()
         webViews.releaseAll()
+        for id in Array(a2uiTabs.keys) { resetA2UI(id) }
         hostHalves = [:]
         unseen = []
         closedShows = []
@@ -495,6 +520,7 @@ final class ProjectTerminals {
     /// Ends every session's process (the sandbox itself keeps its state).
     func terminateAll() {
         views.releaseAll()
+        for id in Array(a2uiTabs.keys) { resetA2UI(id) }
         for session in sessions.values {
             Task { await session.terminate() }
         }
@@ -654,7 +680,7 @@ struct ProjectTabs<Info: View>: View {
             SandboxProcessesTab(project: project)
         } else if let id = ProjectTerminals.showID(tab), let show = terminals.browser.shows.first(where: { $0.id == id }) {
             if show.isInteractive {
-                OpenUIView(project: project, show: show)
+                A2UIShowView(project: project, show: show)
             } else if show.isNative {
                 NativeShowView(project: project, show: show)
             } else {
